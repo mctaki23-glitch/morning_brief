@@ -23,6 +23,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Pages 를 워크플로우 토큰으로 자동 활성화 (Settings 수동 설정 불필요)
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
