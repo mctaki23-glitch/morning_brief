@@ -23,11 +23,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Pages 를 워크플로우 토큰으로 자동 활성화 (Settings 수동 설정 불필요)
+      # Pages 는 Settings → Pages → Source: GitHub Actions 로 1회 활성화 필요.
+      # (Actions 토큰으로는 Pages 사이트 생성이 막혀 있어 자동 활성화 불가)
       - name: Configure Pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - uses: actions/setup-python@v5
         with:
