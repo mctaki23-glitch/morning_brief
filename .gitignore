@@ -1,0 +1,14 @@
+# 생성된 사이트 산출물
+/site/
+/_site/
+
+# 환경/시크릿
+.env
+*.session
+
+# 파이썬
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/

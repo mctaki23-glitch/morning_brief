@@ -1,0 +1,59 @@
+name: Daily Morning Brief
+
+# 매일 아침 06:30 KST 에 그날 올라온 브리핑을 기반으로 사이트를 생성해
+# GitHub Pages 로 배포한다. (06:30 KST = 21:30 UTC 전일)
+on:
+  schedule:
+    - cron: "30 21 * * *"
+  workflow_dispatch: {} # 수동 실행 (테스트용)
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 동시 실행 방지 (마지막 실행만 배포)
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate site (오늘 KST 브리핑)
+        env:
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+          TELEGRAM_SESSION: ${{ secrets.TELEGRAM_SESSION }}
+          TELEGRAM_CHANNEL: ${{ vars.TELEGRAM_CHANNEL || 'ehdwl' }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          MORNING_BRIEF_MODEL: ${{ vars.MORNING_BRIEF_MODEL || 'claude-opus-4-8' }}
+        run: |
+          # 시크릿이 없으면 자동으로 fixture 폴백으로 동작하므로 CI가 깨지지 않는다.
+          python -m morning_brief run --out site
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
