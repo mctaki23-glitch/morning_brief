@@ -23,6 +23,7 @@
   /index.html                        지난 브리핑 아카이브
   /brief/<날짜>/index.html           시황 정리 (지수·종목 카드)
   /brief/<날짜>/stock/<slug>.html    종목별 서머리 (등락 이유 + 차트)
+  /brief/<날짜>/onepage.html         단일 파일 공유용 (모든 종목 상세 포함, 링크 하나로 전달)
   /brief/<날짜>/data.json            구조화 데이터
 ```
 

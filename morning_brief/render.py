@@ -150,6 +150,11 @@ def render_site(brief: Brief, out_dir: str | Path) -> Path:
     # 시황 정리 페이지
     date_dir.joinpath("index.html").write_text(_render_market(brief), encoding="utf-8")
 
+    # 단일 파일 공유 버전 (모든 종목 상세 포함, 완전 자기완결)
+    date_dir.joinpath("onepage.html").write_text(
+        render_single_page(brief, standalone=True), encoding="utf-8"
+    )
+
     # 구조화 데이터
     date_dir.joinpath("data.json").write_text(_dump_json(brief), encoding="utf-8")
 
@@ -303,3 +308,223 @@ def _dump_json(brief: Brief) -> str:
         return asdict(o) if hasattr(o, "__dataclass_fields__") else str(o)
 
     return json.dumps(asdict(brief), ensure_ascii=False, indent=2, default=default)
+
+
+# ── 단일 페이지 렌더 (공유 링크/Artifact용, 완전 자기완결) ──────────
+_SINGLE_CSS = """
+:root{
+  --bg:#f6f6f4; --surface:#ffffff; --surface-2:#fbfbfa; --ink:#15181e;
+  --muted:#5c6572; --line:#e5e7ec; --up:#e23744; --down:#2f76e6; --flat:#8a919c;
+  --accent:#b07d2b; --shadow:0 1px 2px rgba(20,24,30,.06),0 8px 24px rgba(20,24,30,.06);
+  --radius:12px;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",Roboto,Helvetica,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0b0d11; --surface:#14171d; --surface-2:#11141a; --ink:#e8ebf1;
+  --muted:#8b93a1; --line:#222834; --up:#ff5a67; --down:#5b97ff; --flat:#7c8494;
+  --accent:#e0a94a; --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+}}
+:root[data-theme="light"]{--bg:#f6f6f4;--surface:#ffffff;--surface-2:#fbfbfa;--ink:#15181e;
+  --muted:#5c6572;--line:#e5e7ec;--up:#e23744;--down:#2f76e6;--flat:#8a919c;--accent:#b07d2b;
+  --shadow:0 1px 2px rgba(20,24,30,.06),0 8px 24px rgba(20,24,30,.06);}
+:root[data-theme="dark"]{--bg:#0b0d11;--surface:#14171d;--surface-2:#11141a;--ink:#e8ebf1;
+  --muted:#8b93a1;--line:#222834;--up:#ff5a67;--down:#5b97ff;--flat:#7c8494;--accent:#e0a94a;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+  line-height:1.55;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;}
+.page{max-width:900px;margin:0 auto;padding:28px 20px 72px;}
+a{color:inherit;text-decoration:none}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
+.up{color:var(--up)} .down{color:var(--down)} .flat{color:var(--flat)}
+
+.masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+  flex-wrap:wrap;padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:22px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:750;font-size:19px;letter-spacing:-0.02em}
+.brand .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 22%,transparent)}
+.brand .sub{color:var(--muted);font-weight:500;font-size:12.5px;margin-left:2px;letter-spacing:0}
+.masthead .when{text-align:right}
+.masthead .when .d{font-family:var(--mono);font-size:14px}
+.masthead .when .src{color:var(--muted);font-size:11.5px;letter-spacing:.02em;text-transform:uppercase}
+
+.pulse{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:18px 20px;box-shadow:var(--shadow);margin-bottom:14px}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:650;margin:0 0 9px}
+.pulse p{margin:0;font-size:16px;text-wrap:pretty;max-width:64ch}
+.indices{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 26px}
+.chip{display:inline-flex;align-items:baseline;gap:7px;border:1px solid var(--line);
+  background:var(--surface);border-radius:999px;padding:6px 13px;font-size:13px}
+.chip .nm{color:var(--muted)}
+.chip .v{font-family:var(--mono);font-weight:600;font-size:13px}
+
+.movers-head{display:flex;align-items:baseline;justify-content:space-between;margin:0 0 10px}
+.movers-head .eyebrow{margin:0}
+.movers-head .hint{font-size:11.5px;color:var(--muted)}
+.list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--radius);
+  overflow:hidden;background:var(--surface);box-shadow:var(--shadow)}
+.row{display:grid;grid-template-columns:1fr auto 128px;align-items:center;gap:14px;
+  padding:13px 16px;border-bottom:1px solid var(--line);border-left:3px solid transparent;
+  transition:background .12s ease,border-color .12s ease}
+.row:last-child{border-bottom:none}
+.row:hover,.row:focus-visible{background:var(--surface-2);border-left-color:var(--accent);outline:none}
+.row .id{min-width:0}
+.row .nm{font-weight:680;font-size:15px;letter-spacing:-0.01em;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.row .tkr{font-family:var(--mono);font-size:11.5px;color:var(--muted);
+  border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+.row .why{color:var(--muted);font-size:13px;margin:3px 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .chg{font-family:var(--mono);font-weight:700;font-size:15px;white-space:nowrap;text-align:right}
+.row .spark{justify-self:end}
+.chev{display:none}
+
+.foot{color:var(--muted);font-size:12px;line-height:1.6;margin-top:26px;
+  border-top:1px solid var(--line);padding-top:14px}
+.foot a.gh{color:var(--accent);font-weight:600}
+
+/* 종목 상세 — :target 오버레이 (JS 불필요) */
+.detail{position:fixed;inset:0;z-index:50;display:none}
+.detail:target{display:block}
+.detail .scrim{position:absolute;inset:0;background:color-mix(in srgb,#0b0d11 55%,transparent);
+  backdrop-filter:blur(2px)}
+.sheet{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:min(680px,calc(100vw - 32px));max-height:calc(100vh - 48px);overflow:auto;
+  background:var(--surface);border:1px solid var(--line);border-radius:16px;
+  box-shadow:0 24px 60px rgba(0,0,0,.35);padding:22px 24px 26px}
+.sheet .close{position:sticky;top:0;float:right;width:32px;height:32px;display:grid;place-items:center;
+  border-radius:8px;color:var(--muted);font-size:20px;line-height:1;background:var(--surface)}
+.sheet .close:hover{background:var(--surface-2);color:var(--ink)}
+.sheet h2{margin:2px 0 0;font-size:23px;letter-spacing:-0.02em;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;text-wrap:balance}
+.sheet h2 .tkr{font-family:var(--mono);font-size:13px;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:2px 7px}
+.sheet .price{font-family:var(--mono);font-size:20px;font-weight:700;margin:8px 0 20px}
+.panel{border:1px solid var(--line);background:var(--surface-2);border-radius:12px;padding:15px 17px;margin-bottom:14px}
+.panel .eyebrow{margin-bottom:8px}
+.panel p{margin:0;font-size:15px;text-wrap:pretty}
+.panel details{margin-top:10px}
+.panel summary{cursor:pointer;color:var(--accent);font-size:13px;font-weight:600}
+.panel details p{color:var(--muted);font-size:13.5px;margin-top:8px}
+.chart-note{color:var(--muted);font-size:12px;margin:9px 0 0;font-family:var(--mono)}
+.sheet .dis{color:var(--muted);font-size:11.5px;margin:6px 0 0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (max-width:560px){
+  .row{grid-template-columns:1fr auto;gap:10px}
+  .row .spark{display:none}
+  .page{padding:22px 15px 60px}
+}
+"""
+
+
+def render_single_page(brief: Brief, standalone: bool = True) -> str:
+    """모든 종목 상세를 포함한 단일 자기완결 HTML (공유 링크/Artifact용).
+
+    standalone=False 이면 <title>+<style>+본문 마크업만 반환한다(외부 스켈레톤이
+    head/body 를 감싸는 Artifact 게시 환경용).
+    """
+    for m in brief.stocks:
+        m.slug = slugify(m)
+    _dedupe_slugs(brief.stocks)
+
+    def sort_key(m: StockMention):
+        pct = m.price_change_pct()
+        return -(abs(pct) if pct is not None else -1)
+
+    stocks = sorted(brief.stocks, key=sort_key)
+
+    # 지수 칩
+    chips = ""
+    if brief.indices:
+        parts = []
+        for i in brief.indices:
+            disp, cls = _fmt_pct(i.change_pct)
+            parts.append(
+                f'<span class="chip"><span class="nm">{html.escape(i.name)}</span>'
+                f'<span class="v {cls}">{disp}</span></span>'
+            )
+        chips = f'<div class="indices">{"".join(parts)}</div>'
+
+    # 종목 행
+    rows = []
+    for m in stocks:
+        disp, cls = _fmt_pct(m.price_change_pct())
+        tkr = f'<span class="tkr">{html.escape(m.ticker)}</span>' if m.ticker else ""
+        spark = ""
+        if m.prices and m.prices.closes:
+            spark = f'<span class="spark">{chart.sparkline(m.prices.closes, up=_dir_bool(m), width=120, height=34)}</span>'
+        rows.append(
+            f'<a class="row" href="#s-{m.slug}">'
+            f'<span class="id"><span class="nm">{html.escape(m.name)}{tkr}</span>'
+            f'<span class="why">{html.escape(m.reason_summary)}</span></span>'
+            f'<span class="chg {cls}">{disp}</span>{spark}</a>'
+        )
+    list_html = f'<div class="list">{"".join(rows)}</div>' if rows else "<p>언급된 종목이 없습니다.</p>"
+
+    # 종목 상세 오버레이
+    details = []
+    for m in stocks:
+        disp, cls = _fmt_pct(m.price_change_pct())
+        tkr = f'<span class="tkr">{html.escape(m.ticker)}</span>' if m.ticker else ""
+        if m.prices and m.prices.last_close is not None:
+            price = f'{m.prices.last_close:,.2f} {m.prices.currency} <span class="{cls}">{disp}</span>'
+        else:
+            price = f'<span class="{cls}">{disp}</span>'
+        src = ""
+        if m.reason_context:
+            src = (
+                '<details><summary>원문 근거 보기</summary>'
+                f'<p>{html.escape(m.reason_context)}</p></details>'
+            )
+        if m.prices and m.prices.closes:
+            chart_svg = chart.line_chart(m.prices.closes, m.prices.dates, up=_dir_bool(m))
+            n = len(m.prices.closes)
+            src_label = "Stooq 일봉" if m.prices.source == "stooq" else "합성 데이터(데모)"
+            note = f'<p class="chart-note">최근 {n}영업일 종가 · {src_label}</p>'
+        else:
+            chart_svg = chart.line_chart([])
+            note = ""
+        details.append(
+            f'<div class="detail" id="s-{m.slug}"><a class="scrim" href="#top" aria-label="닫기"></a>'
+            f'<div class="sheet" role="dialog" aria-label="{html.escape(m.name)} 상세">'
+            f'<a class="close" href="#top" aria-label="닫기">×</a>'
+            f'<h2>{html.escape(m.name)}{tkr}</h2>'
+            f'<div class="price num">{price}</div>'
+            f'<div class="panel"><p class="eyebrow">등락 이유</p><p>{html.escape(m.reason_summary) or "정보 없음"}</p>{src}</div>'
+            f'<div class="panel"><p class="eyebrow">차트</p>{chart_svg}{note}</div>'
+            '<p class="dis">투자 참고용이며 매매 권유가 아닙니다. 합성 시세는 실제 가격과 다릅니다.</p>'
+            "</div></div>"
+        )
+
+    src_badge = "Claude 요약" if brief.summarizer == "claude" else "규칙 기반 요약"
+    price_badge = "Stooq 시세" if brief.price_source == "stooq" else "합성 시세(데모)"
+
+    body = (
+        '<div class="page" id="top">'
+        '<header class="masthead">'
+        '<div class="brand"><span class="dot"></span>Morning Brief'
+        '<span class="sub">사제콩이 · 서상영</span></div>'
+        f'<div class="when"><div class="d num">{html.escape(brief.date)}</div>'
+        f'<div class="src">Telegram @{html.escape(brief.source_channel)}</div></div>'
+        '</header>'
+        f'<section class="pulse"><p class="eyebrow">시황 · {src_badge}</p>'
+        f'<p>{html.escape(brief.market_overview) or "요약 없음"}</p></section>'
+        f'{chips}'
+        '<div class="movers-head"><p class="eyebrow">오늘의 종목 · 등락순</p>'
+        f'<span class="hint">{len(stocks)}개 · 탭하면 이유·차트 · {price_badge}</span></div>'
+        f'{list_html}'
+        '<p class="foot">텔레그램 브리핑 원문을 자동 요약·재구성한 참고 자료입니다. '
+        '투자 자문이나 매매 권유가 아니며, 투자 판단의 책임은 이용자 본인에게 있습니다. '
+        '원문 저작권은 작성자(서상영)에게 있습니다.</p>'
+        '</div>'
+        + "".join(details)
+    )
+
+    head = (
+        f"<title>Morning Brief · {html.escape(brief.date)}</title>"
+        f"<style>{_SINGLE_CSS}</style>"
+    )
+    if not standalone:
+        return head + body
+    return (
+        "<!doctype html><html lang=\"ko\"><head><meta charset=\"utf-8\">"
+        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+        f"{head}</head><body>{body}</body></html>"
+    )
