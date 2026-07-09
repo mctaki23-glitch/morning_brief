@@ -12,10 +12,10 @@ permissions:
   pages: write
   id-token: write
 
-# 동시 실행 방지 (마지막 실행만 배포)
+# 동시 실행 방지 (대기 중 실행이 취소되지 않도록 cancel-in-progress: false)
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:

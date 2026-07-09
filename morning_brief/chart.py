@@ -124,17 +124,27 @@ def _empty(width: int, height: int) -> str:
     )
 
 
-def candlestick(points, up: Optional[bool] = None, width: int = 680, height: int = 280) -> str:
+def candlestick(
+    points,
+    up: Optional[bool] = None,
+    width: int = 680,
+    height: int = 280,
+    compact: bool = False,
+) -> str:
     """OHLC 봉차트(캔들스틱). points: PricePoint 리스트.
 
     각 봉은 자기 자신의 시가/종가로 색이 결정된다(양봉=상승색, 음봉=하락색).
     상승/하락 색은 페이지 CSS 변수(--up/--down)를 따르므로 한국식(상승 빨강/
     하락 파랑) 등 페이지 설정을 그대로 반영한다.
+    compact=True 이면 축/라벨 없이 목록용 미니 봉차트로 렌더한다.
     """
     if not points:
         return _empty(width, height)
 
-    pad_l, pad_r, pad_t, pad_b = 46.0, 10.0, 12.0, 26.0
+    if compact:
+        pad_l, pad_r, pad_t, pad_b = 1.5, 1.5, 2.0, 2.0
+    else:
+        pad_l, pad_r, pad_t, pad_b = 46.0, 10.0, 12.0, 26.0
     highs = [p.high for p in points]
     lows = [p.low for p in points]
     hi, lo = max(highs), min(lows)
@@ -143,7 +153,8 @@ def candlestick(points, up: Optional[bool] = None, width: int = 680, height: int
     inner_h = height - pad_t - pad_b
     n = len(points)
     slot = inner_w / n if n else inner_w
-    body_w = max(2.0, min(16.0, slot * 0.62))
+    body_w = max(1.4 if compact else 2.0, min(16.0, slot * 0.62))
+    wick_w = 0.8 if compact else 1.2
 
     def y(v: float) -> float:
         return round(pad_t + inner_h * (1 - (v - lo) / span), 2)
@@ -160,21 +171,27 @@ def candlestick(points, up: Optional[bool] = None, width: int = 680, height: int
         x0 = round(cx - body_w / 2, 2)
         # 심지(고가~저가) + 몸통(시가~종가)
         parts.append(
-            f'<line x1="{cx}" y1="{yh}" x2="{cx}" y2="{yl}" stroke="{col}" stroke-width="1.2"/>'
+            f'<line x1="{cx}" y1="{yh}" x2="{cx}" y2="{yl}" stroke="{col}" stroke-width="{wick_w}"/>'
         )
         parts.append(
-            f'<rect x="{x0}" y="{top}" width="{round(body_w,2)}" height="{bh}" fill="{col}" rx="1"/>'
+            f'<rect x="{x0}" y="{top}" width="{round(body_w,2)}" height="{bh}" fill="{col}" rx="0.5"/>'
         )
 
-    labels = [
-        _axis_label(4, pad_t + 4, f"{hi:,.2f}", anchor="start"),
-        _axis_label(4, height - pad_b + 4, f"{lo:,.2f}", anchor="start"),
-        _axis_label(pad_l, height - 6, points[0].date, anchor="start"),
-        _axis_label(width - pad_r, height - 6, points[-1].date, anchor="end"),
-    ]
+    labels = (
+        []
+        if compact
+        else [
+            _axis_label(4, pad_t + 4, f"{hi:,.2f}", anchor="start"),
+            _axis_label(4, height - pad_b + 4, f"{lo:,.2f}", anchor="start"),
+            _axis_label(pad_l, height - 6, points[0].date, anchor="start"),
+            _axis_label(width - pad_r, height - 6, points[-1].date, anchor="end"),
+        ]
+    )
 
+    fixed_w = f'width="{width}" ' if compact else 'width="100%" '
     return (
-        f'<svg viewBox="0 0 {width} {height}" width="100%" height="{height}" '
+        f'<svg viewBox="0 0 {width} {height}" {fixed_w}height="{height}" '
+        f'preserveAspectRatio="xMidYMid meet" '
         f'role="img" aria-label="최근 종가 봉차트" '
         f'style="max-width:100%;height:auto;display:block">'
         f"{''.join(parts)}{''.join(labels)}"

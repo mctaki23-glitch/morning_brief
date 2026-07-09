@@ -226,8 +226,8 @@ def _render_market(brief: Brief) -> str:
     for m in stocks:
         disp, cls = _fmt_pct(m.price_change_pct())
         spark = ""
-        if m.prices and m.prices.closes:
-            spark = f'<div class="spark">{chart.sparkline(m.prices.closes, up=_dir_bool(m))}</div>'
+        if m.prices and m.prices.points:
+            spark = f'<div class="spark">{chart.candlestick(m.prices.points, up=_dir_bool(m), width=220, height=52, compact=True)}</div>'
         tkr = f'<span class="tkr">{html.escape(m.ticker)}</span>' if m.ticker else ""
         cards.append(
             f'<a class="card" href="stock/{m.slug}.html">'
@@ -450,10 +450,11 @@ a{color:inherit;text-decoration:none}
   .masthead{flex-direction:column;align-items:flex-start;gap:4px;margin-bottom:16px}
   .masthead .when{text-align:left}
   .masthead .when .d{font-size:13px}
-  .row{display:flex;align-items:center;gap:12px;padding:15px 15px;min-height:60px}
-  .row .spark{display:none}
+  .row{display:flex;align-items:center;gap:11px;padding:15px 15px;min-height:60px}
   .row .id{flex:1 1 auto;min-width:0}
   .row .chg{flex:0 0 auto}
+  .row .spark{display:block;flex:0 0 66px}
+  .row .spark svg{width:66px}
   .row .nm{font-size:15.5px}
   .row .why{font-size:12.5px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
   .row .chg{font-size:16px}
@@ -505,8 +506,8 @@ def render_single_page(brief: Brief, standalone: bool = True) -> str:
         disp, cls = _fmt_pct(m.price_change_pct())
         tkr = f'<span class="tkr">{html.escape(m.ticker)}</span>' if m.ticker else ""
         spark = ""
-        if m.prices and m.prices.closes:
-            spark = f'<span class="spark">{chart.sparkline(m.prices.closes, up=_dir_bool(m), width=120, height=34)}</span>'
+        if m.prices and m.prices.points:
+            spark = f'<span class="spark">{chart.candlestick(m.prices.points, up=_dir_bool(m), width=120, height=36, compact=True)}</span>'
         rows.append(
             f'<a class="row" href="#s-{m.slug}">'
             f'<span class="id"><span class="nm">{html.escape(m.name)}{tkr}</span>'
