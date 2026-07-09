@@ -22,21 +22,21 @@ from .models import Brief, StockMention
 _CSS = """
 :root {
   --bg: #ffffff; --fg: #111418; --muted: #6b7280; --card: #f6f7f9;
-  --border: #e5e7eb; --accent: #c2410c; --up: #16a34a; --down: #dc2626;
+  --border: #e5e7eb; --accent: #c2410c; --up: #dc2626; --down: #2563eb;
   --radius: 14px;
 }
 @media (prefers-color-scheme: dark) {
   :root { --bg: #0d1117; --fg: #e6edf3; --muted: #9aa4b2; --card: #161b22;
-          --border: #262c36; --accent: #f97316; --up: #3fb950; --down: #f85149; }
+          --border: #262c36; --accent: #f97316; --up: #f85149; --down: #4f8cff; }
 }
 :root[data-theme="light"] { --bg:#ffffff; --fg:#111418; --muted:#6b7280; --card:#f6f7f9;
-  --border:#e5e7eb; --accent:#c2410c; --up:#16a34a; --down:#dc2626; }
+  --border:#e5e7eb; --accent:#c2410c; --up:#dc2626; --down:#2563eb; }
 :root[data-theme="dark"] { --bg:#0d1117; --fg:#e6edf3; --muted:#9aa4b2; --card:#161b22;
-  --border:#262c36; --accent:#f97316; --up:#3fb950; --down:#f85149; }
+  --border:#262c36; --accent:#f97316; --up:#f85149; --down:#4f8cff; }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--fg);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Roboto, sans-serif;
-  line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  line-height: 1.55; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 .wrap { max-width: 860px; margin: 0 auto; padding: 20px 16px 64px; }
 a { color: inherit; }
 header.top { display: flex; align-items: baseline; justify-content: space-between;
@@ -158,9 +158,40 @@ def render_site(brief: Brief, out_dir: str | Path) -> Path:
     # 구조화 데이터
     date_dir.joinpath("data.json").write_text(_dump_json(brief), encoding="utf-8")
 
-    # 루트 아카이브
-    out.joinpath("index.html").write_text(_render_archive(out), encoding="utf-8")
+    # 아카이브(지난 브리핑 목록) + 루트는 최신 종합 화면(onepage)으로 바로 이동
+    out.joinpath("archive.html").write_text(_render_archive(out), encoding="utf-8")
+    latest = _latest_date(out)
+    out.joinpath("index.html").write_text(_render_root(latest), encoding="utf-8")
     return date_dir / "index.html"
+
+
+def _latest_date(out: Path) -> Optional[str]:
+    briefs_dir = out / "brief"
+    if not briefs_dir.exists():
+        return None
+    dates = sorted(
+        [p.name for p in briefs_dir.iterdir() if p.is_dir() and (p / "onepage.html").exists()],
+        reverse=True,
+    )
+    return dates[0] if dates else None
+
+
+def _render_root(latest: Optional[str]) -> str:
+    """루트(/)는 최신 '아침 종합' 모바일 화면으로 바로 이동."""
+    if not latest:
+        return _page("Morning Brief", '<div class="wrap"><p>아직 브리핑이 없습니다.</p></div>')
+    target = f"brief/{latest}/onepage.html"
+    return (
+        "<!doctype html><html lang=\"ko\"><head><meta charset=\"utf-8\">"
+        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+        f'<meta http-equiv="refresh" content="0; url={target}">'
+        f'<link rel="canonical" href="{target}">'
+        "<title>Morning Brief</title>"
+        "<style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;"
+        "background:#0b0d11;color:#e8ebf1;display:grid;place-items:center;height:100vh;margin:0}"
+        "a{color:#e0a94a}</style></head>"
+        f'<body><p>최신 브리핑으로 이동 중… <a href="{target}">열리지 않으면 여기를 누르세요</a></p></body></html>'
+    )
 
 
 def _dedupe_slugs(stocks: list[StockMention]) -> None:
@@ -215,7 +246,8 @@ def _render_market(brief: Brief) -> str:
         '<div><div class="brand">📈 Morning Brief</div>'
         f'<div class="channel">텔레그램 · 사제콩이_서상영 (@{html.escape(brief.source_channel)})</div></div>'
         f'<div class="date">{html.escape(brief.date)}</div></header>'
-        f'<div class="overview"><h2>시황 요약 <span class="badge">{src_badge}</span></h2>'
+        f'<div class="overview"><h2>시황 요약 <span class="badge">{src_badge}</span>'
+        f'<span class="badge">아침 {brief.message_count}건 종합</span></h2>'
         f'<p>{html.escape(brief.market_overview) or "요약 없음"}</p></div>'
         f"{idx_html}"
         f'<div class="section-title">오늘 언급된 종목 ({len(stocks)}) · 등락순 '
@@ -224,7 +256,7 @@ def _render_market(brief: Brief) -> str:
         '<p class="disclaimer">본 페이지는 텔레그램 브리핑 원문을 자동 요약·재구성한 참고 자료이며, '
         "투자 자문이나 매매 권유가 아닙니다. 투자 판단의 책임은 이용자 본인에게 있습니다. "
         "원문 저작권은 작성자(서상영)에게 있습니다.</p>"
-        '<p class="disclaimer"><a class="back" href="../../index.html">← 지난 브리핑 보기</a></p>'
+        '<p class="disclaimer"><a class="back" href="../../archive.html">← 지난 브리핑 보기</a></p>'
     )
     return _page(
         f"Morning Brief · {brief.date}",
@@ -254,13 +286,13 @@ def _render_stock(brief: Brief, m: StockMention) -> str:
 
     chart_html = ""
     note = ""
-    if m.prices and m.prices.closes:
-        chart_html = chart.line_chart(m.prices.closes, m.prices.dates, up=_dir_bool(m))
-        n = len(m.prices.closes)
+    if m.prices and m.prices.points:
+        chart_html = chart.candlestick(m.prices.points, up=_dir_bool(m))
+        n = len(m.prices.points)
         src_label = "Stooq 일봉" if m.prices.source == "stooq" else "합성 데이터(데모)"
-        note = f'<p class="chart-note">최근 {n}영업일 종가 · {src_label}</p>'
+        note = f'<p class="chart-note">최근 {n}영업일 봉차트(OHLC) · {src_label}</p>'
     else:
-        chart_html = chart.line_chart([])
+        chart_html = chart.candlestick([])
 
     body = (
         f'<a class="back" href="../index.html">← 시황으로</a>'
@@ -268,7 +300,7 @@ def _render_stock(brief: Brief, m: StockMention) -> str:
         f"{price_line}"
         f'<div class="block"><h2>등락 이유</h2>'
         f'<ul class="reason-list"><li>{html.escape(reason_items)}</li></ul>{src}</div>'
-        f'<div class="block"><h2>차트</h2>{chart_html}{note}</div>'
+        f'<div class="block"><h2>차트 (봉차트)</h2>{chart_html}{note}</div>'
         '<p class="disclaimer">투자 참고용 자료이며 매매 권유가 아닙니다. '
         "시세가 합성 데이터로 표시된 경우 실제 가격과 다릅니다.</p>"
     )
@@ -333,7 +365,8 @@ _SINGLE_CSS = """
   --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
-  line-height:1.55;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;}
+  line-height:1.55;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;
+  overflow-x:hidden;}
 .page{max-width:900px;margin:0 auto;padding:28px 20px 72px;}
 a{color:inherit;text-decoration:none}
 .num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
@@ -351,7 +384,10 @@ a{color:inherit;text-decoration:none}
 
 .pulse{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
   padding:18px 20px;box-shadow:var(--shadow);margin-bottom:14px}
-.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:650;margin:0 0 9px}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:650;margin:0 0 9px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pill{display:inline-block;font-size:10.5px;letter-spacing:.02em;text-transform:none;font-weight:650;
+  color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);
+  border:1px solid color-mix(in srgb,var(--accent) 35%,transparent);border-radius:999px;padding:2px 9px}
 .pulse p{margin:0;font-size:16px;text-wrap:pretty;max-width:64ch}
 .indices{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 26px}
 .chip{display:inline-flex;align-items:baseline;gap:7px;border:1px solid var(--line);
@@ -405,11 +441,32 @@ a{color:inherit;text-decoration:none}
 .panel details p{color:var(--muted);font-size:13.5px;margin-top:8px}
 .chart-note{color:var(--muted);font-size:12px;margin:9px 0 0;font-family:var(--mono)}
 .sheet .dis{color:var(--muted);font-size:11.5px;margin:6px 0 0}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@keyframes sheet-up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* 스마트폰: 상세를 하단 바텀시트로, 터치 영역 확대 */
 @media (max-width:560px){
-  .row{grid-template-columns:1fr auto;gap:10px}
+  .page{padding:18px 14px 56px}
+  .masthead{flex-direction:column;align-items:flex-start;gap:4px;margin-bottom:16px}
+  .masthead .when{text-align:left}
+  .masthead .when .d{font-size:13px}
+  .row{display:flex;align-items:center;gap:12px;padding:15px 15px;min-height:60px}
   .row .spark{display:none}
-  .page{padding:22px 15px 60px}
+  .row .id{flex:1 1 auto;min-width:0}
+  .row .chg{flex:0 0 auto}
+  .row .nm{font-size:15.5px}
+  .row .why{font-size:12.5px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .row .chg{font-size:16px}
+  .indices{margin:14px 0 22px}
+  .chip{padding:7px 13px}
+  /* 바텀시트 */
+  .sheet{left:0;right:0;top:auto;bottom:0;transform:none;width:100%;
+    max-height:90vh;border-radius:18px 18px 0 0;padding:16px 18px calc(24px + env(safe-area-inset-bottom));
+    animation:sheet-up .22s ease-out}
+  .sheet::before{content:"";display:block;width:40px;height:4px;border-radius:999px;
+    background:var(--line);margin:0 auto 12px}
+  .sheet .close{width:40px;height:40px;font-size:24px;margin-top:-4px}
+  .sheet h2{font-size:21px}
 }
 """
 
@@ -473,13 +530,13 @@ def render_single_page(brief: Brief, standalone: bool = True) -> str:
                 '<details><summary>원문 근거 보기</summary>'
                 f'<p>{html.escape(m.reason_context)}</p></details>'
             )
-        if m.prices and m.prices.closes:
-            chart_svg = chart.line_chart(m.prices.closes, m.prices.dates, up=_dir_bool(m))
-            n = len(m.prices.closes)
+        if m.prices and m.prices.points:
+            chart_svg = chart.candlestick(m.prices.points, up=_dir_bool(m))
+            n = len(m.prices.points)
             src_label = "Stooq 일봉" if m.prices.source == "stooq" else "합성 데이터(데모)"
-            note = f'<p class="chart-note">최근 {n}영업일 종가 · {src_label}</p>'
+            note = f'<p class="chart-note">최근 {n}영업일 봉차트(OHLC) · {src_label}</p>'
         else:
-            chart_svg = chart.line_chart([])
+            chart_svg = chart.candlestick([])
             note = ""
         details.append(
             f'<div class="detail" id="s-{m.slug}"><a class="scrim" href="#top" aria-label="닫기"></a>'
@@ -488,7 +545,7 @@ def render_single_page(brief: Brief, standalone: bool = True) -> str:
             f'<h2>{html.escape(m.name)}{tkr}</h2>'
             f'<div class="price num">{price}</div>'
             f'<div class="panel"><p class="eyebrow">등락 이유</p><p>{html.escape(m.reason_summary) or "정보 없음"}</p>{src}</div>'
-            f'<div class="panel"><p class="eyebrow">차트</p>{chart_svg}{note}</div>'
+            f'<div class="panel"><p class="eyebrow">차트 · 봉차트(OHLC)</p>{chart_svg}{note}</div>'
             '<p class="dis">투자 참고용이며 매매 권유가 아닙니다. 합성 시세는 실제 가격과 다릅니다.</p>'
             "</div></div>"
         )
@@ -504,7 +561,8 @@ def render_single_page(brief: Brief, standalone: bool = True) -> str:
         f'<div class="when"><div class="d num">{html.escape(brief.date)}</div>'
         f'<div class="src">Telegram @{html.escape(brief.source_channel)}</div></div>'
         '</header>'
-        f'<section class="pulse"><p class="eyebrow">시황 · {src_badge}</p>'
+        f'<section class="pulse"><p class="eyebrow">시황 · {src_badge}'
+        f'<span class="pill">아침 {brief.message_count}건 종합</span></p>'
         f'<p>{html.escape(brief.market_overview) or "요약 없음"}</p></section>'
         f'{chips}'
         '<div class="movers-head"><p class="eyebrow">오늘의 종목 · 등락순</p>'

@@ -122,3 +122,61 @@ def _empty(width: int, height: int) -> str:
         f'<text x="{width/2}" y="{height/2}" font-size="12" text-anchor="middle" '
         f'fill="var(--muted, #6b7280)">차트 데이터 없음</text></svg>'
     )
+
+
+def candlestick(points, up: Optional[bool] = None, width: int = 680, height: int = 280) -> str:
+    """OHLC 봉차트(캔들스틱). points: PricePoint 리스트.
+
+    각 봉은 자기 자신의 시가/종가로 색이 결정된다(양봉=상승색, 음봉=하락색).
+    상승/하락 색은 페이지 CSS 변수(--up/--down)를 따르므로 한국식(상승 빨강/
+    하락 파랑) 등 페이지 설정을 그대로 반영한다.
+    """
+    if not points:
+        return _empty(width, height)
+
+    pad_l, pad_r, pad_t, pad_b = 46.0, 10.0, 12.0, 26.0
+    highs = [p.high for p in points]
+    lows = [p.low for p in points]
+    hi, lo = max(highs), min(lows)
+    span = (hi - lo) or 1.0
+    inner_w = width - pad_l - pad_r
+    inner_h = height - pad_t - pad_b
+    n = len(points)
+    slot = inner_w / n if n else inner_w
+    body_w = max(2.0, min(16.0, slot * 0.62))
+
+    def y(v: float) -> float:
+        return round(pad_t + inner_h * (1 - (v - lo) / span), 2)
+
+    parts: list[str] = []
+    for i, p in enumerate(points):
+        cx = round(pad_l + slot * (i + 0.5), 2)
+        rising = p.close >= p.open
+        col = _UP if rising else _DOWN
+        yh, yl = y(p.high), y(p.low)
+        yo, yc = y(p.open), y(p.close)
+        top = min(yo, yc)
+        bh = max(1.0, round(max(yo, yc) - top, 2))
+        x0 = round(cx - body_w / 2, 2)
+        # 심지(고가~저가) + 몸통(시가~종가)
+        parts.append(
+            f'<line x1="{cx}" y1="{yh}" x2="{cx}" y2="{yl}" stroke="{col}" stroke-width="1.2"/>'
+        )
+        parts.append(
+            f'<rect x="{x0}" y="{top}" width="{round(body_w,2)}" height="{bh}" fill="{col}" rx="1"/>'
+        )
+
+    labels = [
+        _axis_label(4, pad_t + 4, f"{hi:,.2f}", anchor="start"),
+        _axis_label(4, height - pad_b + 4, f"{lo:,.2f}", anchor="start"),
+        _axis_label(pad_l, height - 6, points[0].date, anchor="start"),
+        _axis_label(width - pad_r, height - 6, points[-1].date, anchor="end"),
+    ]
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" width="100%" height="{height}" '
+        f'role="img" aria-label="최근 종가 봉차트" '
+        f'style="max-width:100%;height:auto;display:block">'
+        f"{''.join(parts)}{''.join(labels)}"
+        f"</svg>"
+    )

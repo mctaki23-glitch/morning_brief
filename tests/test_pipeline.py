@@ -67,15 +67,43 @@ def test_chart_svg_renders_and_scales():
     assert "차트 데이터 없음" in chart.line_chart([])
 
 
+def test_message_aggregation(master: StockMaster):
+    from morning_brief import ingest
+    from morning_brief.config import Config as Cfg
+
+    text, count = ingest.fetch_briefing(Cfg(), "2026-07-08", use_fixtures=True)
+    assert count >= 3  # 아침 여러 메시지를 종합
+    # 종합된 텍스트에는 모든 메시지의 내용이 들어 있어야 한다
+    assert "엔비디아" in text and "삼성전자" in text and "S&P500" in text
+
+
+def test_candlestick_render():
+    from morning_brief.models import PricePoint
+
+    pts = [
+        PricePoint("D-2", 10, 12, 9, 11),   # 양봉
+        PricePoint("D-1", 11, 11.5, 10, 10.2),  # 음봉
+        PricePoint("D-0", 10.2, 13, 10, 12.8),  # 양봉
+    ]
+    svg = chart.candlestick(pts, up=True)
+    assert svg.startswith("<svg")
+    assert "<rect" in svg and "<line" in svg  # 몸통 + 심지
+    assert "13.00" in svg and "9.00" in svg   # 최고/최저 라벨
+    assert "차트 데이터 없음" in chart.candlestick([])
+
+
 def test_end_to_end_generates_site(tmp_path: Path, master: StockMaster):
     cfg = Config.from_env(output_dir=str(tmp_path))
     index = run(cfg, date_str="2026-07-08", use_fixtures=True)
 
     assert index.exists()
-    assert (tmp_path / "index.html").exists()  # 아카이브
+    assert (tmp_path / "index.html").exists()  # 루트 리다이렉트
+    assert (tmp_path / "archive.html").exists()  # 아카이브
+    assert (tmp_path / "brief" / "2026-07-08" / "onepage.html").exists()  # 단일 종합 화면
     data = json.loads((tmp_path / "brief" / "2026-07-08" / "data.json").read_text(encoding="utf-8"))
     assert data["date"] == "2026-07-08"
     assert len(data["stocks"]) >= 5
+    assert data["message_count"] >= 3  # 아침 메시지 종합
 
     # 종목 상세 페이지가 종목 수만큼 생성됐는지
     stock_pages = list((tmp_path / "brief" / "2026-07-08" / "stock").glob("*.html"))
@@ -85,3 +113,13 @@ def test_end_to_end_generates_site(tmp_path: Path, master: StockMaster):
     market_html = index.read_text(encoding="utf-8")
     assert "시황 요약" in market_html
     assert "오늘 언급된 종목" in market_html
+    assert "종합" in market_html
+
+    # 루트는 최신 onepage 로 리다이렉트
+    root_html = (tmp_path / "index.html").read_text(encoding="utf-8")
+    assert "http-equiv" in root_html and "onepage.html" in root_html
+
+    # 단일 화면(onepage)에 봉차트가 들어 있는지
+    onepage = (tmp_path / "brief" / "2026-07-08" / "onepage.html").read_text(encoding="utf-8")
+    assert "봉차트" in onepage
+    assert "<rect" in onepage  # 캔들 몸통

@@ -29,7 +29,8 @@ def run(
     master = StockMaster.load()
 
     print(f"[1/4] 수집: {cfg.channel} · {date_str}")
-    raw = ingest.fetch_briefing(cfg, date_str, use_fixtures=use_fixtures)
+    raw, msg_count = ingest.fetch_briefing(cfg, date_str, use_fixtures=use_fixtures)
+    print(f"       메시지 {msg_count}건 종합")
 
     print(f"[2/4] 요약: {'Claude' if cfg.has_claude else '규칙 기반'}")
     summary = summarize.summarize(raw, cfg, master)
@@ -59,6 +60,7 @@ def run(
         generated_at=datetime.now(ZoneInfo(cfg.timezone)).isoformat(),
         summarizer=summary.summarizer,
         price_source=price_source,
+        message_count=msg_count,
     )
 
     print(f"[4/4] 렌더: {cfg.output_dir}")

@@ -91,3 +91,4 @@ class Brief:
     generated_at: str = ""  # ISO8601
     summarizer: str = "rule-based"  # rule-based | claude
     price_source: str = "synthetic"
+    message_count: int = 1  # 그날 종합한 텔레그램 메시지 수

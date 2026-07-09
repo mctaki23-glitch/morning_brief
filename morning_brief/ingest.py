@@ -17,28 +17,42 @@ from zoneinfo import ZoneInfo
 from .config import Config
 
 _FIXTURE = Path(__file__).parent / "data" / "sample_briefing.txt"
+_MSG_SEP = "\n\n"  # 여러 메시지를 하나로 종합할 때 쓰는 구분자
+
+
+def _fixture_parts() -> list[str]:
+    """샘플 브리핑을 '그날 아침 올라온 여러 메시지'로 분해 (=== 로 구분)."""
+    raw = _FIXTURE.read_text(encoding="utf-8")
+    return [p.strip() for p in raw.split("\n===\n") if p.strip()]
 
 
 def load_fixture() -> str:
-    return _FIXTURE.read_text(encoding="utf-8")
+    """분할된 샘플 메시지들을 하나로 종합한 텍스트."""
+    return _MSG_SEP.join(_fixture_parts())
 
 
-def fetch_briefing(cfg: Config, date_str: str, use_fixtures: bool = False) -> str:
-    """지정 일자(KST)의 브리핑 원문을 반환. 실패 시 fixture로 폴백."""
+def fetch_briefing(cfg: Config, date_str: str, use_fixtures: bool = False) -> tuple[str, int]:
+    """지정 일자(KST)의 브리핑을 종합해 (원문, 메시지 수)로 반환. 실패 시 fixture 폴백.
+
+    그날 아침 올라온 3~4개의 메시지를 시간순으로 이어붙여 하나로 종합한다.
+    """
     if use_fixtures or not cfg.has_telegram:
-        return load_fixture()
+        parts = _fixture_parts()
+        return _MSG_SEP.join(parts), len(parts)
     try:
-        text = _fetch_from_telegram(cfg, date_str)
+        text, count = _fetch_from_telegram(cfg, date_str)
     except Exception as exc:  # noqa: BLE001 - 수집 실패 시 그레이스풀 폴백
         print(f"[ingest] 텔레그램 수집 실패({exc!r}); fixture로 폴백합니다.")
-        return load_fixture()
+        parts = _fixture_parts()
+        return _MSG_SEP.join(parts), len(parts)
     if not text.strip():
         print("[ingest] 해당 일자 메시지가 비어 있어 fixture로 폴백합니다.")
-        return load_fixture()
-    return text
+        parts = _fixture_parts()
+        return _MSG_SEP.join(parts), len(parts)
+    return text, count
 
 
-def _fetch_from_telegram(cfg: Config, date_str: str) -> str:
+def _fetch_from_telegram(cfg: Config, date_str: str) -> tuple[str, int]:
     # telethon은 선택적 의존성.
     from telethon.sessions import StringSession  # type: ignore
     from telethon.sync import TelegramClient  # type: ignore
@@ -64,4 +78,4 @@ def _fetch_from_telegram(cfg: Config, date_str: str) -> str:
                 chunks.append((msg.date, msg.message))
 
     chunks.sort(key=lambda c: c[0])  # 시간 오름차순으로 재조립
-    return "\n\n".join(text for _, text in chunks)
+    return _MSG_SEP.join(text for _, text in chunks), len(chunks)
