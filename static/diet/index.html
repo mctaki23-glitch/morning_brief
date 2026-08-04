@@ -152,6 +152,15 @@ input[type=number]{font-variant-numeric:tabular-nums}
   padding:5px 12px;font-size:13px;font-weight:600;color:var(--muted);
 }
 .chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-strong)}
+.mini-label{font-size:11.5px;color:var(--faint);letter-spacing:.03em;margin-top:12px}
+.food-suggest-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.fchip{
+  border:1px solid var(--line);background:var(--bg);border-radius:999px;
+  padding:4px 10px;font-size:12px;color:var(--muted);
+  display:inline-flex;gap:4px;align-items:baseline;
+}
+.fchip b{color:var(--ink);font-weight:600}
+.fchip .kc{font-variant-numeric:tabular-nums;color:var(--faint)}
 
 /* ── 기록 리스트 ─────────────────────────────────────── */
 ul.entries{list-style:none;margin:10px 0 0;padding:0}
@@ -216,6 +225,9 @@ details.day .edit-link{
 .field .hint{display:block;font-size:12px;color:var(--faint)}
 .field input{width:110px;text-align:right}
 .data-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.check{display:flex;align-items:center;gap:7px;font-size:13.5px;color:var(--muted);margin:2px 0 10px;cursor:pointer}
+.check input{accent-color:var(--accent);width:16px;height:16px;margin:0}
+.progress-note{font-size:12.5px;color:var(--muted);margin-top:10px;font-variant-numeric:tabular-nums;min-height:1.2em}
 .note{font-size:12.5px;color:var(--faint);margin-top:10px;line-height:1.6}
 .banner{
   background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;
@@ -286,6 +298,8 @@ details.day .edit-link{
         <input type="number" id="food-kcal" inputmode="numeric" min="0" max="10000" placeholder="kcal (선택)">
         <button class="btn primary" id="food-add">추가</button>
       </div>
+      <div class="mini-label" id="food-suggest-label">자주 먹는 음식 · 누르면 채워집니다 (≈는 대략적인 예시)</div>
+      <div class="food-suggest-chips" id="food-suggest-chips"></div>
       <ul class="entries" id="meal-list"></ul>
     </div>
 
@@ -359,6 +373,25 @@ details.day .edit-link{
     </div>
 
     <div class="card">
+      <h2>iPhone 건강 데이터 가져오기</h2>
+      <p class="note" style="margin-top:0">
+        아이폰 <b>건강</b> 앱 → 오른쪽 위 프로필 → <b>모든 건강 데이터 내보내기</b>로 만든
+        파일(zip 그대로, 또는 압축을 푼 export.xml)을 선택하면 <b>체중</b>과 <b>운동</b> 기록을
+        불러옵니다. 건강 데이터에는 음식 이름이 없어 식사는 앱에서 직접 기록합니다.
+        다시 가져와도 같은 운동이 중복 추가되지 않습니다.
+      </p>
+      <div class="chips" id="health-range-chips" role="group" aria-label="가져올 기간"></div>
+      <label class="check"><input type="checkbox" id="health-overwrite">
+        직접 입력·삭제한 기록도 건강 데이터로 덮어쓰기</label>
+      <div class="data-btns">
+        <button class="btn primary" id="health-import-btn">건강 데이터 파일 선택</button>
+        <input type="file" id="health-file" class="hidden"
+          accept=".zip,.xml,application/zip,application/x-zip-compressed,text/xml,application/xml">
+      </div>
+      <div class="progress-note" id="health-status"></div>
+    </div>
+
+    <div class="card">
       <h2>데이터</h2>
       <div class="data-btns">
         <button class="btn" id="export-btn">JSON 내보내기</button>
@@ -394,16 +427,26 @@ var HAS_STORAGE = storageOk();
 if(!HAS_STORAGE) document.getElementById("storage-banner").style.display = "block";
 
 function blankState(){
-  return { version:1, settings:{ goalWeight:null, kcalTarget:null, heightCm:null }, days:{} };
+  return {
+    version:1,
+    settings:{ goalWeight:null, kcalTarget:null, heightCm:null },
+    days:{},
+    hkDeleted:{ workouts:{}, weights:{} } // 사용자가 지운 건강 기록(재가져오기 시 부활 방지)
+  };
+}
+function normalizeState(s){
+  if(!s || typeof s !== "object" || typeof s.days !== "object" || !s.days) return null;
+  s.settings = Object.assign(blankState().settings, s.settings || {});
+  var hd = s.hkDeleted && typeof s.hkDeleted === "object" ? s.hkDeleted : {};
+  s.hkDeleted = { workouts: hd.workouts || {}, weights: hd.weights || {} };
+  s.version = 1;
+  return s;
 }
 function load(){
   try{
     var raw = HAS_STORAGE ? localStorage.getItem(STORE_KEY) : memoryStore;
     if(!raw) return blankState();
-    var s = JSON.parse(raw);
-    if(!s || typeof s !== "object" || typeof s.days !== "object" || !s.days) return blankState();
-    s.settings = Object.assign(blankState().settings, s.settings || {});
-    return s;
+    return normalizeState(JSON.parse(raw)) || blankState();
   }catch(e){ return blankState(); }
 }
 function persist(){
@@ -416,6 +459,7 @@ function persist(){
   }
 }
 var state = load();
+var stateGen = 0; // 전체 교체(모두 지우기/JSON 복원) 세대 — 진행 중인 건강 가져오기와의 경합 방지
 
 /* ── 날짜 유틸 (기기 로컬 기준) ───────────────────────── */
 function pad2(n){ return (n<10?"0":"")+n; }
@@ -519,20 +563,28 @@ el("prev-day").addEventListener("click", function(){ setDate(addDays(curKey,-1))
 el("next-day").addEventListener("click", function(){ setDate(addDays(curKey, 1)); });
 el("goto-today").addEventListener("click", function(){ setDate(todayKey()); });
 el("cur-date").addEventListener("change", function(){ if(this.value) setDate(this.value); });
-function setDate(k){ curKey = k; renderToday(); }
+function setDate(k){ curKey = k; weightDirty = false; renderToday(); }
 
+var weightDirty = false; // 입력 중(저장 전)인 체중을 백그라운드 렌더가 지우지 않도록
+el("weight-input").addEventListener("input", function(){ weightDirty = true; });
 el("weight-save").addEventListener("click", saveWeight);
 el("weight-input").addEventListener("keydown", function(e){ if(e.key==="Enter") saveWeight(); });
 function saveWeight(){
+  weightDirty = false;
   var v = parseFloat(el("weight-input").value);
   if(isNaN(v)){ // 빈 값 저장 = 삭제
     if(day(curKey) && day(curKey).weight != null){
-      day(curKey).weight = null; pruneDay(curKey); persist(); renderToday(); toast("체중 기록을 지웠습니다");
+      if(day(curKey).weightSrc === "health") state.hkDeleted.weights[curKey] = 1;
+      day(curKey).weight = null; delete day(curKey).weightSrc;
+      pruneDay(curKey); persist(); renderToday(); toast("체중 기록을 지웠습니다");
     }
     return;
   }
   if(v < 20 || v > 300){ toast("체중은 20–300kg 범위로 입력해 주세요"); return; }
-  ensureDay(curKey).weight = Math.round(v*10)/10;
+  var dd = ensureDay(curKey);
+  dd.weight = Math.round(v*10)/10;
+  delete dd.weightSrc; // 직접 입력 = 수동 기록
+  delete state.hkDeleted.weights[curKey];
   persist(); renderToday(); toast("체중 저장됨");
 }
 
@@ -570,6 +622,7 @@ function addWorkout(){
 
 function removeEntry(kind, id){
   var d = day(curKey); if(!d) return;
+  if(kind === "workouts" && String(id).indexOf("hk-") === 0) state.hkDeleted.workouts[id] = 1;
   d[kind] = d[kind].filter(function(x){ return x.id !== id; });
   pruneDay(curKey); persist(); renderToday();
 }
@@ -600,7 +653,62 @@ function renderSuggestions(){
   }
   fill(el("food-suggest"), foods);
   fill(el("workout-suggest"), works);
+  renderFoodChips();
 }
+
+/* 자주 먹는 음식: 내 기록 우선, 모자라면 일반 음식 대략값(≈)으로 채움 */
+var FOOD_EXAMPLES = [
+  ["밥 한 공기", 300], ["김치찌개", 250], ["된장찌개", 190], ["라면", 500],
+  ["김밥 한 줄", 480], ["비빔밥", 560], ["샐러드", 150], ["닭가슴살 100g", 110],
+  ["삼각김밥", 170], ["계란 1개", 75], ["바나나", 90], ["카페라떼", 180]
+];
+function foodStats(){
+  var map = {};
+  sortedKeys().forEach(function(k){
+    state.days[k].meals.forEach(function(m){
+      var s = map[m.name] = map[m.name] || { count:0, kcal:null, last:"", lastKcalDay:"" };
+      s.count++;
+      if(k >= s.last) s.last = k;
+      if(m.kcal != null && k >= s.lastKcalDay){ s.kcal = m.kcal; s.lastKcalDay = k; }
+    });
+  });
+  return map;
+}
+function renderFoodChips(){
+  var box = el("food-suggest-chips");
+  var stats = foodStats();
+  var mine = Object.keys(stats).sort(function(a,b){
+    return stats[b].count - stats[a].count ||
+      (stats[a].last < stats[b].last ? 1 : stats[a].last > stats[b].last ? -1 : 0);
+  }).slice(0, 8);
+  var chips = mine.map(function(n){ return { name:n, kcal:stats[n].kcal, approx:false }; });
+  for(var i=0; i<FOOD_EXAMPLES.length && chips.length<8; i++){
+    if(!stats[FOOD_EXAMPLES[i][0]]) chips.push({ name:FOOD_EXAMPLES[i][0], kcal:FOOD_EXAMPLES[i][1], approx:true });
+  }
+  box.innerHTML = "";
+  chips.forEach(function(c){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "fchip";
+    var nameEl = document.createElement("b"); nameEl.textContent = c.name; b.appendChild(nameEl);
+    if(c.kcal != null){
+      var kc = document.createElement("span"); kc.className = "kc";
+      kc.textContent = (c.approx ? "≈" : "") + fmtInt(c.kcal);
+      b.appendChild(kc);
+    }
+    b.addEventListener("click", function(){
+      el("food-name").value = c.name;
+      if(c.kcal != null) el("food-kcal").value = c.kcal;
+      el("food-kcal").focus();
+    });
+    box.appendChild(b);
+  });
+}
+/* 이름을 고르면 최근에 쓴 kcal을 자동으로 채움 */
+el("food-name").addEventListener("change", function(){
+  if(el("food-kcal").value) return;
+  var s = foodStats()[this.value.trim()];
+  if(s && s.kcal != null) el("food-kcal").value = s.kcal;
+});
 
 function renderToday(){
   el("cur-date-label").textContent = labelOf(curKey);
@@ -634,8 +742,8 @@ function renderToday(){
             : ' · '+fmtInt(target-intake)+' 남음')+'</div></div>');
   }
 
-  /* 체중 카드 */
-  el("weight-input").value = w!=null ? w : "";
+  /* 체중 카드 (입력 중인 값은 백그라운드 갱신이 지우지 않는다) */
+  if(!weightDirty) el("weight-input").value = w!=null ? w : "";
   var prev = prevWeightBefore(curKey), aux = "";
   if(w!=null && prev!=null){
     var diff = Math.round((w-prev)*10)/10;
@@ -989,6 +1097,7 @@ function renderSettings(){
   el("set-goal-weight").value = state.settings.goalWeight != null ? state.settings.goalWeight : "";
   el("set-kcal-target").value = state.settings.kcalTarget != null ? state.settings.kcalTarget : "";
   el("set-height").value = state.settings.heightCm != null ? state.settings.heightCm : "";
+  renderHealthRangeChips();
   renderBmi();
 }
 function renderBmi(){
@@ -1040,12 +1149,11 @@ el("import-file").addEventListener("change", function(){
   var reader = new FileReader();
   reader.onload = function(){
     try{
-      var s = JSON.parse(reader.result);
-      if(!s || typeof s.days !== "object" || !s.days) throw new Error("bad");
+      var s = normalizeState(JSON.parse(reader.result));
+      if(!s) throw new Error("bad");
       var n = Object.keys(s.days).length;
       if(!window.confirm("현재 기록을 파일 내용("+n+"일 분)으로 대체합니다. 계속할까요?")) return;
-      s.settings = Object.assign(blankState().settings, s.settings || {});
-      s.version = 1;
+      stateGen++;
       state = s; persist();
       curKey = todayKey();
       renderToday(); renderTrend(); renderSettings();
@@ -1061,11 +1169,345 @@ el("reset-btn").addEventListener("click", function(){
   var n = Object.keys(state.days).length;
   if(!window.confirm("기록 "+n+"일 분과 설정을 모두 지웁니다. 되돌릴 수 없습니다. 계속할까요?")) return;
   if(!window.confirm("정말 지울까요? 백업이 필요하면 먼저 JSON으로 내보내 주세요.")) return;
+  stateGen++;
   state = blankState(); persist();
   curKey = todayKey();
   renderToday(); renderTrend(); renderSettings();
   toast("모든 기록을 지웠습니다");
 });
+
+/* ── iPhone 건강 데이터 가져오기 (Apple Health export) ──
+   건강 앱 내보내기 zip(내부 export.xml) 또는 export.xml을 스트리밍 파싱해
+   체중(BodyMass)과 운동(Workout)을 가져온다. 수백 MB 파일도 통째로 메모리에
+   올리지 않도록 zip은 central directory로 export.xml만 골라 DecompressionStream
+   으로 풀고, XML은 청크 단위로 <Record>/<Workout> 요소만 스캔한다. */
+var HEALTH_RANGES = [["30","최근 30일"],["90","최근 90일"],["365","최근 1년"],["all","전체"]];
+var healthRange = "90";
+
+var HK_ACTIVITY = {
+  HKWorkoutActivityTypeWalking:"걷기", HKWorkoutActivityTypeRunning:"러닝",
+  HKWorkoutActivityTypeCycling:"자전거", HKWorkoutActivityTypeHiking:"등산",
+  HKWorkoutActivityTypeSwimming:"수영", HKWorkoutActivityTypeElliptical:"일립티컬",
+  HKWorkoutActivityTypeRowing:"로잉", HKWorkoutActivityTypeStairClimbing:"계단 오르기",
+  HKWorkoutActivityTypeTraditionalStrengthTraining:"근력 운동",
+  HKWorkoutActivityTypeFunctionalStrengthTraining:"기능성 근력 운동",
+  HKWorkoutActivityTypeHighIntensityIntervalTraining:"인터벌 트레이닝",
+  HKWorkoutActivityTypeCoreTraining:"코어 운동", HKWorkoutActivityTypeCrossTraining:"크로스 트레이닝",
+  HKWorkoutActivityTypeMixedCardio:"유산소 운동", HKWorkoutActivityTypeYoga:"요가",
+  HKWorkoutActivityTypePilates:"필라테스", HKWorkoutActivityTypeDance:"댄스",
+  HKWorkoutActivityTypeMartialArts:"무술", HKWorkoutActivityTypeBoxing:"복싱",
+  HKWorkoutActivityTypeClimbing:"클라이밍", HKWorkoutActivityTypeGolf:"골프",
+  HKWorkoutActivityTypeTennis:"테니스", HKWorkoutActivityTypeTableTennis:"탁구",
+  HKWorkoutActivityTypeBadminton:"배드민턴", HKWorkoutActivityTypeSoccer:"축구",
+  HKWorkoutActivityTypeBasketball:"농구", HKWorkoutActivityTypeBaseball:"야구",
+  HKWorkoutActivityTypeFlexibility:"스트레칭", HKWorkoutActivityTypeCooldown:"쿨다운",
+  HKWorkoutActivityTypePreparationAndRecovery:"회복 운동", HKWorkoutActivityTypeOther:"기타 운동"
+};
+
+function renderHealthRangeChips(){
+  var box = el("health-range-chips"); box.innerHTML = "";
+  HEALTH_RANGES.forEach(function(r){
+    var b = document.createElement("button");
+    b.className = "chip"; b.textContent = r[1];
+    b.setAttribute("aria-pressed", healthRange===r[0] ? "true":"false");
+    b.addEventListener("click", function(){ healthRange = r[0]; renderHealthRangeChips(); });
+    box.appendChild(b);
+  });
+}
+
+function createHealthParser(sinceKey, res){
+  var buf = "";
+  function attrOf(s, name){
+    var i = s.indexOf(name + '="');
+    if(i < 0) return null;
+    var j = s.indexOf('"', i + name.length + 2);
+    return j < 0 ? null : s.slice(i + name.length + 2, j);
+  }
+  function trackRange(k){
+    if(!res.minKey || k < res.minKey) res.minKey = k;
+    if(!res.maxKey || k > res.maxKey) res.maxKey = k;
+  }
+  function kcalValue(v, unit){
+    if(isNaN(v)) return null;
+    return (unit||"").toLowerCase().indexOf("kj")===0 ? v/4.184 : v;
+  }
+  function handleRecord(attrs){
+    if(attrs.indexOf('type="HKQuantityTypeIdentifierBodyMass"') < 0) return;
+    var sd = attrOf(attrs, "startDate"); if(!sd) return;
+    var k = sd.slice(0,10);
+    if(k < sinceKey) return;
+    var v = parseFloat(attrOf(attrs, "value")); if(isNaN(v)) return;
+    var unit = (attrOf(attrs, "unit") || "kg").toLowerCase();
+    if(unit.indexOf("lb")===0) v *= 0.45359237;
+    else if(unit.indexOf("st")===0) v *= 6.35029318;
+    v = Math.round(v*10)/10;
+    if(v < 20 || v > 300) return;
+    var prev = res.weights[k];
+    if(!prev || sd > prev.ts) res.weights[k] = { w:v, ts:sd };
+    trackRange(k);
+  }
+  function handleWorkout(block){
+    var gt = block.indexOf(">");
+    var head = gt < 0 ? block : block.slice(0, gt);
+    var sd = attrOf(head, "startDate"); if(!sd) return;
+    var k = sd.slice(0,10);
+    if(k < sinceKey) return;
+    var type = attrOf(head, "workoutActivityType") || "";
+    var name = HK_ACTIVITY[type] || type.replace("HKWorkoutActivityType","") || "운동";
+    var dur = parseFloat(attrOf(head, "duration"));
+    var du = (attrOf(head, "durationUnit") || "min").toLowerCase();
+    var minutes = null;
+    if(!isNaN(dur)){
+      minutes = Math.round(du.charAt(0)==="s" ? dur/60 : du.charAt(0)==="h" ? dur*60 : dur);
+    }
+    var kcal = kcalValue(parseFloat(attrOf(head, "totalEnergyBurned")),
+                         attrOf(head, "totalEnergyBurnedUnit"));
+    if(kcal == null){
+      var si = block.indexOf('type="HKQuantityTypeIdentifierActiveEnergyBurned"');
+      if(si >= 0){
+        var stat = block.slice(block.lastIndexOf("<", si), block.indexOf(">", si) + 1 || block.length);
+        kcal = kcalValue(parseFloat(attrOf(stat, "sum")), attrOf(stat, "unit"));
+      }
+    }
+    if(kcal != null) kcal = Math.max(0, Math.round(kcal));
+    if(minutes == null && kcal == null) return;
+    // id는 절대 시각(epoch) 기반: 내보내기 시점의 기기 시간대가 바뀌어도(여행·서머타임)
+    // 같은 운동이면 같은 id가 나와 재가져오기 중복을 막는다.
+    var iso = sd.replace(/ ([+-])(\d{2}):?(\d{2})$/, "$1$2:$3").replace(" ", "T");
+    var t = Date.parse(iso);
+    var id = "hk-" + (isNaN(t) ? sd.replace(/\D/g,"") : t) + "-" + type;
+    (res.workouts[k] = res.workouts[k] || []).push({ id:id, name:name, minutes:minutes, kcal:kcal, src:"health" });
+    trackRange(k);
+  }
+  function isTagBoundary(ch){ return ch===" " || ch==="\t" || ch==="\n" || ch==="\r" || ch===">" || ch==="/"; }
+  function consume(final){
+    // rp/wp 캐시: 매 요소마다 버퍼 끝까지 재탐색하면 O(n²)가 되어 수백 MB 내보내기에서
+    // 가져오기가 수 분간 멈춘 것처럼 보인다. -2 = 재탐색 필요, -1 = 이번 버퍼에 더 없음.
+    var i = 0, rp = -2, wp = -2;
+    for(;;){
+      if(rp !== -1 && rp < i){
+        rp = buf.indexOf("<Record", i);
+        while(rp >= 0 && !isTagBoundary(buf.charAt(rp+7))) rp = buf.indexOf("<Record", rp+1);
+      }
+      if(wp !== -1 && wp < i){
+        wp = buf.indexOf("<Workout", i);
+        while(wp >= 0 && !isTagBoundary(buf.charAt(wp+8))) wp = buf.indexOf("<Workout", wp+1);
+      }
+      var p, isRec;
+      if(rp >= 0 && (wp < 0 || rp < wp)){ p = rp; isRec = true; }
+      else if(wp >= 0){ p = wp; isRec = false; }
+      else { buf = final ? "" : buf.slice(Math.max(i, buf.length - 16)); return; }
+      if(isRec){
+        var g = buf.indexOf(">", p);
+        if(g < 0){ buf = final ? "" : buf.slice(p); return; }
+        handleRecord(buf.slice(p+7, g));
+        i = g + 1;
+      }else{
+        var g2 = buf.indexOf(">", p);
+        if(g2 < 0){ buf = final ? "" : buf.slice(p); return; }
+        if(buf.charAt(g2-1) === "/"){
+          handleWorkout(buf.slice(p, g2+1));
+          i = g2 + 1;
+        }else{
+          var ep = buf.indexOf("</Workout>", g2);
+          if(ep < 0){
+            if(final){ handleWorkout(buf.slice(p)); buf = ""; return; }
+            // 워크아웃 블록이 청크 경계에 걸림 → 남겨두되 비정상적으로 크면 버림
+            buf = buf.slice(p);
+            if(buf.length > 4e6) buf = "";
+            return;
+          }
+          handleWorkout(buf.slice(p, ep));
+          i = ep + 10;
+        }
+      }
+    }
+  }
+  return {
+    push: function(t){ buf += t; consume(false); },
+    end: function(){ consume(true); buf = ""; }
+  };
+}
+
+/* zip에서 export.xml 항목을 찾아 {blob, method} 반환 (central directory 파싱) */
+async function findHealthXmlInZip(file){
+  var tailSize = Math.min(file.size, 70000);
+  var tailBuf = await file.slice(file.size - tailSize).arrayBuffer();
+  var tail = new DataView(tailBuf);
+  var eocd = -1;
+  for(var i = tail.byteLength - 22; i >= 0; i--){
+    if(tail.getUint32(i, true) === 0x06054b50){ eocd = i; break; }
+  }
+  if(eocd < 0) throw { code:"zip" };
+  var count = tail.getUint16(eocd+10, true);
+  var cdSize = tail.getUint32(eocd+12, true);
+  var cdOff = tail.getUint32(eocd+16, true);
+  if(count === 0xFFFF || cdSize === 0xFFFFFFFF || cdOff === 0xFFFFFFFF) throw { code:"zip64" };
+  var cdBuf = await file.slice(cdOff, cdOff + cdSize).arrayBuffer();
+  var cd = new DataView(cdBuf);
+  var dec = new TextDecoder();
+  var entries = [], p = 0;
+  while(p + 46 <= cd.byteLength && cd.getUint32(p, true) === 0x02014b50){
+    var method = cd.getUint16(p+10, true);
+    var csize = cd.getUint32(p+20, true);
+    var nlen = cd.getUint16(p+28, true), elen = cd.getUint16(p+30, true), clen = cd.getUint16(p+32, true);
+    var lho = cd.getUint32(p+42, true);
+    var name = dec.decode(new Uint8Array(cdBuf, p+46, nlen));
+    entries.push({ name:name, method:method, csize:csize, lho:lho });
+    p += 46 + nlen + elen + clen;
+  }
+  var entry = null;
+  entries.forEach(function(e){
+    if(/(^|\/)export\.xml$/i.test(e.name)) entry = entry || e;
+  });
+  if(!entry){ // 폴백: cda 제외 가장 큰 xml
+    entries.forEach(function(e){
+      if(/\.xml$/i.test(e.name) && !/cda/i.test(e.name) && (!entry || e.csize > entry.csize)) entry = e;
+    });
+  }
+  if(!entry) throw { code:"noxml" };
+  if(entry.csize === 0xFFFFFFFF || entry.lho === 0xFFFFFFFF) throw { code:"zip64" };
+  if(entry.method !== 0 && entry.method !== 8) throw { code:"zip" };
+  var lhBuf = await file.slice(entry.lho, entry.lho + 30).arrayBuffer();
+  var lh = new DataView(lhBuf);
+  if(lh.getUint32(0, true) !== 0x04034b50) throw { code:"zip" };
+  var dataStart = entry.lho + 30 + lh.getUint16(26, true) + lh.getUint16(28, true);
+  return { blob: file.slice(dataStart, dataStart + entry.csize), method: entry.method };
+}
+
+async function streamTextInto(blob, method, parser, onProgress){
+  var stream = blob.stream();
+  if(method === 8){
+    if(typeof DecompressionStream === "undefined") throw { code:"nods" };
+    stream = stream.pipeThrough(new DecompressionStream("deflate-raw"));
+  }
+  var reader = stream.getReader();
+  var td = new TextDecoder();
+  var bytes = 0, lastShown = 0;
+  for(;;){
+    var r = await reader.read();
+    if(r.done) break;
+    bytes += r.value.byteLength;
+    parser.push(td.decode(r.value, { stream:true }));
+    if(bytes - lastShown > 4e6){ lastShown = bytes; onProgress(bytes); }
+  }
+  parser.push(td.decode());
+  parser.end();
+}
+
+function applyHealthImport(res, overwrite){
+  var wDays = 0, woCount = 0, manualKept = 0, tombSkipped = 0;
+  Object.keys(res.weights).forEach(function(k){
+    var v = res.weights[k].w;
+    if(state.hkDeleted.weights[k]){ // 사용자가 지운 날은 되살리지 않음 (덮어쓰기 시 해제)
+      if(!overwrite){ tombSkipped++; return; }
+      delete state.hkDeleted.weights[k];
+    }
+    var d = day(k);
+    var cur = d ? d.weight : null;
+    var fromHealth = d && d.weightSrc === "health";
+    if(cur == null || overwrite || fromHealth){
+      var dd = ensureDay(k);
+      if(dd.weight !== v){ dd.weight = v; wDays++; }
+      dd.weightSrc = "health";
+    }else{
+      manualKept++;
+    }
+  });
+  // 기존 건강 운동 기록 전체 색인: 내보내기 시간대가 바뀌어 날짜가 하루 밀려도
+  // 같은 id(절대 시각 기반)를 찾아 제자리에서 갱신한다.
+  var idIndex = {};
+  sortedKeys().forEach(function(k){
+    state.days[k].workouts.forEach(function(w, i){
+      if(w.id && String(w.id).indexOf("hk-") === 0) idIndex[w.id] = { day:k, idx:i };
+    });
+  });
+  Object.keys(res.workouts).forEach(function(k){
+    res.workouts[k].forEach(function(w){
+      if(state.hkDeleted.workouts[w.id]){
+        if(!overwrite){ tombSkipped++; return; }
+        delete state.hkDeleted.workouts[w.id];
+      }
+      var hit = idIndex[w.id];
+      if(hit){
+        var old = state.days[hit.day].workouts[hit.idx];
+        if(old.name !== w.name || old.minutes !== w.minutes || old.kcal !== w.kcal){
+          state.days[hit.day].workouts[hit.idx] = w; woCount++;
+        }
+      }else{
+        var dd = ensureDay(k);
+        dd.workouts.push(w);
+        idIndex[w.id] = { day:k, idx: dd.workouts.length-1 };
+        woCount++;
+      }
+    });
+  });
+  return { wDays:wDays, woCount:woCount, manualKept:manualKept, tombSkipped:tombSkipped };
+}
+
+el("health-import-btn").addEventListener("click", function(){ el("health-file").click(); });
+el("health-file").addEventListener("change", function(){
+  var f = this.files && this.files[0]; this.value = "";
+  if(f) importHealthFile(f);
+});
+
+async function importHealthFile(file){
+  var status = el("health-status");
+  var btn = el("health-import-btn");
+  var gen = stateGen; // 도중에 '모두 지우기'/JSON 복원이 일어나면 반영을 포기
+  btn.disabled = true;
+  el("reset-btn").disabled = true;
+  el("import-btn").disabled = true;
+  function mb(n){ return (n/1048576).toFixed(0); }
+  try{
+    status.textContent = "파일 여는 중…";
+    var sinceKey = healthRange === "all" ? "0000-00-00"
+      : addDays(todayKey(), -(parseInt(healthRange,10)-1));
+    var res = { weights:{}, workouts:{}, minKey:null, maxKey:null };
+    var parser = createHealthParser(sinceKey, res);
+    var isZip = /\.zip$/i.test(file.name) || file.type.indexOf("zip") >= 0;
+    var src;
+    if(isZip){
+      src = await findHealthXmlInZip(file);
+    }else{
+      src = { blob:file, method:0 };
+    }
+    await streamTextInto(src.blob, src.method, parser, function(bytes){
+      status.textContent = "읽는 중… "+mb(bytes)+"MB 처리";
+    });
+    var found = Object.keys(res.weights).length + Object.keys(res.workouts).length;
+    if(!found){
+      status.textContent = "선택한 기간에 가져올 체중·운동 기록이 없습니다.";
+      return;
+    }
+    if(gen !== stateGen){
+      status.textContent = "가져오는 동안 기록이 바뀌어 반영하지 않았습니다. 다시 시도해 주세요.";
+      return;
+    }
+    var applied = applyHealthImport(res, el("health-overwrite").checked);
+    persist();
+    renderToday(); renderBmi();
+    if(!el("view-trend").classList.contains("hidden")) renderTrend();
+    var period = res.minKey === res.maxKey ? shortLabel(res.minKey)
+      : shortLabel(res.minKey)+" – "+shortLabel(res.maxKey);
+    status.textContent = "완료: 체중 "+applied.wDays+"일, 운동 "+applied.woCount+"건 반영 ("+period+")"
+      + (applied.manualKept > 0 ? " · 직접 입력한 체중 "+applied.manualKept+"일은 유지했습니다" : "")
+      + (applied.tombSkipped > 0 ? " · 지운 기록 "+applied.tombSkipped+"건은 다시 넣지 않았습니다" : "");
+    toast("건강 데이터 가져오기 완료");
+  }catch(e){
+    var code = e && e.code;
+    status.textContent =
+      code === "zip64" ? "파일이 4GB를 넘어 zip을 직접 열 수 없습니다. 파일 앱에서 압축을 푼 뒤 export.xml을 선택해 주세요."
+      : code === "nods" ? "이 브라우저는 zip 해제를 지원하지 않습니다. 압축을 푼 export.xml을 선택해 주세요."
+      : code === "noxml" ? "zip 안에서 export.xml을 찾지 못했습니다. 건강 앱 내보내기 파일이 맞는지 확인해 주세요."
+      : code === "zip" ? "zip 파일을 읽지 못했습니다. 압축을 푼 export.xml로 다시 시도해 주세요."
+      : "가져오기에 실패했습니다. 건강 앱 내보내기 파일(zip 또는 export.xml)인지 확인해 주세요.";
+  }finally{
+    btn.disabled = false;
+    el("reset-btn").disabled = false;
+    el("import-btn").disabled = false;
+  }
+}
 
 /* ── 리사이즈 시 차트 다시 그림 ───────────────────────── */
 var resizeTimer = null;
