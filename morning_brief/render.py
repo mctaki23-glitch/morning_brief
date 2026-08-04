@@ -12,6 +12,7 @@ from __future__ import annotations
 import html
 import json
 import re
+import shutil
 from dataclasses import asdict
 from pathlib import Path
 from typing import Optional
@@ -158,11 +159,30 @@ def render_site(brief: Brief, out_dir: str | Path) -> Path:
     # 구조화 데이터
     date_dir.joinpath("data.json").write_text(_dump_json(brief), encoding="utf-8")
 
+    # 리포 동봉 정적 앱(static/) → 사이트에 그대로 복사 (예: /diet/ 다이어트 기록)
+    _copy_static_apps(out)
+
     # 아카이브(지난 브리핑 목록) + 루트는 최신 종합 화면(onepage)으로 바로 이동
     out.joinpath("archive.html").write_text(_render_archive(out), encoding="utf-8")
     latest = _latest_date(out)
     out.joinpath("index.html").write_text(_render_root(latest), encoding="utf-8")
     return date_dir / "index.html"
+
+
+def _copy_static_apps(out: Path) -> None:
+    """리포 루트 static/ 아래의 자기완결 정적 앱들을 사이트 출력에 복사한다.
+
+    패키지가 리포 밖에 설치돼 static/ 이 없으면 조용히 건너뛴다.
+    """
+    static_dir = Path(__file__).resolve().parent.parent / "static"
+    if not static_dir.is_dir():
+        return
+    for child in static_dir.iterdir():
+        dest = out / child.name
+        if child.is_dir():
+            shutil.copytree(child, dest, dirs_exist_ok=True)
+        else:
+            shutil.copy2(child, dest)
 
 
 def _latest_date(out: Path) -> Optional[str]:
@@ -326,10 +346,17 @@ def _render_archive(out: Path) -> str:
             f'<li><a href="brief/{d}/index.html"><span>{html.escape(d)}{latest}</span>'
             f'<span class="tkr">시황 정리 →</span></a></li>'
         )
+    apps = ""
+    if (out / "diet" / "index.html").exists():
+        apps = (
+            '<ul class="archive-list"><li><a href="diet/index.html">'
+            '<span>🍽️ 다이어트 기록</span><span class="tkr">식사·운동·체중 →</span></a></li></ul>'
+        )
     body = (
         '<header class="top"><div class="brand">📈 Morning Brief</div>'
         '<div class="channel">사제콩이_서상영 시황 브리핑 아카이브</div></header>'
         + (f'<ul class="archive-list">{"".join(items)}</ul>' if items else "<p>아직 브리핑이 없습니다.</p>")
+        + apps
         + '<p class="disclaimer">투자 참고용 자동 생성 리포트. 매매 권유가 아닙니다.</p>'
     )
     return _page("Morning Brief — 아카이브", body, description="시황 브리핑 아카이브")

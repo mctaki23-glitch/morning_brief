@@ -123,3 +123,10 @@ def test_end_to_end_generates_site(tmp_path: Path, master: StockMaster):
     onepage = (tmp_path / "brief" / "2026-07-08" / "onepage.html").read_text(encoding="utf-8")
     assert "봉차트" in onepage
     assert "<rect" in onepage  # 캔들 몸통
+
+    # static/ 정적 앱(다이어트 기록)이 사이트에 복사되고 아카이브에서 링크되는지
+    diet = tmp_path / "diet" / "index.html"
+    assert diet.exists()
+    assert "다이어트 기록" in diet.read_text(encoding="utf-8")
+    archive_html = (tmp_path / "archive.html").read_text(encoding="utf-8")
+    assert "diet/index.html" in archive_html

@@ -25,6 +25,7 @@
   /brief/<날짜>/stock/<slug>.html    종목별 서머리 (등락 이유 + 차트)
   /brief/<날짜>/onepage.html         단일 파일 공유용 (모든 종목 상세 포함, 링크 하나로 전달)
   /brief/<날짜>/data.json            구조화 데이터
+  /diet/index.html                   🍽️ 다이어트 기록 앱 (식사·운동·체중, 브라우저 저장)
 ```
 
 시황 페이지와 종목 상세 페이지는 **인라인 CSS/SVG로 완전히 자기완결적**입니다
@@ -100,6 +101,7 @@ morning_brief/
   pipeline.py      수집→요약→시세→렌더 오케스트레이션
   cli.py           run / serve 명령
   data/            종목 마스터, 샘플 브리핑
+static/diet/       🍽️ 다이어트 기록 앱 (사이트 생성 시 /diet/ 로 복사)
 .github/workflows/daily-brief.yml   매일 06:30 KST 자동 실행
 docs/PRD.md        제품 요구사항 문서
 ```
