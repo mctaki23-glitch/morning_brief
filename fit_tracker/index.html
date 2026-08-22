@@ -226,8 +226,13 @@ button{font:inherit; color:inherit; background:none; border:0; cursor:pointer}
 <div class="toast" id="toast" role="status"></div>
 <input type="file" id="importfile" accept=".json,application/json" hidden>
 
+<script type="application/json" id="log">{"version":1,"days":{}}</script>
+
 <script>
 "use strict";
+/* 페이지의 원본 마크업을 렌더 전에 확보해 둔다 — 저장 시 이 원본에 최신 기록을
+   심어 완전한 교체 페이지를 만들어 게시한다 (라이브 DOM 직렬화 금지 원칙). */
+const SRC0 = document.body.innerHTML;
 /* ================= 계획 데이터 (계획서 원문 기반) ================= */
 const CHECK = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8.5l3.6 3.6L13.5 4.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
@@ -248,11 +253,10 @@ const SECTIONS = [
     { id:'n1', name:'아침 — 가벼운 자연식', vol:'', sub:'계란 1~2개 + 바나나/하루견과 + 올레샷 1스푼' },
     { id:'n2', name:'점심 — 일반식 밥 반 공기 + 단백질 음료 23g', vol:'', sub:'식후 50분 속보' },
     { id:'n3', name:'저녁 — 닭가슴살 샐러드 + 방울토마토 7개', vol:'', sub:'수면 중 체지방 연소 유도' },
-    { id:'n4', name:'수분 — 미지근한 물 2L 이상', vol:'', sub:'' },
   ]},
 ];
 const STRENGTH = ['m1','m2','e1','e2','e3'];
-const DIET = ['n1','n2','n3','n4'];
+const DIET = ['n1','n2','n3'];
 const ITEM_NAME = {};
 SECTIONS.forEach(s => s.items.forEach(it => ITEM_NAME[it.id] = it.name));
 const CAT_LABEL = { m:'아침', e:'저녁', c:'조깅', n:'식단' };
@@ -268,10 +272,10 @@ let saveTimer = null, retryTimer = null;
 let viewTab = 'today';
 let calY, calM;                       // 캘린더에서 보고 있는 연/월
 let selKey = null;                    // 캘린더에서 선택한 날
-let lastRemoteFetch = 0;
 
 const LS_KEY = 'ounwan_v1';
 const SS_KEY = 'ounwan_pending_v1';
+const UI_KEY = 'ounwan_ui_v1';
 
 /* ================= 날짜 유틸 ================= */
 const pad = n => String(n).padStart(2,'0');
@@ -299,9 +303,9 @@ function dayDone(k){
 const isComplete = k => isWeekend(k) ? dayDone(k).c : dayDone(k).strength;
 
 function setDay(k, patch){
-  const cur = { ...day(k), ...patch, u: Date.now() };
-  const empty = STRENGTH.concat(DIET, ['c1']).every(id => !cur[id]) && !(cur.km > 0);
-  if (empty) delete S.days[k]; else S.days[k] = cur;
+  const cleaned = cleanDay({ ...day(k), ...patch, u: Date.now() });
+  const hasContent = cleaned && (STRENGTH.concat(DIET, ['c1']).some(id => cleaned[id]) || cleaned.km > 0);
+  if (!hasContent) delete S.days[k]; else S.days[k] = cleaned;
   writeLS();
   scheduleSave();
   render();
@@ -349,7 +353,7 @@ function gcalUrl(k){
   const parts = [];
   if (st.m) parts.push('아침'); if (st.e) parts.push('저녁');
   if (st.c) parts.push('조깅' + (d.km > 0 ? ' ' + d.km + 'km' : ''));
-  if (st.nCnt) parts.push('식단 ' + st.nCnt + '/4');
+  if (st.nCnt) parts.push('식단 ' + st.nCnt + '/' + DIET.length);
   const title = '💪 오운완 — ' + (parts.length ? parts.join(' · ') : '운동 기록');
   const lines = ['[오운완 체크 · 훈련 일지]', ''];
   SECTIONS.forEach(s => {
@@ -568,46 +572,92 @@ function readSS(){ try { return JSON.parse(sessionStorage.getItem(SS_KEY)) || nu
 function writeSS(){ try { sessionStorage.setItem(SS_KEY, JSON.stringify(S)); } catch(e){} }
 function clearSS(){ try { sessionStorage.removeItem(SS_KEY); } catch(e){} }
 
+/* 병합 시 필드 화이트리스트로 정제한다 — 외부에서 가져온 JSON이
+   페이지에 내장되므로 임의 문자열이 흘러들지 않게 한다. */
+const DAY_FIELDS = ['m1','m2','e1','e2','e3','c1','n1','n2','n3','n4','km','u'];
+const KEY_RE = /^\d{4}-\d{2}-\d{2}$/;
+function cleanDay(v){
+  if (!v || typeof v !== 'object') return null;
+  const o = {};
+  DAY_FIELDS.forEach(f => {
+    let x = v[f];
+    if (x === true) x = 1;
+    if (typeof x !== 'number' || !isFinite(x)) return;
+    o[f] = f === 'km' ? Math.max(0, Math.min(99, x)) : (f === 'u' ? Math.max(0, Math.floor(x)) : (x ? 1 : 0));
+  });
+  return Object.keys(o).length ? o : null;
+}
 function mergeInto(base, extra){
-  if (!extra || !extra.days) return base;
+  if (!extra || typeof extra !== 'object' || !extra.days || typeof extra.days !== 'object') return base;
   Object.keys(extra.days).forEach(k => {
-    const a = base.days[k], b = extra.days[k];
+    if (!KEY_RE.test(k)) return;
+    const b = cleanDay(extra.days[k]);
+    if (!b) return;
+    const a = base.days[k];
     if (!a || (b.u || 0) > (a.u || 0)) base.days[k] = b;
   });
   return base;
 }
+function readEmbedded(){
+  try {
+    const o = JSON.parse(document.getElementById('log').textContent);
+    return (o && typeof o.days === 'object') ? o : null;
+  } catch(e){ return null; }
+}
+/* 저장 필요 여부 판단용 정규형 — 키 정렬 + 필드 정제로 순서 차이를 없앤다 */
+function canonDays(days){
+  const out = {};
+  Object.keys(days || {}).filter(k => KEY_RE.test(k)).sort().forEach(k => {
+    const d = cleanDay(days[k]);
+    if (d) out[k] = d;
+  });
+  return JSON.stringify(out);
+}
+function stashUI(){ try { sessionStorage.setItem(UI_KEY, JSON.stringify({ tab:viewTab, sel:selKey, y:calY, m:calM })); } catch(e){} }
+function restoreUI(){
+  try {
+    const u = JSON.parse(sessionStorage.getItem(UI_KEY));
+    sessionStorage.removeItem(UI_KEY);
+    if (u && u.tab === 'cal'){
+      viewTab = 'cal';
+      selKey = (typeof u.sel === 'string' && KEY_RE.test(u.sel)) ? u.sel : null;
+      if (typeof u.y === 'number' && typeof u.m === 'number' && u.m >= 0 && u.m <= 11){ calY = u.y; calM = u.m; }
+    }
+  } catch(e){}
+}
+function applyTab(){
+  document.getElementById('tab-today').setAttribute('aria-selected', viewTab === 'today');
+  document.getElementById('tab-cal').setAttribute('aria-selected', viewTab === 'cal');
+  document.getElementById('view-today').hidden = viewTab !== 'today';
+  document.getElementById('view-cal').hidden = viewTab !== 'cal';
+}
 
 /* ================= 아티팩트 저장 ================= */
+const LOG_BLOCK_RE = /(<script type="application\/json" id="log">)[\s\S]*?(<\/script>)/;
+function buildPage(){
+  const json = JSON.stringify(S).replace(/</g, '\\u003c');
+  const body = SRC0.replace(LOG_BLOCK_RE, (m, a, b) => a + json + b);
+  return '<!doctype html>\n<html lang="ko"><head><meta charset="utf-8"></head><body>' + body + '\n</body></html>';
+}
 function scheduleSave(){
   if (!art || permanentLocal){ setStatus(permanentLocal ? localStatus : 'local'); return; }
   setStatus('saving');
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(doSave, 1400);
+  saveTimer = setTimeout(doSave, 2500);
 }
 async function doSave(retried){
   if (!art || permanentLocal){ setStatus(permanentLocal ? localStatus : 'local'); return; }
-  writeSS(); // 저장 도중 뷰가 리로드돼도 잃지 않도록 스태시
+  if (!LOG_BLOCK_RE.test(SRC0)){ setStatus('error'); return; }   // 원본에 기록 블록이 없으면 덮어쓰기 금지
+  writeSS();   // 저장 후 뷰가 리로드되므로 스태시 + 화면 상태 보존
+  stashUI();
   try {
-    await art.publish({ 'data/log.json': JSON.stringify(S) });
+    await art.publish(buildPage());   // 성공하면 이 보기는 새 버전으로 리로드된다
     clearSS();
     conflictRetried = false;
     setStatus('synced');
   } catch(e){
     const code = e && e.code;
-    if (code === 'conflict'){                                            // 최신 버전을 합친 뒤 한 번만 재시도
-      setStatus('conflict');
-      if (!conflictRetried){
-        conflictRetried = true;
-        clearTimeout(retryTimer);
-        retryTimer = setTimeout(async () => {
-          const r = await fetchRemote();
-          if (r) mergeInto(S, r);
-          writeLS(); render();
-          doSave(true);
-        }, 3000);
-      }
-      return;
-    }
+    if (code === 'conflict'){ setStatus('conflict'); return; }   // 셸이 최신 버전으로 리로드, 스태시는 리로드 후 병합됨
     if (code === 'rate_limited'){ clearTimeout(retryTimer); retryTimer = setTimeout(() => doSave(), 6000); return; }
     if (code === 'upstream_error' && !retried){ clearTimeout(retryTimer); retryTimer = setTimeout(() => doSave(true), 2500); return; }
     if (code === 'not_writer'){ permanentLocal = true; localStatus = 'readonly'; setStatus('readonly'); return; }
@@ -616,14 +666,6 @@ async function doSave(retried){
     }
     setStatus('error');
   }
-}
-async function fetchRemote(){
-  try {
-    const r = await fetch('data/log.json', { cache:'no-store' });
-    lastRemoteFetch = Date.now();
-    if (r.ok) return await r.json();
-  } catch(e){}
-  return null;
 }
 
 /* ================= 도구: 내보내기/가져오기 ================= */
@@ -671,10 +713,7 @@ document.addEventListener('click', e => {
   }
   else if (act === 'tab'){
     viewTab = el.dataset.tab;
-    document.getElementById('tab-today').setAttribute('aria-selected', viewTab === 'today');
-    document.getElementById('tab-cal').setAttribute('aria-selected', viewTab === 'cal');
-    document.getElementById('view-today').hidden = viewTab !== 'today';
-    document.getElementById('view-cal').hidden = viewTab !== 'cal';
+    applyTab();
     if (viewTab === 'cal' && !selKey) selKey = todayKey();
     render();
     window.scrollTo({ top:0 });
@@ -716,19 +755,20 @@ document.addEventListener('change', e => {
     importJSON(e.target.files[0]); e.target.value = '';
   }
 });
-document.addEventListener('visibilitychange', async () => {
-  if (document.visibilityState !== 'visible' || !art || permanentLocal) return;
-  if (Date.now() - lastRemoteFetch < 60000) return;
-  const remote = await fetchRemote();
-  if (remote){ mergeInto(S, remote); writeLS(); render(); }
-});
-
 /* ================= 초기화 ================= */
+/* 기록의 원본은 페이지에 내장된 #log 블록. localStorage(이 기기 캐시)와
+   sessionStorage(저장 도중 리로드 대비 스태시)를 날짜별 u(수정시각)로 병합한다. */
 (function initSync(){
   const now = new Date();
   calY = now.getFullYear(); calM = now.getMonth();
+  const emb = readEmbedded();
+  if (emb) mergeInto(S, emb);
   const local = readLS();
-  if (local) S = mergeInto(S, local);
+  if (local) mergeInto(S, local);
+  const stash = readSS();
+  if (stash) mergeInto(S, stash);   // 스태시는 동기화 확인 후에만 지운다
+  restoreUI();
+  applyTab();
   setStatus('boot');
   render();
 })();
@@ -741,17 +781,20 @@ document.addEventListener('visibilitychange', async () => {
   } catch(e){ art = null; }
   if (!art){ permanentLocal = true; localStatus = 'local'; setStatus('local'); return; }
 
-  const remote = await fetchRemote();
-  const stash = readSS();
+  // 구버전이 쓰던 data/log.json 기록이 남아 있으면 한 번 합쳐 온다 (마이그레이션)
+  let legacy = null;
+  try {
+    const r = await fetch('data/log.json', { cache:'no-store' });
+    if (r.ok) legacy = await r.json();
+  } catch(e){}
   const before = JSON.stringify(S.days);
-  if (remote) mergeInto(S, remote);
-  if (stash){ mergeInto(S, stash); clearSS(); }
+  if (legacy) mergeInto(S, legacy);
   writeLS();
   if (JSON.stringify(S.days) !== before) render();
 
-  // 원격과 다른 로컬 기록이 있으면 올려 둔다 (둘 다 비어 있으면 저장할 것이 없음)
-  const hasData = Object.keys(S.days).length > 0;
-  if ((remote && JSON.stringify(remote.days || {}) !== JSON.stringify(S.days)) || (!remote && hasData)) scheduleSave();
-  else setStatus('synced');
+  // 페이지에 내장된 기록과 다르면 저장해서 내장본을 최신으로 만든다
+  const emb = readEmbedded();
+  if (canonDays(emb && emb.days) !== canonDays(S.days)) scheduleSave();
+  else { clearSS(); setStatus('synced'); }
 })();
 </script>

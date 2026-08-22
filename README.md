@@ -109,15 +109,20 @@ docs/PRD.md        제품 요구사항 문서
 `fit_tracker/index.html` 은 매일의 운동(아침/저녁 루틴 · 슬로우 조깅)과 식단을
 체크하는 **단일 파일 웹앱**입니다. 모닝브리프 파이프라인과는 독립적으로 동작합니다.
 
-- **Claude 아티팩트로 게시해 사용** — `artifact` capability(파일 저장)로 체크 기록을
-  아티팩트의 `data/log.json` 에 저장해 기기 간 동기화. 아티팩트 밖에서 열면
-  자동으로 localStorage 폴백.
+- **Claude 아티팩트로 게시해 사용** — `artifact` capability 로 체크 기록을 페이지에
+  내장된 `#log` JSON 블록에 저장(자기 자신을 재게시)해 기기 간 동기화. 아티팩트
+  밖에서 열면 자동으로 localStorage 폴백.
 - **앱 내 월간 캘린더** — 날짜별 완료 기록(카테고리 점 4개 + 목표 달성 스탬프),
   스트릭·주간 조깅 횟수·월간 거리 통계.
 - **구글 캘린더 원탭 기록** — 하루 요약을 구글 캘린더 이벤트 템플릿 링크로 저장.
+- **캘린더 자동 기록(구독 피드)** — 매일 밤 22:37 KST에 Claude 루틴이 아티팩트에서
+  기록을 읽어 `scripts/fit_ics.py` 로 `fit_tracker/ounwan.ics` 를 재생성해 이
+  브랜치에 푸시. 구글/애플 캘린더에서 아래 URL을 "URL로 구독"하면 자동 반영:
+  `https://raw.githubusercontent.com/mctaki23-glitch/morning_brief/claude/daily-exercise-tracker-y04n3i/fit_tracker/ounwan.ics`
 - 데이터 내보내기/가져오기(JSON), 라이트·다크 테마, 모바일 우선.
 
 로컬 미리보기: `python -m http.server -d fit_tracker 8001` → http://localhost:8001
+피드 수동 재생성: `python3 scripts/fit_ics.py --html <아티팩트 HTML> --out fit_tracker/ounwan.ics`
 
 ## 유의사항
 투자 참고용 자동 생성 자료이며 매매 권유가 아닙니다. 브리핑 원문 저작권은 작성자(서상영)에게
