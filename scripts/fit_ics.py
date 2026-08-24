@@ -29,10 +29,11 @@ LOG_BLOCK_RE = re.compile(
 ITEMS = [
     ("m1", "아침 — 정석 푸쉬업 15회×1세트"),
     ("m2", "아침 — 3kg 오버헤드 W-레이즈 15회×1세트"),
+    ("m3", "아침 — 8kg 덤벨 이두 컬 각 10회×1세트"),
     ("e1", "저녁 — 8kg 원암 덤벨 로우 각 10~12회×3세트"),
     ("e2", "저녁 — 3kg 사이드 레터럴 레이즈 15회×2~3세트"),
     ("e4", "저녁 — 3kg 오버헤드 W-레이즈 15회×1세트"),
-    ("e3", "저녁 — 8kg 덤벨 이두 컬 각 10회×2세트"),
+    ("e3", "저녁 — 8kg 덤벨 이두 컬 각 10회×1세트"),
     ("c1", "슬로우 조깅 (Zone 2)"),
     ("n1", "식단 — 아침 (자연식)"),
     ("n2", "식단 — 점심 (일반식)"),
@@ -90,7 +91,7 @@ def clean_day(raw: object) -> dict | None:
 
 def summary(d: dict) -> str:
     parts: list[str] = []
-    if d.get("m1") and d.get("m2"):
+    if d.get("m1") and d.get("m2") and d.get("m3"):
         parts.append("아침")
     if d.get("e1") and d.get("e2") and d.get("e4") and d.get("e3"):
         parts.append("저녁")
