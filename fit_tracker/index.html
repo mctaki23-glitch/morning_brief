@@ -239,13 +239,14 @@ const SRC0 = document.body.innerHTML;
 const CHECK = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8.5l3.6 3.6L13.5 4.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 const SECTIONS = [
-  { key:'m', icon:'🌅', title:'아침 루틴', sub:'출근 전 1분 · 자세 정렬 & 펌핑', items:[
+  { key:'m', icon:'🌅', title:'아침 루틴', sub:'출근 전 2분 · 자세 정렬 & 펌핑', items:[
     { id:'m1', name:'정석 푸쉬업', vol:'15회 × 1세트', sub:'가슴 · 앞어깨' },
+    { id:'m2', name:'3kg 오버헤드 W-레이즈', vol:'15회 × 1세트', sub:'뒤어깨 · 등 상부(능형근)' },
   ]},
   { key:'e', icon:'🌙', title:'저녁 루틴', sub:'퇴근 후 14분 · 8kg 중량 & 프레임 타격', items:[
     { id:'e1', name:'8kg 원암 덤벨 로우 🥇', vol:'각 10~12회 × 3세트', sub:'광배근 · 등' },
     { id:'e2', name:'3kg 사이드 레터럴 레이즈 🥈', vol:'15회 × 2~3세트', sub:'옆어깨' },
-    { id:'m2', name:'3kg 오버헤드 W-레이즈', vol:'15회 × 1세트', sub:'뒤어깨 · 등 상부(능형근)' },
+    { id:'e4', name:'3kg 오버헤드 W-레이즈', vol:'15회 × 1세트', sub:'뒤어깨 · 등 상부(능형근)' },
     { id:'e3', name:'8kg 덤벨 이두 컬 🥉', vol:'각 10회 × 2세트', sub:'이두' },
   ]},
   { key:'c', icon:'🏃', title:'슬로우 조깅', sub:'주 2~3회 · 3.0~4.0km · 25~35분', items:[
@@ -253,11 +254,11 @@ const SECTIONS = [
   ]},
   { key:'n', icon:'🥗', title:'식단 체크', sub:'하루 영양 체크리스트', items:[
     { id:'n1', name:'아침 — 가벼운 자연식', vol:'', sub:'계란 1~2개 + 바나나/하루견과 + 올레샷 1스푼' },
-    { id:'n2', name:'점심 — 일반식 밥 반 공기 + 단백질 음료 23g', vol:'', sub:'식후 50분 속보' },
+    { id:'n2', name:'점심 — 사 먹는 일반식 (밥 반 공기)', vol:'', sub:'식후 50분 속보' },
     { id:'n3', name:'저녁 — 닭가슴살 샐러드 + 방울토마토 7개', vol:'', sub:'수면 중 체지방 연소 유도' },
   ]},
 ];
-const STRENGTH = ['m1','e1','e2','m2','e3'];
+const STRENGTH = ['m1','m2','e1','e2','e4','e3'];
 const DIET = ['n1','n2','n3'];
 const ITEM_NAME = {};
 SECTIONS.forEach(s => s.items.forEach(it => ITEM_NAME[it.id] = it.name));
@@ -292,8 +293,8 @@ const day = k => S.days[k] || {};
 function dayDone(k){
   const d = day(k);
   return {
-    m: !!d.m1, mAny: !!d.m1,
-    e: !!(d.e1 && d.e2 && d.m2 && d.e3), eAny: !!(d.e1 || d.e2 || d.m2 || d.e3),
+    m: !!(d.m1 && d.m2), mAny: !!(d.m1 || d.m2),
+    e: !!(d.e1 && d.e2 && d.e4 && d.e3), eAny: !!(d.e1 || d.e2 || d.e4 || d.e3),
     c: !!d.c1,
     n: DIET.every(id => d[id]), nAny: DIET.some(id => d[id]),
     nCnt: DIET.filter(id => d[id]).length,
@@ -576,7 +577,7 @@ function clearSS(){ try { sessionStorage.removeItem(SS_KEY); } catch(e){} }
 
 /* 병합 시 필드 화이트리스트로 정제한다 — 외부에서 가져온 JSON이
    페이지에 내장되므로 임의 문자열이 흘러들지 않게 한다. */
-const DAY_FIELDS = ['m1','m2','e1','e2','e3','c1','n1','n2','n3','n4','km','u'];
+const DAY_FIELDS = ['m1','m2','e1','e2','e3','e4','c1','n1','n2','n3','n4','km','u'];
 const KEY_RE = /^\d{4}-\d{2}-\d{2}$/;
 function cleanDay(v){
   if (!v || typeof v !== 'object') return null;
