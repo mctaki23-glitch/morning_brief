@@ -58,4 +58,21 @@ DESCRIPTION:✅ 아침 — 정석 푸쉬업 15회×1세트\n✅ 아침 —
  운완 체크 앱 자동 기록
 TRANSP:TRANSPARENT
 END:VEVENT
+BEGIN:VEVENT
+UID:ounwan-20260825@morning-brief
+DTSTAMP:20260824T235229Z
+DTSTART;VALUE=DATE:20260825
+DTEND;VALUE=DATE:20260826
+SUMMARY:💪 오운완 — 식단 1/3
+DESCRIPTION:✅ 아침 — 정석 푸쉬업 15회×1세트\n✅ 아침 —
+  3kg 오버헤드 W-레이즈 15회×1세트\n⬜ 아침 — 8kg 덤벨 
+ 이두 컬 각 10회×1세트\n⬜ 저녁 — 8kg 원암 덤벨 로우 
+ 각 10~12회×3세트\n⬜ 저녁 — 3kg 사이드 레터럴 레이즈 1
+ 5회×2~3세트\n⬜ 저녁 — 3kg 오버헤드 W-레이즈 15회×1세
+ 트\n⬜ 저녁 — 8kg 덤벨 이두 컬 각 10회×1세트\n⬜ 슬로
+ 우 조깅 (Zone 2)\n✅ 식단 — 아침 (자연식)\n⬜ 식단 — 
+ 점심 (일반식)\n⬜ 식단 — 저녁 (닭가슴살 샐러드)\n\n오
+ 운완 체크 앱 자동 기록
+TRANSP:TRANSPARENT
+END:VEVENT
 END:VCALENDAR
