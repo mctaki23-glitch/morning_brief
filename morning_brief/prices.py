@@ -1,7 +1,8 @@
 """시세 데이터 조회 — 소스 어댑터 + 아카이브 캐시 + 전일 폴백 (PRD D4 확정: 무료 비공식 조합).
 
-미국: Stooq CSV → Yahoo Finance chart API
+미국: 네이버 해외주식(api.stock.naver.com) → Nasdaq Data API → investing.com(비공식) → Stooq CSV → Yahoo Finance chart API
 한국: 네이버 금융 siseJson → Yahoo Finance(.KS/.KQ)
+(GitHub Actions 러너 실측 2026-09-09: Stooq 는 공용 IP 일일 한도, Yahoo 는 429 로 실패. 네이버는 정상.)
 
 모든 어댑터는 urllib 만 사용한다(HTTPS_PROXY 환경변수 자동 인식). 성공 시 archive/<date>/prices/<ticker>.json 에
 저장하고, 전부 실패하면 최근 아카이브 캐시(source="cache")를 쓴다. 합성 데이터는 개발·테스트 전용이며
@@ -14,6 +15,7 @@ import csv
 import io
 import json
 import random
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -47,6 +49,8 @@ def from_stooq(ticker: str, days: int, suffix: str = ".us") -> Optional[PriceSer
 
 def parse_stooq(body: str, ticker: str, days: int, currency: str = "USD") -> Optional[PriceSeries]:
     if not body or body.lstrip().startswith("<") or "Date" not in body[:64]:
+        if body and "daily hits limit" in body.lower():
+            print(f"[prices] stooq: 일일 조회 한도 초과 ({ticker})")
         return None
     points: list[PricePoint] = []
     for row in csv.DictReader(io.StringIO(body)):
@@ -85,6 +89,164 @@ def parse_yahoo(data: dict, ticker: str, days: int, currency_hint: str = "USD") 
         d = datetime.fromtimestamp(ts, tz=tz).strftime("%Y-%m-%d")
         points.append(PricePoint(d, float(o), float(h), float(l), float(c), float(v or 0)))
     return _finish(points, ticker, meta.get("currency") or currency_hint, "yahoo", days)
+
+
+# ── 어댑터: 네이버 해외주식 (미국) ─────────────────────────────
+def _num(v) -> Optional[float]:
+    if v is None:
+        return None
+    if isinstance(v, (int, float)):
+        return float(v)
+    t = str(v).replace(",", "").replace("$", "").strip()
+    if not t or t in ("-", "—"):
+        return None
+    try:
+        return float(t)
+    except ValueError:
+        return None
+
+
+def naver_world_symbols(ticker: str, exchange: Optional[str] = None) -> list[str]:
+    """네이버 해외주식 심볼 후보: 나스닥 'TICKER.O', 뉴욕 'TICKER' (거래소를 알면 그것만)."""
+    ex = (exchange or "").upper()
+    order = [f"{ticker}.O", ticker, f"{ticker}.N"]
+    if ex in ("NYSE", "NYS", "AMEX"):
+        order = [ticker, f"{ticker}.O", f"{ticker}.N"]
+    return order  # 힌트가 틀려도 나머지 후보로 폴백
+
+
+def from_naver_world(ticker: str, days: int, exchange: Optional[str] = None) -> Optional[PriceSeries]:
+    for symbol in naver_world_symbols(ticker, exchange):
+        url = f"https://api.stock.naver.com/stock/{urllib.parse.quote(symbol)}/price?pageSize={min(max(days, 20), 60)}&page=1"
+        try:
+            body = _get(url, referer="https://m.stock.naver.com/")
+        except urllib.error.HTTPError as exc:
+            if exc.code in (400, 404):
+                continue  # 심볼 불일치 → 다음 후보
+            raise
+        series = parse_naver_world(body, ticker, days)
+        if series is not None:
+            return series
+    return None
+
+
+def parse_naver_world(text: str, ticker: str, days: int) -> Optional[PriceSeries]:
+    """api.stock.naver.com/stock/<symbol>/price 응답: [{localTradedAt, openPrice, highPrice, lowPrice, closePrice,
+    accumulatedTradingVolume, ...}, ...] (최신순, 숫자는 문자열/콤마 포함 가능)"""
+    text = (text or "").strip()
+    if not text.startswith("["):
+        return None
+    rows = json.loads(text)
+    points: list[PricePoint] = []
+    for r in rows:
+        if not isinstance(r, dict):
+            continue
+        d = str(r.get("localTradedAt") or r.get("localDate") or "")[:10]
+        o, h, l, c = (_num(r.get(k)) for k in ("openPrice", "highPrice", "lowPrice", "closePrice"))
+        if len(d) != 10 or None in (o, h, l, c):
+            continue
+        v = _num(r.get("accumulatedTradingVolume")) or 0.0
+        points.append(PricePoint(d.replace(".", "-"), o, h, l, c, v))
+    return _finish(points, ticker, "USD", "naver", days)
+
+
+# ── 어댑터: Nasdaq Data API (미국) ────────────────────────────
+def from_nasdaq(ticker: str, days: int, today: Optional[date] = None) -> Optional[PriceSeries]:
+    end = today or datetime.now(ZoneInfo("America/New_York")).date()
+    start = end - timedelta(days=days * 2 + 14)
+    url = (f"https://api.nasdaq.com/api/quote/{urllib.parse.quote(ticker)}/historical?assetclass=stocks"
+           f"&fromdate={start:%Y-%m-%d}&todate={end:%Y-%m-%d}&limit=9999")
+    req = urllib.request.Request(url, headers={
+        "User-Agent": _UA, "Accept": "application/json, text/plain, */*", "Accept-Language": "en-US,en;q=0.9",
+        "Origin": "https://www.nasdaq.com", "Referer": "https://www.nasdaq.com/",
+    })
+    with urllib.request.urlopen(req, timeout=_TIMEOUT) as resp:
+        body = resp.read().decode("utf-8", errors="replace")
+    return parse_nasdaq(json.loads(body), ticker, days)
+
+
+def parse_nasdaq(data: dict, ticker: str, days: int) -> Optional[PriceSeries]:
+    """{"data": {"tradesTable": {"rows": [{"date": "09/08/2026", "close": "$178.42", "volume": "51,000,000",
+    "open": "$171.20", "high": "$179.90", "low": "$170.80"}, ...]}}}"""
+    rows = (((data or {}).get("data") or {}).get("tradesTable") or {}).get("rows") or []
+    points: list[PricePoint] = []
+    for r in rows:
+        try:
+            m, d_, y = str(r.get("date", "")).split("/")
+            d = f"{int(y):04d}-{int(m):02d}-{int(d_):02d}"
+        except ValueError:
+            continue
+        o, h, l, c = (_num(r.get(k)) for k in ("open", "high", "low", "close"))
+        if None in (o, h, l, c):
+            continue
+        points.append(PricePoint(d, o, h, l, c, _num(r.get("volume")) or 0.0))
+    return _finish(points, ticker, "USD", "nasdaq", days)
+
+
+# ── 어댑터: investing.com (미국, 비공식 — 사용자 허용 2026-09-09) ──────
+_INV_HEADERS = {"User-Agent": _UA, "Accept": "application/json, text/plain, */*", "domain-id": "www",
+                "Referer": "https://www.investing.com/", "Origin": "https://www.investing.com"}
+
+
+def _get_json(url: str, headers: dict) -> dict:
+    req = urllib.request.Request(url, headers=headers)
+    with urllib.request.urlopen(req, timeout=_TIMEOUT) as resp:
+        return json.loads(resp.read().decode("utf-8", errors="replace"))
+
+
+def investing_pair_id(ticker: str) -> Optional[int]:
+    """검색 API 로 종목의 pair id 를 찾는다(미국 주식 우선)."""
+    data = _get_json(f"https://api.investing.com/api/search/v2/search?q={urllib.parse.quote(ticker)}", _INV_HEADERS)
+    return pick_investing_quote(data, ticker)
+
+
+def pick_investing_quote(data: dict, ticker: str) -> Optional[int]:
+    quotes = (data or {}).get("quotes") or []
+    best = None
+    for q in quotes:
+        if str(q.get("symbol", "")).upper() != ticker.upper():
+            continue
+        flag = str(q.get("flag", "")).upper()
+        exch = str(q.get("exchange", "")).upper()
+        score = 2 if flag in ("USA", "US") or exch in ("NASDAQ", "NYSE", "NYSE ARCA", "AMEX") else 1
+        if best is None or score > best[0]:
+            best = (score, q.get("id"))
+    if best and best[1] is not None:
+        try:
+            return int(best[1])
+        except (TypeError, ValueError):
+            return None
+    return None
+
+
+def from_investing(ticker: str, days: int, today: Optional[date] = None) -> Optional[PriceSeries]:
+    pair = investing_pair_id(ticker)
+    if pair is None:
+        return None
+    end = today or datetime.now(ZoneInfo("America/New_York")).date()
+    start = end - timedelta(days=days * 2 + 14)
+    url = (f"https://api.investing.com/api/financialdata/historical/{pair}?start-date={start:%Y-%m-%d}&end-date={end:%Y-%m-%d}"
+           f"&time-frame=Daily&add-missing-rows=false")
+    return parse_investing(_get_json(url, _INV_HEADERS), ticker, days)
+
+
+def parse_investing(data: dict, ticker: str, days: int) -> Optional[PriceSeries]:
+    """{"data": [{"rowDateTimestamp": "2026-09-08T00:00:00Z", "last_closeRaw": 178.42, "last_openRaw": 171.2,
+    "last_maxRaw": 179.9, "last_minRaw": 170.8, "volumeRaw": 51000000, ...}, ...]} (최신순)"""
+    rows = (data or {}).get("data") or []
+    points: list[PricePoint] = []
+    for r in rows:
+        ts = str(r.get("rowDateTimestamp") or "")[:10]
+        if len(ts) != 10:
+            continue
+        o = _num(r.get("last_openRaw", r.get("last_open")))
+        h = _num(r.get("last_maxRaw", r.get("last_max")))
+        l = _num(r.get("last_minRaw", r.get("last_min")))
+        c = _num(r.get("last_closeRaw", r.get("last_close")))
+        if None in (o, h, l, c):
+            continue
+        points.append(PricePoint(ts, o, h, l, c, _num(r.get("volumeRaw", r.get("volume"))) or 0.0))
+    return _finish(points, ticker, "USD", "investing", days)
 
 
 # ── 어댑터: 네이버 금융 (한국) ────────────────────────────────
@@ -164,11 +326,18 @@ def adapters_for(ticker: str, market: str, days: int, exchange: Optional[str] = 
     if market == "KR":
         suffix = ".KQ" if (exchange or "").upper() == "KOSDAQ" else ".KS"
         return [lambda: from_naver(ticker, days), lambda: from_yahoo(f"{ticker}{suffix}", ticker, days, "KRW")]
-    return [lambda: from_stooq(ticker, days), lambda: from_yahoo(ticker, ticker, days, "USD")]
+    return [
+        lambda: from_naver_world(ticker, days, exchange),
+        lambda: from_nasdaq(ticker, days),
+        lambda: from_investing(ticker, days),
+        lambda: from_stooq(ticker, days),
+        lambda: from_yahoo(ticker, ticker, days, "USD"),
+    ]
 
 
 def get_prices(ticker: str, market: str = "US", days: int = 45, *, allow_synthetic: bool = True,
                cache_dir: Optional[Path] = None, exchange: Optional[str] = None) -> Optional[PriceSeries]:
+    time.sleep(0.15)  # 소스별 rate limit 예방
     for fetch in adapters_for(ticker, market, days, exchange):
         try:
             series = fetch()
@@ -176,6 +345,7 @@ def get_prices(ticker: str, market: str = "US", days: int = 45, *, allow_synthet
             print(f"[prices] {ticker}: {exc!r}")
             continue
         if series is not None:
+            print(f"[prices] {ticker} ← {series.source} ({series.as_of}, {len(series.points)}봉)")
             if cache_dir is not None:
                 save_cache(cache_dir, series)
             return series

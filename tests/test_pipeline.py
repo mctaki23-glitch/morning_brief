@@ -171,3 +171,52 @@ def test_og_card_default_and_chrome(tmp_path: Path, monkeypatch):
     import struct
     w, h = struct.unpack(">II", out2.read_bytes()[16:24])
     assert (w, h) == (1200, 630)
+
+
+
+REAL_EXCERPT = """09/08 미 증시, AI, 반도체 강세에도 제약주 부진과 국제유가 상승 여파로 부진
+
+미 증시는 중동 불안 속 국제유가 상승에 하락 출발. 다우지수가 1% 넘게 하락. 이후 지수에 더욱 부담(다우 -1.18%, 나스닥 -0.32%, S&P500 -0.58%, 러셀2000 -0.52%, 필라델피아 반도체 지수 +1.30%)
+
+*변화요인: 상품가격 변화와 증시
+
+이런 가운데 AI 및 반도체 업종의 강세가 뚜렷. 씨티의 TMT 컨퍼런스, 골드만 삭스의 컨퍼런스 등을 통해 AI 관련 종목군의 강세가 진행. 그 외에도 디지털오션은 AI 매출의 85%가 추론 부문에서 발생한다고 설명.
+
+*특징 종목: 테슬라, AMD, 인텔 강세 Vs. 엔비디아, 암젠, 세일즈포스 부진
+
+메모리, 스토리지 반도체: 시게이트 큰 폭 상승 Vs. 마이크론 보합권 등락
+시게이트(+6.49%)는 AI 스토리지 수요 증가에 상승. SK하이닉스 ADR(+4.83%)도 강세. 반면, 샌디스크(-0.12%)는 차익 실현 매물로 하락 전환. 마이크론(-1.61%)은 상승 출발했지만 차익 실현 매물 출회되며 하락 전환. 아시아 시장에서 삼성전자와 SK하이닉스의 메모리 재고가 급감하고 있다는 소식에 상승 출발했지만 개별 기업들 중심으로 매물 소화한 점이 특징.
+
+광통신: 코닝의 계약 소식에 대부분 크게 상승
+코닝(+7.56%)은 버라이존과 2032년까지 광섬유를 공급하는 계약을 발표하자 큰 폭 상승. 인텔(+9.05%)은 10월 PC CPU 가격을 약 10% 추가 인상할 수 있다는 소식에 상승.
+
+제약: 임상 실패 등에 부진
+노바티스(-13.93%)는 2개의 임상 실패 소식에 크게 하락.
+
+*한국 증시 관련 수치: 견조한 AI 산업과 컨퍼런스 효과
+
+MSCI 한국 증시 ETF는 0.55% 상승, MSCI 신흥지수 ETF도 0.19% 상승. KOSPI 야간 선물은 0.8% 상승.
+
+*FICC: 유럽 천연가스 상승
+
+국제유가는 상승."""
+
+
+def test_rule_based_on_real_briefing_format(master: StockMaster):
+    from morning_brief.summarize import summarize_rule_based
+
+    r = summarize_rule_based(REAL_EXCERPT, master)
+    assert r.overview.startswith("09/08 미 증시") and "*변화요인" not in r.overview
+    assert {(i.name, i.change_pct) for i in r.indices} == {("다우", -1.18), ("나스닥", -0.32), ("S&P500", -0.58), ("러셀2000", -0.52), ("필라델피아 반도체", 1.3)}
+    assert r.kr_outlook.startswith("견조한 AI 산업") and "MSCI 한국 증시 ETF" in r.kr_outlook
+
+    by = {m.ticker or m.name: m for m in r.stocks}
+    assert by["INTC"].change_pct == 9.05 and by["INTC"].direction == "UP" and "PC CPU 가격" in by["INTC"].reason_summary
+    assert by["MU"].change_pct == -1.61 and by["MU"].reason_summary.startswith("마이크론(-1.61%)은")  # 앞 문장에 붙지 않음
+    assert by["000660"].change_pct == 4.83 and by["000660"].market == "KR"  # SK하이닉스 ADR → 000660
+    assert by["NVS"].change_pct == -13.93 and by["GLW"].change_pct == 7.56
+    assert "005930" in by and by["005930"].change_pct is None  # 삼성전자: 등락률 표기 없는 언급
+    for noise in ("GS", "C", "DOCN", "VZ"):  # 문맥 언급(씨티·골드만삭스·디지털오션·버라이존)은 제외
+        assert noise not in by, noise
+    tickers = [m.ticker for m in r.stocks]
+    assert tickers.index("STX") < tickers.index("MU") < tickers.index("INTC") < tickers.index("NVS")  # 언급순

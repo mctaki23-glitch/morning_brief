@@ -34,7 +34,7 @@ DISCLAIMER = (
     "투자 판단의 책임은 이용자 본인에게 있습니다. 원문 저작권은 작성자(서상영)에게 있습니다."
 )
 _SOURCE_LABEL = {
-    "stooq": "Stooq 일봉", "yahoo": "Yahoo Finance 일봉", "naver": "네이버 금융 일봉",
+    "stooq": "Stooq 일봉", "yahoo": "Yahoo Finance 일봉", "naver": "네이버 금융 일봉", "nasdaq": "Nasdaq 일봉", "investing": "Investing.com 일봉",
     "cache": "캐시(전일 기준)", "synthetic": "합성 데이터(데모)", "none": "시세 없음",
 }
 _FETCH_LABEL = {"preview": "공개 미리보기 수집", "session": "텔레그램 세션 수집", "fixture": "샘플 데이터(데모)"}
@@ -311,7 +311,12 @@ def render_brief(brief: Brief, *, base_url: str = "", logo_svg: Optional[str] = 
     page_url = _join_url(base_url, f"brief/{brief.date}/")
     og_url = _join_url(base_url, f"brief/{brief.date}/og.png")
 
-    overview = "".join(f'<p class="lead">{_esc(p)}</p>' for p in _paragraphs(brief.market_overview)) or '<p class="empty">시황 요약이 없습니다.</p>'
+    paras = _paragraphs(brief.market_overview)
+    overview = ""
+    for i, p in enumerate(paras):
+        cls = "lead headline" if (i == 0 and len(paras) > 1 and len(p) <= 90) else "lead"
+        overview += f'<p class="{cls}">{_esc(p)}</p>'
+    overview = overview or '<p class="empty">시황 요약이 없습니다.</p>'
     outlook = ""
     if brief.kr_outlook:
         outlook = ('<section class="sec outlook" id="kr"><div class="rule"></div><h2>한국 증시 관전 포인트</h2>'

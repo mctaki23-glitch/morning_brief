@@ -63,6 +63,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{o
 .sec-head h2{margin:0}
 .lead{font-size:19px;line-height:1.7;margin:0;max-width:68ch;color:var(--body)}
 .lead+.lead{margin-top:12px}
+.lead.headline{font-size:21px;font-weight:700;color:var(--ink);line-height:1.45;letter-spacing:-.3px}
 .empty{color:var(--muted);font-size:15px;margin:0}
 
 /* 지수 보드 */

@@ -131,3 +131,37 @@ def test_archive_save_load_roundtrip(tmp_path: Path):
     assert loaded is not None and loaded.raw_text == "원문 전체" and loaded.message_ids == [5011, 5012, 5013]
     assert loaded.stocks[0].prices.points[-1].close == 1.8 and loaded.stocks[0].evidence == "엔비디아는 +5.2% 급등"
     assert archive.list_dates(tmp_path / "archive") == ["2026-09-09"]
+
+
+def test_parse_naver_world_and_nasdaq():
+    naver_world = """[{"localTradedAt":"2026-09-08","closePrice":"178.42","openPrice":"171.20","highPrice":"179.90","lowPrice":"170.80",
+    "accumulatedTradingVolume":"51,000,000","fluctuationsRatio":"5.21"},
+    {"localTradedAt":"2026-09-05","closePrice":"169.59","openPrice":"168.00","highPrice":"170.10","lowPrice":"166.90","accumulatedTradingVolume":"30,000,000"}]"""
+    s = prices.parse_naver_world(naver_world, "NVDA", 45)
+    assert s is not None and s.source == "naver" and s.currency == "USD"
+    assert [p.date for p in s.points] == ["2026-09-05", "2026-09-08"] and s.points[-1].volume == 51_000_000
+    assert prices.parse_naver_world('{"error":"x"}', "NVDA", 45) is None
+
+    nasdaq = {"data": {"tradesTable": {"rows": [
+        {"date": "09/08/2026", "close": "$178.42", "volume": "51,000,000", "open": "$171.20", "high": "$179.90", "low": "$170.80"},
+        {"date": "09/05/2026", "close": "$169.59", "volume": "30,000,000", "open": "$168.00", "high": "$170.10", "low": "$166.90"}]}}}
+    n = prices.parse_nasdaq(nasdaq, "NVDA", 45)
+    assert n is not None and n.source == "nasdaq" and n.as_of == "2026-09-08" and n.points[0].close == 169.59
+    assert prices.parse_nasdaq({"data": None}, "NVDA", 45) is None
+    assert prices.naver_world_symbols("NVDA") == ["NVDA.O", "NVDA", "NVDA.N"]
+    assert prices.naver_world_symbols("JPM", "NYSE")[0] == "JPM"  # 거래소 힌트 우선, 나머지는 폴백
+
+
+
+def test_parse_investing_and_pick_quote():
+    search = {"quotes": [{"id": 999, "symbol": "NVDA", "exchange": "Frankfurt", "flag": "Germany"},
+                         {"id": 6497, "symbol": "NVDA", "exchange": "NASDAQ", "flag": "USA"}]}
+    assert prices.pick_investing_quote(search, "NVDA") == 6497
+    assert prices.pick_investing_quote({"quotes": []}, "NVDA") is None
+    hist = {"data": [{"rowDateTimestamp": "2026-09-08T00:00:00Z", "last_closeRaw": 178.42, "last_openRaw": 171.2, "last_maxRaw": 179.9,
+                      "last_minRaw": 170.8, "volumeRaw": 51000000},
+                     {"rowDateTimestamp": "2026-09-05T00:00:00Z", "last_close": "169.59", "last_open": "168.00", "last_max": "170.10",
+                      "last_min": "166.90", "volume": "30.00M"}]}
+    s = prices.parse_investing(hist, "NVDA", 45)
+    assert s is not None and s.source == "investing" and s.as_of == "2026-09-08" and s.points[-1].close == 178.42
+    assert s.points[0].close == 169.59
