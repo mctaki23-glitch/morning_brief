@@ -84,14 +84,19 @@ def write_status(cfg: Config, **fields) -> Path:
     return path
 
 
-def publish_status(cfg: Config, date_str: str, status: str, fetched: Optional[Fetched] = None) -> Path:
-    """브리핑이 없을 때: 아카이브 기반 사이트 재생성 + 루트에 상태 페이지 게시."""
+def publish_status(cfg: Config, date_str: str, status: str, fetched: Optional[Fetched] = None, *, today: Optional[str] = None) -> Path:
+    """브리핑이 없을 때: 아카이브 기반 사이트 재생성 + 루트에 상태 페이지 게시. today 는 기준 일자(KST, 기본 오늘)."""
     out = Path(cfg.output_dir)
     rebuild_site(cfg)
     dates = archive.list_dates(cfg.archive_dir)
     latest = dates[-1] if dates else (render.collect_archive(out)[0]["date"] if render.collect_archive(out) else None)
-    root_html = render.render_status(date_str, status, latest=latest, checked_at=now_kst(cfg).isoformat(timespec="seconds"),
-                                     logo_svg=cfg.logo_svg())
+    if date_str < (today or today_kst(cfg)):
+        # 과거 일자 재생성에서 브리핑을 못 찾은 경우: 루트는 최신 브리핑 리다이렉트를 유지한다(대기 페이지로 덮지 않음)
+        print(f"       과거 일자({date_str}) 브리핑 없음 → 루트 페이지는 최신 브리핑({latest}) 유지")
+        root_html = None
+    else:
+        root_html = render.render_status(date_str, status, latest=latest, checked_at=now_kst(cfg).isoformat(timespec="seconds"),
+                                         logo_svg=cfg.logo_svg())
     render.write_shared_pages(out, logo_svg=cfg.logo_svg(), root_html=root_html)
     write_status(cfg, result=status, brief_date=date_str, message_count=0, latest=latest,
                  warnings=(fetched.errors if fetched else []))

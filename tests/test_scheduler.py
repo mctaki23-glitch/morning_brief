@@ -59,6 +59,20 @@ def test_waiting_page_after_target_when_not_posted(tmp_path, monkeypatch):
     assert (Path(cfg.output_dir) / "robots.txt").exists()
 
 
+def test_past_date_without_briefing_keeps_root_on_latest(tmp_path):
+    """과거 일자 재생성에서 브리핑을 못 찾아도 루트는 최신 브리핑 리다이렉트를 유지한다(대기 페이지로 덮지 않음)."""
+    cfg = _cfg(tmp_path)
+    latest = Brief(date="2026-09-10", market_overview="시황.", generated_at="2026-09-10T08:03:02+09:00", status="published")
+    archive.save(cfg.archive_dir, latest)
+    out = pipeline.publish_status(cfg, "2026-09-09", "waiting", Fetched(method="none"), today="2026-09-10")
+    html = out.read_text(encoding="utf-8")
+    assert "brief/2026-09-10/" in html and "대기 중" not in html
+    assert _status(cfg)["result"] == "waiting" and _status(cfg)["latest"] == "2026-09-10"
+    # 오늘 일자면 그대로 대기 페이지
+    out2 = pipeline.publish_status(cfg, "2026-09-10", "waiting", Fetched(method="none"), today="2026-09-10")
+    assert "대기 중" in out2.read_text(encoding="utf-8")
+
+
 def test_no_briefing_after_deadline(tmp_path, monkeypatch):
     cfg = _cfg(tmp_path)
     monkeypatch.setattr(ingest, "fetch_day", lambda c, d, use_fixtures=False: Fetched(method="none"))
