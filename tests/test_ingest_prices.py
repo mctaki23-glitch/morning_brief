@@ -193,3 +193,34 @@ def test_macro_price_parsers():
     g = macro_prices.parse_generic_rows(rows, "MACRO_USDKRW", 45, "naver", currency="KRW")
     assert g is not None and g.points[-1].close == 1345.6 and g.currency == "KRW" and macro_prices.is_close_only(g)
     assert macro_prices.parse_generic_rows('{"x":1}', "K", 45, "naver") is None
+
+    treasury = ('Date,"1 Mo","2 Mo","3 Mo","6 Mo","1 Yr","2 Yr","10 Yr","30 Yr"\n'
+                '09/08/2026,4.30,4.28,4.25,4.10,3.90,3.62,4.35,4.80\n09/05/2026,4.31,4.29,4.26,4.11,3.91,3.60,4.31,4.78\n'
+                '09/04/2026,4.31,4.29,4.26,4.11,3.91,,4.29,4.77\n')
+    t10 = macro_prices.parse_treasury(treasury, "10 Yr", "MACRO_US10Y", 45)
+    assert t10 is not None and t10.source == "treasury" and [p.date for p in t10.points] == ["2026-09-04", "2026-09-05", "2026-09-08"]
+    assert t10.points[-1].close == 4.35 and macro_prices.is_close_only(t10)
+    t2 = macro_prices.parse_treasury(treasury, "2 Yr", "MACRO_US2Y", 45)
+    assert t2 is not None and len(t2.points) == 2  # 빈 칸은 건너뜀
+    assert macro_prices.parse_treasury("garbage", "10 Yr", "K", 45) is None
+
+
+def test_macro_get_series_falls_through_sources(monkeypatch, capsys):
+    from morning_brief import macro_prices, prices
+    from morning_brief.macro import MacroInstrument
+
+    treasury = 'Date,"2 Yr","10 Yr"\n09/08/2026,3.62,4.35\n09/05/2026,3.60,4.31\n'
+
+    def fake_get(url, referer=None):
+        if "fred.stlouisfed.org" in url:
+            raise TimeoutError("The read operation timed out")
+        if "home.treasury.gov" in url:
+            return treasury
+        raise AssertionError(url)
+
+    monkeypatch.setattr(prices, "_get", fake_get)
+    inst = MacroInstrument(id="US10Y", name="미국 10년물 국채 금리", unit="%", sources=[["fred", "DGS10"], ["treasury", "10 Yr"]])
+    s = macro_prices.get_series(inst, days=45, allow_synthetic=False)
+    assert s is not None and s.source == "treasury" and s.points[-1].close == 4.35
+    out = capsys.readouterr().out
+    assert "US10Y/fred" in out and "US10Y ← treasury" in out
