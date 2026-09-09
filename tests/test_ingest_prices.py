@@ -165,3 +165,13 @@ def test_parse_investing_and_pick_quote():
     s = prices.parse_investing(hist, "NVDA", 45)
     assert s is not None and s.source == "investing" and s.as_of == "2026-09-08" and s.points[-1].close == 178.42
     assert s.points[0].close == 169.59
+
+
+def test_naver_world_volume_key_detection():
+    rows = '[{"localTradedAt":"2026-09-08","closePrice":"1","openPrice":"1","highPrice":"1","lowPrice":"1","accumulatedVolume":"1,234"}]'
+    s = prices.parse_naver_world(rows, "X", 45)
+    assert s is None  # 1개 봉 → None (2개 미만)
+    rows2 = ('[{"localTradedAt":"2026-09-08","closePrice":"2","openPrice":"1","highPrice":"2","lowPrice":"1","tradeVolume":"1,234"},'
+             '{"localTradedAt":"2026-09-05","closePrice":"1","openPrice":"1","highPrice":"1","lowPrice":"1","tradeVolume":"5"}]')
+    s2 = prices.parse_naver_world(rows2, "X", 45)
+    assert s2 is not None and s2.points[-1].volume == 1234.0

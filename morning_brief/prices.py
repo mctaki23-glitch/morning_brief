@@ -145,9 +145,28 @@ def parse_naver_world(text: str, ticker: str, days: int) -> Optional[PriceSeries
         o, h, l, c = (_num(r.get(k)) for k in ("openPrice", "highPrice", "lowPrice", "closePrice"))
         if len(d) != 10 or None in (o, h, l, c):
             continue
-        v = _num(r.get("accumulatedTradingVolume")) or 0.0
-        points.append(PricePoint(d.replace(".", "-"), o, h, l, c, v))
+        points.append(PricePoint(d.replace(".", "-"), o, h, l, c, _volume_of(r)))
+    if rows and isinstance(rows[0], dict) and points and points[-1].volume == 0 and not _LOGGED_KEYS.get("naver_world"):
+        _LOGGED_KEYS["naver_world"] = True
+        print(f"[prices] naver_world 응답 키(거래량 필드 확인용): {sorted(rows[0].keys())}")
     return _finish(points, ticker, "USD", "naver", days)
+
+
+_LOGGED_KEYS: dict[str, bool] = {}
+
+
+def _volume_of(row: dict) -> float:
+    """거래량 필드명이 소스·시장별로 달라 'volume' 이 들어간 키를 우선순위로 찾는다."""
+    for key in ("accumulatedTradingVolume", "accTradeVolume", "tradingVolume", "volume"):
+        v = _num(row.get(key))
+        if v is not None:
+            return v
+    for key, val in row.items():
+        if "volume" in key.lower() and "value" not in key.lower():
+            v = _num(val)
+            if v is not None:
+                return v
+    return 0.0
 
 
 # ── 어댑터: Nasdaq Data API (미국) ────────────────────────────

@@ -53,10 +53,10 @@ def fmt_pct(pct: Optional[float]) -> tuple[str, str]:
     if pct is None:
         return ("—", "flat")
     if pct > 0:
-        return (f"▲{pct:.1f}%", "up")
+        return (f"▲{pct:.2f}%", "up")
     if pct < 0:
-        return (f"▼{abs(pct):.1f}%", "down")
-    return ("0.0%", "flat")
+        return (f"▼{abs(pct):.2f}%", "down")
+    return ("0.00%", "flat")
 
 
 def fmt_index_value(v: Optional[float]) -> str:
@@ -239,9 +239,8 @@ def _sheet_body(brief: Brief, m: StockMention, *, share_href: str = "") -> str:
                f'<div class="chart-sm">{chart.candlestick(m.prices.points, currency=m.prices.currency, change_pct=pct, width=360, height=250)}</div>')
         n = min(20, len(m.prices.points))
         src = _SOURCE_LABEL.get(m.prices.source, m.prices.source)
-        basis = f"{_esc(m.prices.as_of or m.prices.points[-1].date)} 종가 기준"
-        if m.market == "KR":
-            basis += "(전일 종가)"
+        as_of = m.prices.as_of or m.prices.points[-1].date
+        basis = f"{_esc(as_of)} {'장중 시세' if as_of == brief.date else '종가'} 기준"
         note = f'<p class="chart-note">최근 {n}영업일 · 거래량 · MA5/MA20 · {_esc(src)} · {basis}</p>'
         table = f'<details class="data"><summary>데이터 표(OHLCV)</summary>{chart.data_table(m.prices.points, m.prices.currency)}</details>'
     else:
