@@ -18,7 +18,7 @@ from .models import PricePoint, PriceSeries
 _TIMEOUT = 12
 
 
-def get_prices(ticker: str, market: str = "US", days: int = 20) -> PriceSeries:
+def get_prices(ticker: str, market: str = "US", days: int = 20, allow_synthetic: bool = True) -> PriceSeries | None:
     if market == "US":
         series = _from_stooq(ticker, days)
         if series is not None:
@@ -28,6 +28,8 @@ def get_prices(ticker: str, market: str = "US", days: int = 20) -> PriceSeries:
         series = _from_stooq(ticker, days, suffix=".kr")
         if series is not None:
             return series
+    if not allow_synthetic:
+        return None  # 운영 모드: 합성 데이터 금지 → 차트 없이 텍스트만
     return _synthetic(ticker, market, days)
 
 
@@ -66,7 +68,7 @@ def _from_stooq(ticker: str, days: int, suffix: str = ".us") -> PriceSeries | No
 
     points = points[-days:]
     currency = "USD" if suffix == ".us" else "KRW"
-    return PriceSeries(ticker=ticker, points=points, currency=currency, source="stooq")
+    return PriceSeries(ticker=ticker, points=points, currency=currency, source="stooq", as_of=points[-1].date)
 
 
 def _synthetic(ticker: str, market: str, days: int) -> PriceSeries:

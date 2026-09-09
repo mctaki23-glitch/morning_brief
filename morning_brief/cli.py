@@ -20,11 +20,12 @@ from .pipeline import run
 
 
 def _cmd_run(args: argparse.Namespace) -> int:
-    cfg = Config.from_env(output_dir=args.out, channel=args.channel)
+    cfg = Config.from_env(output_dir=args.out, channel=args.channel, base_url=args.base_url, logo_path=args.logo)
+    if args.production:
+        cfg.production = True
     index_path = run(cfg, date_str=args.date, use_fixtures=args.fixtures)
-    rel = index_path
-    print(f"\n✅ 생성 완료: {rel}")
-    print(f"   아카이브: {Path(cfg.output_dir) / 'index.html'}")
+    print(f"\n생성 완료: {index_path}")
+    print(f"   아카이브: {Path(cfg.output_dir) / 'archive' / 'index.html'}")
     print(f"   로컬 확인: python -m morning_brief.cli serve --out {cfg.output_dir}")
     return 0
 
@@ -50,6 +51,9 @@ def main(argv: list[str] | None = None) -> int:
     p_run.add_argument("--out", default="site", help="출력 디렉터리 (기본: site)")
     p_run.add_argument("--channel", default="ehdwl", help="텔레그램 채널 username")
     p_run.add_argument("--fixtures", action="store_true", help="샘플 데이터로 강제 실행")
+    p_run.add_argument("--production", action="store_true", help="운영 모드 (샘플·합성 데이터 폴백 금지)")
+    p_run.add_argument("--base-url", dest="base_url", help="사이트 기본 URL (OG 절대 링크용)")
+    p_run.add_argument("--logo", help="공식 로고 SVG 경로 (없으면 로고 영역 비움)")
     p_run.set_defaults(func=_cmd_run)
 
     p_serve = sub.add_parser("serve", help="생성된 사이트를 로컬에서 서빙")

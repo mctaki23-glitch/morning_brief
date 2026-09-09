@@ -221,7 +221,7 @@
 ### 5.3 타이포그래피
 | 역할 | 폰트 | 비고 |
 | --- | --- | --- |
-| 한국어 본문·제목 | **Noto Sans KR**(Google Fonts, 웹 대체 폰트) → Spoqa Han Sans Neo 자체 호스팅 가능 시 우선 | 그 외 폰트(Pretendard, Apple SD Gothic, Malgun 등) 금지 |
+| 한국어 본문·제목 | **KoPub돋움체(KoPub Dotum Pro)** — 정식 고딕. `morning_brief/assets/fonts/KoPubDotum-{Light,Medium,Bold}.woff2`(또는 woff/ttf)를 두면 자체 호스팅 `@font-face`로 적용. 파일이 없으면 **Noto Sans KR**(Google Fonts) 폴백 | 사용자 지정(2026-09-09). Light 300 · Medium 400~500 · Bold 600~700 매핑. 그 외 폰트(Pretendard, Apple SD Gothic, Malgun 등) 금지 |
 | 영문·숫자 | **Inter** / Aptos | `font-variant-numeric: tabular-nums`. 가격·등락률·날짜는 모두 Inter |
 | 스케일 | h1 34px(모바일 26) · h2 26(22) · h3 22(19) · 본문 19(17) · 보조 17 · 캡션 14 · 지수 타일 수치 34(28) | 헤드라인 700, 자간 -0.3~-0.5px. 본문 자간 0 |
 
@@ -563,3 +563,4 @@ status.json
 | v1.0 | 2026-07-08 | 최초 PRD(개념·요구 정의) |
 | v2.0 초안 | 2026-09-09 | v0.1 구현·운영 진단 반영, 미래에셋 CI 요구 추가, 결정 로그 도입 |
 | v2.0 확정 | 2026-09-09 | D1(GitHub Pages 공개) · D2(조기 예약 + 대기 루프) · D3(공개 미리보기 우선 + 세션 폴백) · D4(무료 비공식 시세 조합) 확정, 8.4 상세 설계 추가 |
+| v2.0.1 | 2026-09-09 | 본문 폰트를 KoPub돋움체로 지정(자체 호스팅, Noto Sans KR 폴백). 모바일 우선 · 공개 링크 요구 재확인 |
