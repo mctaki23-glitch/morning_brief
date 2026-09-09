@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Optional
 from zoneinfo import ZoneInfo
 
-from . import archive, ingest, prices, render, summarize
+from . import archive, ingest, macro, macro_prices, prices, render, summarize
 from .config import Config
 from .ingest import Fetched
 from .models import Brief
@@ -53,10 +53,22 @@ def build_brief(cfg: Config, raw: str, date_str: str, *, msg_count: int = 1, fet
     real = [s for s in sources if s != "synthetic"]
     price_source = max(real, key=lambda s: sources[s]) if real else ("synthetic" if sources else "none")
 
+    instruments = macro.load_instruments()
+    macros = macro.extract_macros(raw, instruments)
+    print(f"       매크로 자산: {len(macros)}개 ({', '.join(m.name for m in macros)})")
+    by_id = macro.by_id(instruments)
+    for mm in macros:
+        inst = by_id.get(mm.ticker or "")
+        if inst is None:
+            continue
+        mm.prices = macro_prices.get_series(inst, days=cfg.price_days, cache_dir=cache_dir, allow_synthetic=not cfg.production)
+        if mm.prices is not None and mm.prices.change_pct is not None and mm.direction == "FLAT":
+            mm.direction = "UP" if mm.prices.change_pct > 0 else "DOWN" if mm.prices.change_pct < 0 else "FLAT"
+
     return Brief(
         date=date_str, source_channel=cfg.channel, status="published", posted_at=posted_at,
         generated_at=now_kst(cfg).isoformat(timespec="seconds"),
-        market_overview=summary.overview, kr_outlook=summary.kr_outlook, indices=summary.indices, stocks=summary.stocks,
+        market_overview=summary.overview, kr_outlook=summary.kr_outlook, indices=summary.indices, stocks=summary.stocks, macros=macros,
         raw_text=raw, message_count=msg_count, message_ids=message_ids or [], messages=messages or [], fetch_method=fetch_method,
         summarizer=summary.summarizer, model=summary.model, prompt_version=summary.prompt_version,
         price_source=price_source, unmapped=summary.unmapped, evidence_failures=summary.evidence_failures,

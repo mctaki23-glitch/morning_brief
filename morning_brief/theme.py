@@ -98,6 +98,7 @@ th.r,td.r{text-align:right}
 .stocks td.nm-cell{white-space:nowrap}
 .stocks .mk{font-size:11px;color:var(--muted);border:1px solid var(--hair);padding:0 5px;margin-left:6px;vertical-align:1px}
 .stocks .chg{font-family:var(--en);font-weight:700;white-space:nowrap}
+.macro td.num{color:var(--ink);font-weight:600}
 .stocks .why{color:var(--muted);font-size:14px}
 .stocks .mini svg{display:block}
 .stocks .more{white-space:nowrap;font-size:13px}
@@ -108,14 +109,6 @@ th.r,td.r{text-align:right}
 details.raw{margin-top:18px;border:1px solid var(--hair2);padding:10px 14px;background:var(--s2)}
 details.raw summary{cursor:pointer;font-size:14px;color:var(--navy);font-weight:600}
 details.raw pre{white-space:pre-wrap;font-family:inherit;font-size:14px;line-height:1.6;color:var(--body);margin:10px 0 0}
-
-/* 브리핑 전문 */
-.fulltext .empty{margin:0 0 6px}
-.msg{border-top:1px solid var(--hair2);padding:16px 0 18px}
-.msg:last-child{padding-bottom:4px}
-.msg-h{display:flex;gap:14px;align-items:baseline;font-size:13.5px;color:var(--muted);margin-bottom:8px}
-.msg-h .num{font-family:var(--en)}
-.msg-b{font-size:16px;line-height:1.75;color:var(--body);white-space:pre-wrap;overflow-wrap:anywhere;max-width:76ch}
 
 /* 푸터 */
 .foot{margin-top:48px;border-top:1px solid var(--hair2);padding-top:14px;font-size:13.5px;line-height:1.6;color:var(--muted)}

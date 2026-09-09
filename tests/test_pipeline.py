@@ -141,7 +141,7 @@ def test_end_to_end_generates_site(tmp_path: Path):
     assert len(stock_pages) == len(data["stocks"])
 
     html = index.read_text(encoding="utf-8")
-    assert "브리핑 전문" in html and "순환매에 유의할 필요가 있습니다" in html  # 당일 메시지 전문 포함
+    assert "브리핑 전문" not in html  # 원문 전문 섹션은 페이지에 넣지 않는다(2026-09-09 사용자 지시). 데이터에는 보존
     assert data["messages"] and data["messages"][0]["text"].startswith("[서상영의 미국 증시 시황 ①]")
     for needle in ("시황 요약", "주요 지수", "오늘의 종목", "한국 증시 관전 포인트", 'id="s-nvda"', "MA20", "등락순", 'class="chart-sm"',
                    '<meta name="robots" content="noindex, nofollow">',
@@ -220,3 +220,52 @@ def test_rule_based_on_real_briefing_format(master: StockMaster):
         assert noise not in by, noise
     tickers = [m.ticker for m in r.stocks]
     assert tickers.index("STX") < tickers.index("MU") < tickers.index("INTC") < tickers.index("NVS")  # 언급순
+
+
+FICC_EXCERPT = REAL_EXCERPT.split("*FICC")[0] + """*FICC: 유럽 천연가스 상승, 브라질 헤알 강세 Vs. 제한적인 국제유가와 금리
+
+국제유가는 지난 주말부터 이어진 미국과 이란의 군사적 충돌 등에 상승. 장 마감 앞두고는 재차 상승을 확대하며 1%대 상승. 미국 천연가스는 기온 안정에 따른 냉방 수요 감소 기대와 공급 증가 소식에 2% 하락. 반면, 유럽 천연가스는 호르무즈 해협 불안에 4%대 상승
+
+달러화는 소비자 기대 조사 결과 기대 물가가 안정을 보이자 여타 환율에 대해 약세.
+
+국채 금리는 높은 국제유가, 전일 유럽 국채 금리 상승 등을 반영하며 한 때 10년물 국채 금리가 4.8%를 기록하기도 했음.
+
+금은 달러 약세 불구 높은 국제유가 등에 따른 물가 불안에 0.8% 하락. 은은 제한적인 상승. 구리 및 비철금속은 주석을 제외하고 대부분 상승.
+
+농작물은 밀이 흑해 지역 선박 공격이 지속되자 상승. 대두는 작황 부진 이슈가 영향을 주며 상승. 반면, 옥수수는 차익 매물에 하락."""
+
+
+def test_macro_extraction_from_ficc():
+    from morning_brief.macro import extract_macros
+
+    by = {m.ticker: m for m in extract_macros(FICC_EXCERPT)}
+    assert by["WTI"].direction == "UP" and by["WTI"].change_pct == 1.0 and by["WTI"].reason_summary.startswith("국제유가는")
+    assert by["NATGAS"].change_pct == -2.0 and by["NATGAS"].reason_summary.startswith("미국 천연가스는")  # 유럽 천연가스 문장이 아님
+    assert by["GOLD"].change_pct == -0.8 and by["GOLD"].direction == "DOWN" and "금리" not in by["GOLD"].reason_summary[:3]
+    assert by["SILVER"].direction == "UP" and by["SILVER"].reason_summary.startswith("은은")
+    assert by["US10Y"].change_pct is None and "10년물" in by["US10Y"].reason_summary  # 금리 수준(4.8%)은 등락률로 쓰지 않음
+    assert by["DXY"].direction == "DOWN" and by["WHEAT"].direction == "UP" and by["CORN"].direction == "DOWN"
+    assert all(m.kind == "macro" and m.market == "MACRO" for m in by.values())
+    assert "US2Y" not in by and "BTC" not in by  # 언급 없는 자산은 제외
+    order = [m.ticker for m in extract_macros(FICC_EXCERPT)]
+    assert order.index("WTI") < order.index("GOLD") < order.index("WHEAT")
+
+
+def test_macro_section_renders_with_line_and_candle_charts(tmp_path: Path, monkeypatch):
+    from morning_brief import macro_prices, prices, render
+    from morning_brief.models import Brief, PricePoint, PriceSeries, StockMention
+
+    closes = [4.2 + i * 0.01 for i in range(30)]
+    yields = PriceSeries("MACRO_US10Y", [PricePoint(f"2026-08-{1 + i % 28:02d}", c, c, c, c, 0) for i, c in enumerate(closes)], "USD", "fred", "2026-08-28")
+    gold = prices.synthetic("MACRO_GOLD", "US", 45)
+    brief = Brief(date="2026-09-09", market_overview="시황.", generated_at="2026-09-09T06:31:00+09:00", macros=[
+        StockMention(name="미국 10년물 국채 금리", ticker="US10Y", market="MACRO", kind="macro", unit="%", direction="UP",
+                     reason_summary="국채 금리는 상승.", evidence="국채 금리는 상승.", prices=yields),
+        StockMention(name="금", ticker="GOLD", market="MACRO", kind="macro", unit="USD/oz", direction="DOWN", change_pct=-0.8,
+                     reason_summary="금은 0.8% 하락.", evidence="금은 0.8% 하락.", prices=gold),
+    ])
+    html = render.render_brief(brief)
+    assert "금리 · 유가 · 금 · 환율" in html and 'id="x-us10y"' in html and 'id="x-gold"' in html
+    assert "bp" in html  # 금리는 bp 표기
+    assert macro_prices.is_close_only(yields) and not macro_prices.is_close_only(gold)
+    assert 'stroke="#043B72" stroke-width="2"' in html  # 라인 차트(종가만 있는 시계열)
