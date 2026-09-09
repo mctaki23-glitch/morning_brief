@@ -120,6 +120,14 @@ def run(cfg: Config, date_str: Optional[str] = None, use_fixtures: bool = False)
     print(f"[1/4] 수집: {cfg.channel} · {date_str} ({'샘플' if use_fixtures else '공개 미리보기 → 세션'})")
     fetched = ingest.fetch_day(cfg, date_str, use_fixtures=use_fixtures)
     if not fetched.ok:
+        archived = archive.load(cfg.archive_dir, date_str)
+        if archived is not None:
+            # 이미 생성된 날짜의 재실행에서 수집이 실패하면 아카이브로 사이트만 다시 만든다(대기 페이지로 덮지 않음)
+            print(f"       수집 실패({', '.join(fetched.errors) or '메시지 없음'}) → 아카이브({date_str})로 사이트 재생성")
+            rebuild_site(cfg)
+            write_status(cfg, result="published", brief_date=date_str, posted_at=archived.posted_at, message_count=archived.message_count,
+                         stock_count=len(archived.stocks), source="archive", warnings=fetched.errors)
+            return Path(cfg.output_dir) / "index.html"
         print("       브리핑이 없습니다 → 상태 페이지 게시")
         return publish_status(cfg, date_str, "waiting", fetched)
     print(f"       메시지 {fetched.count}건 종합 ({fetched.method})")

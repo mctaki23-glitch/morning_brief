@@ -55,6 +55,7 @@ python -m morning_brief run --production              # 오늘 브리핑 즉시 
 python -m morning_brief run --production --scheduled  # 06:30 목표 게시 감지 대기 루프
 python -m morning_brief run --production --date 2026-09-08   # 과거 일자 재생성
 python -m morning_brief rebuild                       # 아카이브 전체로 사이트 재생성
+# GitHub Actions 수동 실행 입력: date(과거 일자 재생성) · scheduled(대기 루프) · probe(시세 소스 점검만) · rebuild(수집 없이 사이트만 재생성·배포)
 ```
 
 | 환경변수 | 설명 |
