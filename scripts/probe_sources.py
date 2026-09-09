@@ -75,39 +75,36 @@ NAVER_H = {"User-Agent": NAVER_UA, "Accept": "application/json", "Referer": "htt
 PLAIN_H = {"User-Agent": _p._UA, "Accept": "*/*"}
 
 PROBES: list[tuple[str, str, dict, int]] = [
-    ("nasdaq GC:CMX commodities", nasdaq("GC:CMX", "commodities"), NASDAQ_H, 20),
-    ("nasdaq CL:NMX commodities", nasdaq("CL:NMX", "commodities"), NASDAQ_H, 20),
-    ("nasdaq GC:CMX raw colon", nasdaq("GC:CMX", "commodities").replace("GC%3ACMX", "GC:CMX"), NASDAQ_H, 20),
-    ("nasdaq BTC crypto", nasdaq("BTC", "cryptocurrency"), NASDAQ_H, 20),
-    ("nasdaq AAPL stocks (control)", nasdaq("AAPL", "stocks"), NASDAQ_H, 20),
-    ("fred DGS10 csv (40s)", "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS10", PLAIN_H, 40),
-    ("fred DGS10 txt", "https://fred.stlouisfed.org/data/DGS10.txt", PLAIN_H, 40),
     ("treasury yield csv", "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/"
      f"{END.year}/all?type=daily_treasury_yield_curve&field_tdr_date_value={END.year}&page&_format=csv", PLAIN_H, 40),
-    ("stooq gc.f", "https://stooq.com/q/d/l/?s=gc.f&i=d", PLAIN_H, 20),
-    ("stooq 10yusy.b", "https://stooq.com/q/d/l/?s=10yusy.b&i=d", PLAIN_H, 20),
-    ("stooq dx.f", "https://stooq.com/q/d/l/?s=dx.f&i=d", PLAIN_H, 20),
+    ("coingecko btc (control)", "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=3&interval=daily", PLAIN_H, 20),
 ]
-for path in ("exchange/FX_USDKRW", "oil/OIL_CL", "oil/OIL_BRT", "oil/OIL_DU", "metals/CMDT_GC", "metals/CMDT_SI", "metals/CMDT_CDY",
-             "energy/OIL_NG", "oil/OIL_NG", "agricultural/CMDT_W", "agricultural/CMDT_C", "agricultural/CMDT_S",
-             "bond/US10YT=RR", "bond/US10Y", "bond/KR10YT=RR", "exchange/FX_DXY"):
-    PROBES.append((f"naver {path}", f"https://api.stock.naver.com/marketindex/{urllib.parse.quote(path, safe='/=')}/prices?page=1&pageSize=3", NAVER_H, 20))
-for disc in ("https://api.stock.naver.com/marketindex/majors", "https://api.stock.naver.com/marketindex/oil",
-             "https://api.stock.naver.com/marketindex/metals", "https://api.stock.naver.com/marketindex/bond",
-             "https://api.stock.naver.com/marketindex/exchange", "https://api.stock.naver.com/marketindex/energy",
-             "https://api.stock.naver.com/marketindex/agricultural", "https://api.stock.naver.com/marketindex/home/major"):
-    PROBES.append((f"naver discovery {disc.rsplit('/', 1)[-1]}", disc, NAVER_H, 20))
-INV_PAIRS = {"gold 8830": 8830, "wti 8849": 8849, "brent 8833": 8833, "natgas 8862": 8862, "silver 8836": 8836, "copper 8831": 8831,
-             "us10y 23705": 23705, "us2y 23701": 23701, "dxy 8827": 8827, "usdkrw 650": 650, "wheat 8917": 8917,
-             "soybean 8916": 8916, "corn 8918": 8918, "coffee 8832": 8832, "cocoa 8894": 8894, "sugar 8869": 8869, "btc 945629": 945629}
-for label, pair in INV_PAIRS.items():
-    PROBES.append((f"investing hist {label}", f"https://api.investing.com/api/financialdata/historical/{pair}?start-date={START:%Y-%m-%d}"
-                   f"&end-date={END:%Y-%m-%d}&time-frame=Daily&add-missing-rows=false", _p._INV_HEADERS, 20))
-for q in ("Gold Futures", "Crude Oil WTI", "US 10 Year", "US Dollar Index", "USD/KRW", "Natural Gas", "Wheat", "Cocoa"):
-    PROBES.append((f"investing search {q}", f"https://api.investing.com/api/search/v2/search?q={urllib.parse.quote(q)}", _p._INV_HEADERS, 20))
-PROBES.append(("coingecko btc (control)", "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=3&interval=daily", PLAIN_H, 20))
+# 네이버 시장지표: 카테고리 목록(코드 발견용) + 로이터 코드 추정치로 일봉 조회
+NAVER_LISTS = ("metals", "energy", "agricultural", "exchange", "bond", "interest", "rates", "index")
+for cat in NAVER_LISTS:
+    PROBES.append((f"naver list {cat}", f"https://api.stock.naver.com/marketindex/{cat}", NAVER_H, 20))
+for path in ("metals/GCcv1", "metals/SIcv1", "metals/HGcv1", "energy/CLcv1", "energy/LCOcv1", "energy/NGcv1",
+             "agricultural/Wcv1", "agricultural/Ccv1", "agricultural/Scv1", "agricultural/KCcv1", "agricultural/CCcv1", "agricultural/SBcv1",
+             "bond/US2YT=RR", "bond/US10YT=RR", "exchange/FX_USDKRW"):
+    PROBES.append((f"naver prices {path} (60)", f"https://api.stock.naver.com/marketindex/{urllib.parse.quote(path, safe='/=')}/prices?page=1&pageSize=60", NAVER_H, 20))
+
+
+def naver_items(body: str) -> str:
+    """카테고리 목록 응답에서 (reutersCode, symbolCode, name, nameEng, unit, close) 만 뽑아 한 줄씩."""
+    try:
+        data = json.loads(body)
+    except json.JSONDecodeError:
+        return body[:200]
+    items = data if isinstance(data, list) else [x for k in ("majorList", "normalList") for x in (data.get(k) or [])] if isinstance(data, dict) else []
+    lines = []
+    for it in items:
+        if isinstance(it, dict):
+            lines.append("      - " + " | ".join(str(it.get(k)) for k in ("categoryType", "reutersCode", "symbolCode", "name", "nameEng", "unit", "closePrice")))
+    return f"{len(items)} items\n" + "\n".join(lines)
+
 
 if __name__ == "__main__":
     for label, url, headers, timeout in PROBES:
         status, body = fetch(url, headers, timeout)
-        print(f"### {label}\n    {url}\n    {status} :: {summarize(body)}", flush=True)
+        detail = naver_items(body) if label.startswith("naver list") and status == "200" else summarize(body)
+        print(f"### {label}\n    {url}\n    {status} :: {detail}", flush=True)
