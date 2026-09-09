@@ -175,3 +175,21 @@ def test_naver_world_volume_key_detection():
              '{"localTradedAt":"2026-09-05","closePrice":"1","openPrice":"1","highPrice":"1","lowPrice":"1","tradeVolume":"5"}]')
     s2 = prices.parse_naver_world(rows2, "X", 45)
     assert s2 is not None and s2.points[-1].volume == 1234.0
+
+
+def test_macro_price_parsers():
+    from morning_brief import macro_prices
+
+    fred = "observation_date,DGS10\n2026-09-04,4.31\n2026-09-05,.\n2026-09-08,4.35\n"
+    s = macro_prices.parse_fred(fred, "MACRO_US10Y", 45)
+    assert s is not None and s.source == "fred" and [p.date for p in s.points] == ["2026-09-04", "2026-09-08"] and s.points[-1].close == 4.35
+    assert macro_prices.is_close_only(s)
+
+    cg = {"prices": [[1757289600000, 111000.5], [1757376000000, 112500.0], [1757400000000, 112800.0]]}  # 마지막 둘은 같은 UTC 날짜
+    c = macro_prices.parse_coingecko(cg, "MACRO_BTC", 45)
+    assert c is not None and c.source == "coingecko" and len(c.points) == 2 and c.points[-1].close == 112800.0
+
+    rows = '[{"localTradedAt":"2026-09-09","closePrice":"1,345.60"},{"localTradedAt":"2026-09-08","closePrice":"1,350.10"}]'
+    g = macro_prices.parse_generic_rows(rows, "MACRO_USDKRW", 45, "naver", currency="KRW")
+    assert g is not None and g.points[-1].close == 1345.6 and g.currency == "KRW" and macro_prices.is_close_only(g)
+    assert macro_prices.parse_generic_rows('{"x":1}', "K", 45, "naver") is None

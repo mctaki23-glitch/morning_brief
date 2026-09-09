@@ -36,6 +36,7 @@ DISCLAIMER = (
 _SOURCE_LABEL = {
     "stooq": "Stooq 일봉", "yahoo": "Yahoo Finance 일봉", "naver": "네이버 금융 일봉", "nasdaq": "Nasdaq 일봉", "investing": "Investing.com 일봉",
     "cache": "캐시(전일 기준)", "synthetic": "합성 데이터(데모)", "none": "시세 없음",
+    "fred": "FRED(세인트루이스 연준)", "coingecko": "CoinGecko",
 }
 _FETCH_LABEL = {"preview": "공개 미리보기 수집", "session": "텔레그램 세션 수집", "fixture": "샘플 데이터(데모)"}
 
@@ -269,6 +270,12 @@ def _sheet_body(brief: Brief, m: StockMention, *, share_href: str = "") -> str:
 
 
 def _sheet_overlay(brief: Brief, m: StockMention) -> str:
+    if m.kind == "macro":
+        return (
+            f'<div class="detail" id="x-{m.slug}" role="dialog" aria-modal="true" aria-label="{_esc(m.name)} 서머리">'
+            '<a class="scrim" href="#top" aria-label="닫기"></a>'
+            f'<div class="sheet"><a class="close" href="#top" aria-label="닫기">×</a>{_macro_sheet_body(brief, m)}</div></div>'
+        )
     return (
         f'<div class="detail" id="s-{m.slug}" role="dialog" aria-modal="true" aria-label="{_esc(m.name)} 종목 서머리">'
         '<a class="scrim" href="#top" aria-label="닫기"></a>'
@@ -305,6 +312,8 @@ _BRIEF_JS = """<script>
 
 def render_brief(brief: Brief, *, base_url: str = "", logo_svg: Optional[str] = None, fonts=()) -> str:
     _dedupe_slugs(brief.stocks)
+    for m in brief.macros:
+        m.slug = slugify(m)
     stocks = sorted(brief.stocks, key=lambda m: m.order)
     root = "../../"
     page_url = _join_url(base_url, f"brief/{brief.date}/")
@@ -321,7 +330,7 @@ def render_brief(brief: Brief, *, base_url: str = "", logo_svg: Optional[str] = 
         outlook = ('<section class="sec outlook" id="kr"><div class="rule"></div><h2>한국 증시 관전 포인트</h2>'
                    + "".join(f"<p>{_esc(p)}</p>" for p in _paragraphs(brief.kr_outlook)) + "</section>")
 
-    fulltext = _fulltext(brief)
+    macro_section = _macro_section(brief)
     controls = (
         '<div class="controls">'
         '<div class="seg" role="group" aria-label="정렬"><button type="button" data-sort="order" aria-pressed="true">언급순</button>'
@@ -336,8 +345,9 @@ def render_brief(brief: Brief, *, base_url: str = "", logo_svg: Optional[str] = 
         f'<section class="sec" id="indices"><div class="rule"></div><h2>주요 지수</h2>{_indices(brief)}</section>'
         f'<section class="sec" id="stocks-sec"><div class="rule"></div><div class="sec-head">'
         f'<h2>오늘의 종목<span class="n" id="stock-count">{len(stocks)}</span></h2>{controls}</div>{_stock_table(brief, stocks)}</section>'
-        f"{outlook}{fulltext}{_foot(brief)}</div>"
+        f"{macro_section}{outlook}{_foot(brief)}</div>"
         + "".join(_sheet_overlay(brief, m) for m in stocks)
+        + "".join(_sheet_overlay(brief, m) for m in brief.macros)
     )
     desc = _first_sentence(brief.market_overview, 120) or f"{brief.date} 시황 정리 및 종목별 서머리"
     return _page(f"{PRODUCT} · {brief.date}", body, description=desc, url=page_url, og_image=og_url, script=_BRIEF_JS, root=root, fonts=fonts)
@@ -358,25 +368,93 @@ def render_stock(brief: Brief, m: StockMention, *, base_url: str = "", logo_svg:
     )
 
 
-def _fulltext(brief: Brief) -> str:
-    """당일 채널에 게시된 모든 메시지 전문 (시간순). 원문 줄바꿈을 그대로 보존한다."""
-    msgs = brief.messages or ([{"id": None, "posted_at": brief.posted_at, "text": brief.raw_text}] if brief.raw_text else [])
-    if not msgs:
+def _macro_change(m: StockMention) -> tuple[str, str, str]:
+    """(등락 표시, css, 보조 표기) — 데이터 기준 전일 대비. 금리(%)는 bp 로 표기."""
+    if m.prices is None or m.prices.change is None:
+        disp, cls = fmt_pct(m.change_pct)
+        return disp, cls, ""
+    diff, pct = m.prices.change, m.prices.change_pct
+    if m.unit == "%":
+        bp = diff * 100
+        cls = "up" if bp > 0 else "down" if bp < 0 else "flat"
+        arrow = "▲" if bp > 0 else "▼" if bp < 0 else ""
+        return f"{arrow}{abs(bp):.0f}bp", cls, ""
+    disp, cls = fmt_pct(pct)
+    sign = "+" if diff >= 0 else "−"
+    return disp, cls, f"({sign}{chart.fmt_unit(abs(diff), m.unit).lstrip('$')})"
+
+
+def _macro_chart(m: StockMention, *, width: int = 680, height: int = 300) -> str:
+    from .macro_prices import is_close_only
+
+    pts = m.prices.points if m.prices else []
+    if not pts:
+        return chart.empty(message="시세 준비 중")
+    pct = m.prices.change_pct if m.prices else None
+    if is_close_only(m.prices):
+        return chart.line_chart(pts, unit=m.unit, width=width, height=height - 40, change_pct=pct)
+    return chart.candlestick(pts, currency=m.prices.currency, change_pct=pct, width=width, height=height)
+
+
+def _macro_mini(m: StockMention) -> str:
+    from .macro_prices import is_close_only
+
+    if not (m.prices and m.prices.points):
         return ""
-    items = []
-    for i, m in enumerate(msgs, 1):
-        t = hhmm(m.get("posted_at") or "")
-        link = (f'<a href="https://t.me/{_esc(brief.source_channel)}/{m["id"]}" target="_blank" rel="noopener">원문 메시지</a>'
-                if m.get("id") else "")
-        items.append(
-            f'<article class="msg" id="m-{m.get("id") or i}"><div class="msg-h"><span class="num">{i}/{len(msgs)}</span>'
-            f'{f"<span class=num>{t}</span>" if t else ""}{link}</div>'
-            f'<div class="msg-b">{_esc((m.get("text") or "").strip())}</div></article>'
+    if is_close_only(m.prices):
+        return chart.line_chart(m.prices.points, unit=m.unit, compact=True, width=120, height=36)
+    return chart.candlestick(m.prices.points, compact=True, width=120, height=36)
+
+
+def _macro_section(brief: Brief) -> str:
+    """금리 · 유가 · 금 · 환율 등 매크로 자산 — 브리핑 코멘트 + 차트(종목 서머리와 같은 시트)."""
+    if not brief.macros:
+        return ""
+    rows = []
+    for m in brief.macros:
+        disp, cls, sub = _macro_change(m)
+        value = chart.fmt_unit(m.prices.last_close, m.unit) if (m.prices and m.prices.last_close is not None) else "—"
+        rows.append(
+            f'<tr><td class="nm-cell"><span class="nm"><a href="#x-{m.slug}">{_esc(m.name)}</a></span><span class="tk">{_esc(m.unit)}</span></td>'
+            f'<td class="chg r num">{_esc(value)}</td><td class="chg r {cls}">{disp}</td>'
+            f'<td class="mini">{_macro_mini(m)}</td><td class="why">{_esc(m.reason_summary) or "—"}</td></tr>'
         )
     return (
-        f'<section class="sec fulltext" id="full"><div class="rule"></div><h2>브리핑 전문<span class="n">{len(msgs)}건</span></h2>'
-        f'<p class="empty">당일 채널에 게시된 메시지를 시간순으로 모두 담았습니다. 요약·종목 정보는 이 전문에서 추출했습니다.</p>'
-        f'{"".join(items)}</section>'
+        '<section class="sec" id="macro"><div class="rule"></div><div class="sec-head">'
+        f'<h2>금리 · 유가 · 금 · 환율<span class="n">{len(brief.macros)}</span></h2>'
+        '<span class="empty">브리핑에 언급된 매크로 자산 · 등락은 데이터 기준 전일 대비</span></div>'
+        '<div class="tbl stocks macro"><table><thead><tr><th>자산</th><th class="r">현재값</th><th class="r">전일 대비</th>'
+        f'<th>최근 20일</th><th>브리핑 코멘트</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div></section>'
+    )
+
+
+def _macro_sheet_body(brief: Brief, m: StockMention) -> str:
+    disp, cls, sub = _macro_change(m)
+    if m.prices and m.prices.last_close is not None:
+        price = (f'<span class="num">{_esc(chart.fmt_unit(m.prices.last_close, m.unit))}</span>'
+                 f'<span class="chg {cls}">{disp}</span>' + (f"<small>{_esc(sub)}</small>" if sub else ""))
+        src = _SOURCE_LABEL.get(m.prices.source, m.prices.source)
+        n = min(20, len(m.prices.points))
+        note = f'<p class="chart-note">최근 {n}일 · {_esc(src)} · {_esc(m.prices.as_of or m.prices.points[-1].date)} 기준</p>'
+        table = f'<details class="data"><summary>데이터 표</summary>{chart.data_table(m.prices.points, m.prices.currency)}</details>'
+    else:
+        price = f'<span class="chg {cls}">{disp}</span>'
+        note = '<p class="chart-note">시세를 가져오지 못했습니다. 브리핑 코멘트만 제공합니다.</p>'
+        table = ""
+    svg = (f'<div class="chart-lg">{_macro_chart(m)}</div>'
+           f'<div class="chart-sm">{_macro_chart(m, width=360, height=250)}</div>')
+    quote = ""
+    if m.evidence:
+        quote = (f'<blockquote class="quote">“{_esc(m.evidence)}”'
+                 f'<a class="src" href="{_esc(brief.message_url)}" target="_blank" rel="noopener">원문 메시지 보기</a></blockquote>')
+    return (
+        f'<div class="s-head"><h2>{_esc(m.name)}</h2><span class="tk">{_esc(m.unit)}</span><span class="mk">매크로</span></div>'
+        f'<div class="price">{price}</div>'
+        '<div class="s-rule"></div><h3 class="s-h">차트</h3>'
+        f'<div class="chart-card">{svg}</div>{note}{table}'
+        '<div class="s-rule"></div><h3 class="s-h">브리핑 코멘트</h3>'
+        f'<p class="reason">{_esc(m.reason_summary) or "코멘트가 없습니다."}</p>{quote}'
+        '<p class="s-dis">투자 참고용 자동 생성 자료이며 매매 권유가 아닙니다.</p>'
     )
 
 

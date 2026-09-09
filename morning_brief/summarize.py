@@ -432,15 +432,30 @@ def _mentions_entry(block: str, entry: StockEntry) -> bool:
     return False
 
 
+_TAIL_UP = ("상승", "급등", "강세", "반등", "올랐", "견조")
+_TAIL_DOWN = ("하락", "급락", "약세", "부진", "내렸", "밀렸")
+_TAIL_FLAT = ("보합", "혼조")
+
+
 def _direction(context: str) -> str:
+    """등락 방향. 한국어 문장은 마지막 서술어가 결론이므로 문장 끝(마지막 14자)의 등락 표현을 우선한다.
+    그다음 명시적 부호가 있는 등락률, 마지막으로 키워드 빈도."""
+    tail = re.sub(r"[\s.。!?\"'”’)]+$", "", context)[-14:]
+    for words, d in ((_TAIL_FLAT, "FLAT"), (_TAIL_UP, "UP"), (_TAIL_DOWN, "DOWN")):
+        if any(w in tail for w in words):
+            # 끝부분에 상승·하락이 함께 있으면(예: '하락 전환') 더 뒤에 나오는 표현을 택한다
+            last_up = max((tail.rfind(w) for w in _TAIL_UP), default=-1)
+            last_down = max((tail.rfind(w) for w in _TAIL_DOWN), default=-1)
+            if d == "FLAT":
+                return "FLAT"
+            return "UP" if last_up > last_down else "DOWN"
+    m = _SIGNED_PCT_RE.search(context)
+    if m:
+        v = _to_float(m.group(1))
+        if v is not None and v != 0:
+            return "UP" if v > 0 else "DOWN"
     up = sum(context.count(w) for w in _UP_WORDS)
     down = sum(context.count(w) for w in _DOWN_WORDS)
-    pct = _first_pct(context)
-    if pct is not None:
-        if pct > 0:
-            up += 2
-        elif pct < 0:
-            down += 2
     if up > down:
         return "UP"
     if down > up:

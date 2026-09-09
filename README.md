@@ -5,7 +5,7 @@
 
 - 제품 요구사항: [`docs/PRD.md`](docs/PRD.md) (v2.0 확정) · 이전 버전 [`docs/PRD-v1.0.md`](docs/PRD-v1.0.md)
 - 운영 URL: https://mctaki23-glitch.github.io/morning_brief/ (고정 링크 → 항상 최신 브리핑)
-- 핵심 화면: 시황 요약 → 주요 지수 → 오늘의 종목 → **종목 서머리 = 캔들차트(거래량·MA5/20) + 등락 이유 + 원문 근거** → 브리핑 전문(당일 채널 메시지 전체)
+- 핵심 화면: 시황 요약 → 주요 지수 → 오늘의 종목 → **종목 서머리 = 캔들차트(거래량·MA5/20) + 등락 이유 + 원문 근거** → 금리·유가·금·환율 서머리(차트 + 브리핑 코멘트)
 
 ## 파이프라인
 
@@ -18,7 +18,7 @@
                         │
         ④ 아카이브 ────▶ archive/<date>/{raw.txt, meta.json, brief.json, prices/}  (리포지토리 커밋 = 소스 오브 트루스)
                         │
-        ⑤ 렌더 ────────▶ site/  정적 사이트 (미래에셋 CI, 모바일 우선, 당일 메시지 전문 포함, Google Fonts 외 외부 요청 없음)
+        ⑤ 렌더 ────────▶ site/  정적 사이트 (미래에셋 CI, 모바일 우선, Google Fonts 외 외부 요청 없음)
                         │
         ⑥ 배포 ────────▶ GitHub Pages  +  status.json · 알림(옵션)
 ```
@@ -101,6 +101,8 @@ morning_brief/
   summarize.py    Claude 구조화(근거 검증) + 규칙 기반 폴백
   stock_master.py 종목명·별칭 ↔ 티커/거래소 매핑 (data/stocks.json)
   prices.py       시세 어댑터(Nasdaq/네이버/investing.com/Stooq/Yahoo) + 아카이브 캐시 + 합성[개발 전용]
+  macro.py        매크로 자산(금리·유가·금·환율·원자재·비트코인) 언급 추출 (data/macro.json)
+  macro_prices.py 매크로 시세 어댑터(Nasdaq 원자재 · FRED · CoinGecko · 네이버 시장지표)
   chart.py        인라인 SVG 캔들차트(거래량·MA·툴팁) / 미니 캔들
   theme.py        미래에셋 CI 토큰·CSS·폰트
   render.py       정적 사이트(브리핑 · 종목 · 아카이브 · 상태 페이지 · OG 메타)

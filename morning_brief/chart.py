@@ -297,3 +297,78 @@ def data_table(points: Iterable[PricePoint], currency: str = "USD", window: int 
         '<table class="ohlcv"><thead><tr><th>일자</th><th>시가</th><th>고가</th><th>저가</th><th>종가</th><th>거래량</th></tr></thead>'
         f"<tbody>{rows}</tbody></table>"
     )
+
+
+# ── 라인 차트 (종가만 있는 시계열: 금리 · 환율 · 지수) ───────────
+def fmt_unit(value: float, unit: str) -> str:
+    """매크로 자산 값 표기. %는 소수 둘째 자리, 원화는 콤마+원, 달러 계열은 $."""
+    if unit == "%":
+        return f"{value:.2f}%"
+    if unit == "KRW":
+        return f"{value:,.2f}원"
+    if unit == "USD":
+        return f"${value:,.0f}" if abs(value) >= 1000 else f"${value:,.2f}"
+    if unit.startswith("USD"):
+        return f"${value:,.2f}"
+    if unit.startswith("USc"):
+        return f"{value:,.2f}¢"
+    return f"{value:,.2f}"
+
+
+def line_chart(points: Iterable[PricePoint], *, unit: str = "", window: int = 20, width: int = 680, height: int = 260,
+               compact: bool = False, change_pct: Optional[float] = None) -> str:
+    """종가 라인 차트 — 네이비 선, 점선 그리드, 우측 값축, 날짜축, 최근값 태그. compact 는 목록용 스파크라인."""
+    pts = list(points)
+    if not pts:
+        return empty(width, height)
+    shown = pts[-window:]
+    n = len(shown)
+    vals = [p.close for p in shown]
+    if compact:
+        lo, hi = min(vals), max(vals)
+        span = (hi - lo) or abs(hi) * 0.01 or 1.0
+        xs = [round(width / max(1, n - 1) * i, 1) for i in range(n)]
+        ys = [round(2 + (height - 4) * (1 - (v - lo) / span), 1) for v in vals]
+        col = UP if vals[-1] >= vals[0] else DOWN
+        pl = " ".join(f"{x},{y}" for x, y in zip(xs, ys))
+        return (f'<svg viewBox="0 0 {width} {height}" width="{width}" height="{height}" preserveAspectRatio="none" role="img" '
+                f'aria-label="최근 {n}일 추이" style="max-width:100%;display:block">'
+                f'<polyline fill="none" stroke="{col}" stroke-width="1.6" vector-effect="non-scaling-stroke" points="{pl}"/></svg>')
+
+    ml, mr, mt, mb = 10.0, (62.0 if width < 480 else 76.0), 18.0, 26.0
+    plot_w, plot_h = width - ml - mr, height - mt - mb
+    hi, lo = max(vals), min(vals)
+    pad = (hi - lo) * 0.1 or abs(hi) * 0.01 or 1.0
+    hi, lo = hi + pad, lo - pad
+    span = hi - lo
+
+    def y(v: float) -> float:
+        return round(mt + plot_h * (1 - (v - lo) / span), 1)
+
+    def x(i: int) -> float:
+        return round(ml + plot_w * (i / max(1, n - 1)), 1)
+
+    parts: list[str] = []
+    for tick in _nice_ticks(lo, hi, 4):
+        yy = y(tick)
+        parts.append(f'<line x1="{ml}" x2="{width - mr}" y1="{yy}" y2="{yy}" stroke="{GRID}" stroke-width="1" stroke-dasharray="3 4"/>')
+        parts.append(_text(width - mr + 8, yy + 4, fmt_unit(tick, unit) if unit in ("%", "") else f"{tick:,.2f}"))
+    pl = " ".join(f"{x(i)},{y(v)}" for i, v in enumerate(vals))
+    parts.append(f'<polyline fill="none" stroke="#043B72" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="{pl}"/>')
+    for i, p in enumerate(shown):
+        parts.append(f'<g><title>{_short_date(p.date)} · {fmt_unit(p.close, unit)}</title>'
+                     f'<circle cx="{x(i)}" cy="{y(p.close)}" r="{3 if i == n - 1 else 2}" fill="#043B72"/></g>')
+    last = vals[-1]
+    ly = y(last)
+    parts.append(f'<rect x="{width - mr + 4}" y="{ly - 10}" width="{mr - 8}" height="20" fill="{INK}"/>')
+    parts.append(_text(width - mr + 8, ly + 4, fmt_unit(last, unit), "start", fill="#FFFFFF", weight="700"))
+    idxs = sorted({0, n // 4, n // 2, (3 * n) // 4, n - 1}) if n >= 5 else list(range(n))
+    for i in idxs:
+        parts.append(_text(x(i), height - 8, _short_date(shown[i].date), "middle"))
+    parts.append(f'<line x1="{ml}" x2="{width - mr}" y1="{mt + plot_h:.1f}" y2="{mt + plot_h:.1f}" stroke="{AXIS}" stroke-width="1"/>')
+    chg = ""
+    if change_pct is not None:
+        chg = f", 전일 대비 {'상승' if change_pct > 0 else '하락' if change_pct < 0 else '보합'}"
+    aria = f"최근 {n}일 추이 라인 차트. 최근 값 {fmt_unit(last, unit)}{chg}."
+    return (f'<svg viewBox="0 0 {width} {height}" width="100%" height="{height}" role="img" aria-label="{aria}" '
+            f'xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;display:block">{"".join(parts)}</svg>')

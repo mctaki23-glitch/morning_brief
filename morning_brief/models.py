@@ -77,6 +77,8 @@ class StockMention:
     evidence_verified: bool = True  # 근거 발췌가 원문에 실제로 존재하는지 검증 결과
     message_id: Optional[int] = None  # 근거가 포함된 텔레그램 메시지 ID (원문 링크용)
     order: int = 0  # 본문 등장 순서 (언급순 정렬용)
+    kind: str = "stock"  # stock | macro (금리 · 유가 · 금 · 환율 등)
+    unit: str = ""  # macro 표시 단위 (%, KRW, USD/bbl, USD/oz …)
     prices: Optional[PriceSeries] = None
     slug: str = ""
 
@@ -100,6 +102,7 @@ class Brief:
     kr_outlook: str = ""  # 한국 증시 관전 포인트
     indices: list[IndexSnapshot] = field(default_factory=list)
     stocks: list[StockMention] = field(default_factory=list)
+    macros: list[StockMention] = field(default_factory=list)  # 매크로 자산 서머리 (kind="macro")
     raw_text: str = ""
     message_count: int = 1  # 그날 종합한 텔레그램 메시지 수
     message_ids: list[int] = field(default_factory=list)
