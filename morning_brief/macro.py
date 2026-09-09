@@ -55,6 +55,7 @@ def extract_macros(text: str, instruments: Optional[list[MacroInstrument]] = Non
     text = _s._normalize(text)
     spans = _s._sentence_spans(text)
     ficc = _section_start(text, r"\n\s*\*\s*FICC")
+    others = [(i.id, i.regex()) for i in instruments]
     out: list[StockMention] = []
     for inst in instruments:
         rx = inst.regex()
@@ -70,11 +71,9 @@ def extract_macros(text: str, instruments: Optional[list[MacroInstrument]] = Non
         pos, sent = hits[0]
         pct = None if inst.unit in ("%", "pt") else _pct_move(sent)
         if pct is None and inst.unit not in ("%", "pt"):
-            # 대표 문장에 등락률이 없으면 같은 자산을 다룬 다른 문장(예: '… 1%대 상승')에서 가져온다
-            for _, other in hits[1:]:
-                pct = _pct_move(other)
-                if pct is not None:
-                    break
+            # 대표 문장에 등락률이 없으면 바로 뒤에 이어지는 같은 문단의 문장(예: '장 마감 앞두고 … 1%대 상승')에서 가져온다.
+            # 다른 자산을 언급하는 문장(예: '금은 … 0.8% 하락')이 나오면 거기서 멈춘다.
+            pct = _continuation_pct(text, spans, pos, [r for i2, r in others if i2 != inst.id])
         if pct is not None and pct != 0:
             direction = "UP" if pct > 0 else "DOWN"  # 명시 등락률이 있으면 그 부호가 방향
         else:
@@ -85,6 +84,22 @@ def extract_macros(text: str, instruments: Optional[list[MacroInstrument]] = Non
         ))
     out.sort(key=lambda m: m.order)
     return out
+
+
+def _continuation_pct(text: str, spans: list[tuple[int, int, str]], start: int, other_rx: list[re.Pattern]) -> Optional[float]:
+    """start 위치 문장 뒤에 같은 문단(줄바꿈 없이)으로 이어지는 문장들에서 등락률을 찾는다. 다른 자산이 등장하면 중단."""
+    idx = next((k for k, (a, _, _) in enumerate(spans) if a == start), None)
+    if idx is None:
+        return None
+    prev_end = spans[idx][1]
+    for a, b, sent in spans[idx + 1:]:
+        if "\n" in text[prev_end:a] or _s._is_header(sent) or any(rx.search(sent) for rx in other_rx):
+            return None
+        pct = _pct_move(sent)
+        if pct is not None:
+            return pct
+        prev_end = b
+    return None
 
 
 def _pct_move(sentence: str) -> Optional[float]:
