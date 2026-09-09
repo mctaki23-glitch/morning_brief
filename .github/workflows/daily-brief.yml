@@ -27,6 +27,10 @@ on:
         description: "true 면 브리핑 생성 대신 시세 소스 응답만 점검(scripts/probe_sources.py)"
         required: false
         default: "false"
+      rebuild:
+        description: "true 면 수집 없이 아카이브로 사이트만 재생성·배포 (디자인 변경 반영용)"
+        required: false
+        default: "false"
 
 permissions:
   contents: write   # archive/ 커밋
@@ -88,6 +92,10 @@ jobs:
           TELEGRAM_SESSION: ${{ secrets.TELEGRAM_SESSION }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
+          if [ "${{ github.event.inputs.rebuild }}" = "true" ]; then
+            python -m morning_brief rebuild --production --out site
+            exit 0
+          fi
           ARGS="--production --out site"
           if [ -n "${{ github.event.inputs.date }}" ]; then ARGS="$ARGS --date ${{ github.event.inputs.date }}"; fi
           if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event.inputs.scheduled }}" = "true" ]; then ARGS="$ARGS --scheduled"; fi

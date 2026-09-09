@@ -197,24 +197,38 @@ def _stock_table(brief: Brief, stocks: list[StockMention]) -> str:
     for m in stocks:
         pct = m.price_change_pct()
         disp, cls = fmt_pct(pct)
-        mini = ""
-        if m.prices and m.prices.points:
-            mini = chart.candlestick(m.prices.points, compact=True, width=120, height=36)
+        mini = _mini_link(f"#s-{m.slug}", m.name, chart.candlestick(m.prices.points, compact=True, width=MINI_W, height=MINI_H)
+                          if m.prices and m.prices.points else "")
         tk = f'<span class="tk">{_esc(m.ticker)}</span>' if m.ticker else ""
         mk = f'<span class="mk">{"미국" if m.market == "US" else "한국"}</span>'
         warn = "" if m.evidence_verified else '<span class="badge-warn">근거 미검증</span>'
         rows.append(
             f'<tr data-order="{m.order}" data-pct="{pct if pct is not None else ""}" data-market="{m.market}">'
-            f'<td class="nm-cell"><span class="nm"><a href="#s-{m.slug}">{_esc(m.name)}</a></span>{tk}{mk}</td>'
+            f'<td class="nm-cell"><span class="nm">{_esc(m.name)}</span>{tk}{mk}</td>'
             f'<td class="chg r {cls}">{disp}</td>'
             f'<td class="mini">{mini}</td>'
             f'<td class="why">{_esc(m.reason_summary) or "—"}{warn}</td>'
-            f'<td class="more"><a href="stock/{m.slug}.html">공유 링크</a></td></tr>'
+            f'<td class="more">{_more_button(f"#s-{m.slug}", m.name)}</td></tr>'
         )
     return (
         '<div class="tbl stocks"><table id="stocks"><thead><tr><th>종목</th><th class="r">등락</th><th>최근 20일</th>'
-        f'<th>등락 이유</th><th></th></tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
+        f'<th>등락 이유</th><th class="r">상세</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
     )
+
+
+MINI_W, MINI_H = 320, 110          # 목록 미니 차트 원본 크기(비율 유지 스케일: PC 150px, 모바일 셀 폭)
+CHART_LG, CHART_SM = (680, 380), (360, 330)  # 시트 차트: PC · 모바일 — 세로를 넉넉히 잡아 등락 움직임이 보이게
+
+
+def _more_button(href: str, name: str) -> str:
+    """상세 시트를 여는 버튼(종목명은 링크가 아니라 이 버튼과 차트가 열게 한다)."""
+    return f'<a class="btn-more" href="{href}" aria-label="{_esc(name)} 상세 보기">상세 보기<span aria-hidden="true"> ›</span></a>'
+
+
+def _mini_link(href: str, name: str, svg: str) -> str:
+    if not svg:
+        return ""
+    return f'<a class="mini-link" href="{href}" aria-label="{_esc(name)} 차트 크게 보기">{svg}</a>'
 
 
 def _sheet_body(brief: Brief, m: StockMention, *, share_href: str = "") -> str:
@@ -236,8 +250,8 @@ def _sheet_body(brief: Brief, m: StockMention, *, share_href: str = "") -> str:
         price = f'<span class="chg {cls}">{disp}</span>'
 
     if m.prices and m.prices.points:
-        svg = (f'<div class="chart-lg">{chart.candlestick(m.prices.points, currency=m.prices.currency, change_pct=pct)}</div>'
-               f'<div class="chart-sm">{chart.candlestick(m.prices.points, currency=m.prices.currency, change_pct=pct, width=360, height=250)}</div>')
+        svg = (f'<div class="chart-lg">{chart.candlestick(m.prices.points, currency=m.prices.currency, change_pct=pct, width=CHART_LG[0], height=CHART_LG[1])}</div>'
+               f'<div class="chart-sm">{chart.candlestick(m.prices.points, currency=m.prices.currency, change_pct=pct, width=CHART_SM[0], height=CHART_SM[1])}</div>')
         n = min(20, len(m.prices.points))
         src = _SOURCE_LABEL.get(m.prices.source, m.prices.source)
         as_of = m.prices.as_of or m.prices.points[-1].date
@@ -384,7 +398,7 @@ def _macro_change(m: StockMention) -> tuple[str, str, str]:
     return disp, cls, f"({sign}{chart.fmt_unit(abs(diff), m.unit).lstrip('$')})"
 
 
-def _macro_chart(m: StockMention, *, width: int = 680, height: int = 300) -> str:
+def _macro_chart(m: StockMention, *, width: int = 680, height: int = 380) -> str:
     from .macro_prices import is_close_only
 
     pts = m.prices.points if m.prices else []
@@ -402,8 +416,8 @@ def _macro_mini(m: StockMention) -> str:
     if not (m.prices and m.prices.points):
         return ""
     if is_close_only(m.prices):
-        return chart.line_chart(m.prices.points, unit=m.unit, compact=True, width=120, height=36)
-    return chart.candlestick(m.prices.points, compact=True, width=120, height=36)
+        return chart.line_chart(m.prices.points, unit=m.unit, compact=True, width=MINI_W, height=MINI_H)
+    return chart.candlestick(m.prices.points, compact=True, width=MINI_W, height=MINI_H)
 
 
 def _macro_section(brief: Brief) -> str:
@@ -415,16 +429,17 @@ def _macro_section(brief: Brief) -> str:
         disp, cls, sub = _macro_change(m)
         value = chart.fmt_unit(m.prices.last_close, m.unit) if (m.prices and m.prices.last_close is not None) else "—"
         rows.append(
-            f'<tr><td class="nm-cell"><span class="nm"><a href="#x-{m.slug}">{_esc(m.name)}</a></span><span class="tk">{_esc(m.unit)}</span></td>'
-            f'<td class="chg r num">{_esc(value)}</td><td class="chg r {cls}">{disp}</td>'
-            f'<td class="mini">{_macro_mini(m)}</td><td class="why">{_esc(m.reason_summary) or "—"}</td></tr>'
+            f'<tr><td class="nm-cell"><span class="nm">{_esc(m.name)}</span><span class="tk">{_esc(m.unit)}</span></td>'
+            f'<td class="val r">{_esc(value)}</td><td class="chg r {cls}">{disp}</td>'
+            f'<td class="mini">{_mini_link(f"#x-{m.slug}", m.name, _macro_mini(m))}</td><td class="why">{_esc(m.reason_summary) or "—"}</td>'
+            f'<td class="more">{_more_button(f"#x-{m.slug}", m.name)}</td></tr>'
         )
     return (
         '<section class="sec" id="macro"><div class="rule"></div><div class="sec-head">'
         f'<h2>금리 · 유가 · 금 · 환율<span class="n">{len(brief.macros)}</span></h2>'
         '<span class="empty">브리핑에 언급된 매크로 자산 · 등락은 데이터 기준 전일 대비</span></div>'
         '<div class="tbl stocks macro"><table><thead><tr><th>자산</th><th class="r">현재값</th><th class="r">전일 대비</th>'
-        f'<th>최근 20일</th><th>브리핑 코멘트</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div></section>'
+        f'<th>최근 20일</th><th>브리핑 코멘트</th><th class="r">상세</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div></section>'
     )
 
 
@@ -441,8 +456,8 @@ def _macro_sheet_body(brief: Brief, m: StockMention) -> str:
         price = f'<span class="chg {cls}">{disp}</span>'
         note = '<p class="chart-note">시세를 가져오지 못했습니다. 브리핑 코멘트만 제공합니다.</p>'
         table = ""
-    svg = (f'<div class="chart-lg">{_macro_chart(m)}</div>'
-           f'<div class="chart-sm">{_macro_chart(m, width=360, height=250)}</div>')
+    svg = (f'<div class="chart-lg">{_macro_chart(m, width=CHART_LG[0], height=CHART_LG[1])}</div>'
+           f'<div class="chart-sm">{_macro_chart(m, width=CHART_SM[0], height=CHART_SM[1])}</div>')
     quote = ""
     if m.evidence:
         quote = (f'<blockquote class="quote">“{_esc(m.evidence)}”'

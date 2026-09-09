@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 import json
 import random
 from pathlib import Path
@@ -97,6 +99,19 @@ def test_candlestick_renders_volume_ma_and_tooltips():
 
     mini = chart.candlestick(pts, compact=True, width=120, height=36)
     assert "<rect" in mini and "<text" not in mini
+    assert "preserveAspectRatio" not in mini  # 비율 유지 스케일(늘려 그리지 않음)
+
+    # 값이 긴 종목(수만 달러)도 최근가 태그가 잘리지 않게 우측 여백이 라벨 폭에 맞춰 늘어난다
+    big = [PricePoint(f"2026-08-{i + 1:02d}", 77000 + i * 40, 77400 + i * 40, 76800 + i * 40, 77200 + i * 40, 1000) for i in range(25)]
+    svg = chart.candlestick(big, currency="USD", width=360, height=330)
+    tag = re.search(r'<rect x="([\d.]+)" y="[\d.]+" width="([\d.]+)" height="20" fill="#1A1A1A"/>', svg)
+    assert tag is not None
+    assert float(tag.group(2)) >= chart._label_w(chart.fmt_price(big[-1].close)) + 8  # 태그 폭 ≥ 라벨 폭
+    assert float(tag.group(1)) + float(tag.group(2)) <= 360  # 차트 밖으로 나가지 않음
+    # 태그와 같은 높이의 눈금 라벨은 생략되어 숫자가 겹치지 않는다
+    tag_y = float(re.search(r'<rect x="[\d.]+" y="([\d.]+)" width="[\d.]+" height="20" fill="#1A1A1A"/>', svg).group(1)) + 10
+    tick_ys = [float(m.group(1)) - 4 for m in re.finditer(r'<text x="[\d.]+" y="([\d.]+)" font-size="12" text-anchor="start" fill="#6C6C6C"', svg)]
+    assert all(abs(y - tag_y) >= 14 for y in tick_ys)
     assert "차트 데이터 없음" in chart.candlestick([])
     assert "시세 준비 중" in chart.empty(message="시세 준비 중")
 
@@ -143,6 +158,8 @@ def test_end_to_end_generates_site(tmp_path: Path):
     html = index.read_text(encoding="utf-8")
     assert "브리핑 전문" not in html  # 원문 전문 섹션은 페이지에 넣지 않는다(2026-09-09 사용자 지시). 데이터에는 보존
     assert data["messages"] and data["messages"][0]["text"].startswith("[서상영의 미국 증시 시황 ①]")
+    assert 'class="btn-more" href="#s-nvda"' in html and '<span class="nm"><a' not in html  # 상세는 버튼(과 차트)으로 연다
+    assert 'class="mini-link" href="#s-nvda"' in html
     for needle in ("시황 요약", "주요 지수", "오늘의 종목", "한국 증시 관전 포인트", 'id="s-nvda"', "MA20", "등락순", 'class="chart-sm"',
                    '<meta name="robots" content="noindex, nofollow">',
                    f'<meta property="og:image" content="https://example.test/mb/brief/{FIXTURE_DATE}/og.png">'):
@@ -266,6 +283,7 @@ def test_macro_section_renders_with_line_and_candle_charts(tmp_path: Path, monke
     ])
     html = render.render_brief(brief)
     assert "금리 · 유가 · 금 · 환율" in html and 'id="x-us10y"' in html and 'id="x-gold"' in html
+    assert '<td class="val r">' in html and 'class="btn-more" href="#x-gold"' in html
     assert "bp" in html  # 금리는 bp 표기
     assert macro_prices.is_close_only(yields) and not macro_prices.is_close_only(gold)
     assert 'stroke="#043B72" stroke-width="2"' in html  # 라인 차트(종가만 있는 시계열)

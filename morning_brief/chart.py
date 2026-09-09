@@ -90,6 +90,11 @@ def _nice_ticks(lo: float, hi: float, n: int = 4) -> list[float]:
     return ticks
 
 
+def _label_w(*labels: str) -> float:
+    """12px 숫자 라벨의 대략적인 폭(px). 우측 여백을 가장 긴 라벨에 맞추기 위해 사용."""
+    return max((sum(4.0 if ch in ".,%¢$ " else 7.0 for ch in s) for s in labels), default=0.0)
+
+
 def _text(x: float, y: float, s: str, anchor: str = "start", font: str = FONT, fill: str = LABEL, weight: str = "") -> str:
     w = f' font-weight="{weight}"' if weight else ""
     return f'<text x="{x:.1f}" y="{y:.1f}" font-size="12" text-anchor="{anchor}" fill="{fill}" font-family="{font}"{w}>{s}</text>'
@@ -129,17 +134,22 @@ def candlestick(
     mas = {k: moving_average(closes_all, k)[-n:] for k in ma_periods}
     show_vol = volume and any(p.volume > 0 for p in shown)
 
-    ml, mr, mt, mb = 10.0, (56.0 if width < 480 else 70.0), 32.0, 26.0
-    gap, vol_h = (10.0, (40.0 if width < 480 else 48.0)) if show_vol else (0.0, 0.0)
-    plot_w = width - ml - mr
-    price_h = height - mt - mb - vol_h - gap
-
     ma_vals = [v for vs in mas.values() for v in vs if v is not None]
     hi = max([p.high for p in shown] + ma_vals)
     lo = min([p.low for p in shown] + ma_vals)
     pad = (hi - lo) * 0.08 or hi * 0.01 or 1.0
     hi, lo = hi + pad, lo - pad
     span = hi - lo
+    ticks = _nice_ticks(lo, hi, 4)
+    last = shown[-1].close
+    tag_label = fmt_price(last, currency)
+
+    # 우측 여백은 가장 긴 라벨(눈금·최근가 태그)에 맞춘다 — 값이 길어도 겹치거나 잘리지 않게
+    ml, mt, mb = 10.0, 32.0, 26.0
+    mr = max(56.0 if width < 480 else 70.0, _label_w(tag_label, *(_fmt_tick(t, currency, span) for t in ticks)) + 18.0)
+    gap, vol_h = (10.0, (40.0 if width < 480 else 48.0)) if show_vol else (0.0, 0.0)
+    plot_w = width - ml - mr
+    price_h = height - mt - mb - vol_h - gap
 
     def y(v: float) -> float:
         return round(mt + price_h * (1 - (v - lo) / span), 1)
@@ -152,11 +162,13 @@ def candlestick(
 
     parts: list[str] = []
 
-    # 그리드 + 우측 가격축
-    for t in _nice_ticks(lo, hi, 4):
+    # 그리드 + 우측 가격축 (최근가 태그와 겹치는 눈금 라벨은 생략)
+    ly = y(last)
+    for t in ticks:
         yy = y(t)
         parts.append(f'<line x1="{ml}" x2="{width - mr}" y1="{yy}" y2="{yy}" stroke="{GRID}" stroke-width="1" stroke-dasharray="3 4"/>')
-        parts.append(_text(width - mr + 8, yy + 4, _fmt_tick(t, currency, span)))
+        if abs(yy - ly) >= 14:
+            parts.append(_text(width - mr + 8, yy + 4, _fmt_tick(t, currency, span)))
 
     # 거래량 (하단 영역, 봉 사이 2px 간격, 마지막 봉만 진하게)
     if show_vol:
@@ -218,11 +230,9 @@ def candlestick(
     parts.append(_text(x(il) + dl, y(shown[il].low) + 14, fmt_price(shown[il].low, currency), al))
 
     # 최근 종가 태그
-    last = shown[-1].close
-    ly = y(last)
     parts.append(f'<line x1="{x(n - 1)}" x2="{width - mr}" y1="{ly}" y2="{ly}" stroke="{INK}" stroke-width="1" stroke-dasharray="2 3"/>')
     parts.append(f'<rect x="{width - mr + 4}" y="{ly - 10}" width="{mr - 8}" height="20" fill="{INK}"/>')
-    parts.append(_text(width - mr + 8, ly + 4, fmt_price(last, currency), "start", fill="#FFFFFF", weight="700"))
+    parts.append(_text(width - mr + 8, ly + 4, tag_label, "start", fill="#FFFFFF", weight="700"))
 
     # 날짜축 + 기준선
     idxs = sorted({0, n // 4, n // 2, (3 * n) // 4, n - 1}) if n >= 5 else list(range(n))
@@ -264,25 +274,25 @@ def _compact(shown: list[PricePoint], width: int, height: int) -> str:
     lo = min(p.low for p in shown)
     span = (hi - lo) or 1.0
     slot = width / n
-    body_w = max(1.5, min(6.0, slot * 0.6))
+    body_w = max(1.5, min(10.0, slot * 0.6))
 
     def y(v: float) -> float:
-        return round(2 + (height - 4) * (1 - (v - lo) / span), 1)
+        return round(3 + (height - 6) * (1 - (v - lo) / span), 1)
 
-    parts = []
+    parts = [f'<line x1="0" x2="{width}" y1="{height - 0.5}" y2="{height - 0.5}" stroke="{GRID}" stroke-width="1" vector-effect="non-scaling-stroke"/>']
     for i, p in enumerate(shown):
         col = UP if p.close >= p.open else DOWN
         cx = round(slot * (i + 0.5), 1)
         top = y(max(p.open, p.close))
         body_h = max(1.0, round(y(min(p.open, p.close)) - top, 1))
         parts.append(
-            f'<line x1="{cx}" x2="{cx}" y1="{y(p.high)}" y2="{y(p.low)}" stroke="{col}" stroke-width="0.8" vector-effect="non-scaling-stroke"/>'
+            f'<line x1="{cx}" x2="{cx}" y1="{y(p.high)}" y2="{y(p.low)}" stroke="{col}" stroke-width="1" vector-effect="non-scaling-stroke"/>'
             f'<rect x="{cx - body_w / 2:.1f}" y="{top}" width="{body_w:.1f}" height="{body_h}" fill="{col}"/>'
         )
-    # preserveAspectRatio=none: 모바일에서 셀 폭에 맞게 가로로 늘어나도 심지 두께는 고정된다.
+    # 비율 유지 스케일: 목록에서는 작게, 모바일에서는 셀 폭에 맞춰 크게 — 늘려 그리지 않으므로 캔들 비례가 유지된다.
     return (
-        f'<svg viewBox="0 0 {width} {height}" width="{width}" height="{height}" preserveAspectRatio="none" role="img" '
-        f'aria-label="최근 {n}영업일 미니 캔들차트" style="max-width:100%;display:block">{"".join(parts)}</svg>'
+        f'<svg viewBox="0 0 {width} {height}" width="{width}" height="{height}" role="img" '
+        f'aria-label="최근 {n}영업일 미니 캔들차트" style="max-width:100%;height:auto;display:block">{"".join(parts)}</svg>'
     )
 
 
@@ -315,6 +325,15 @@ def fmt_unit(value: float, unit: str) -> str:
     return f"{value:,.2f}"
 
 
+def _fmt_unit_tick(value: float, unit: str, span: float) -> str:
+    """라인 차트 눈금 라벨: 단위 기호 없이 짧게, 소수 자릿수는 값 범위에 맞춘다."""
+    if unit == "%":
+        return f"{value:.2f}"
+    if unit == "KRW":
+        return f"{value:,.0f}"
+    return _fmt_tick(value, "USD", span)
+
+
 def line_chart(points: Iterable[PricePoint], *, unit: str = "", window: int = 20, width: int = 680, height: int = 260,
                compact: bool = False, change_pct: Optional[float] = None) -> str:
     """종가 라인 차트 — 네이비 선, 점선 그리드, 우측 값축, 날짜축, 최근값 태그. compact 는 목록용 스파크라인."""
@@ -331,16 +350,23 @@ def line_chart(points: Iterable[PricePoint], *, unit: str = "", window: int = 20
         ys = [round(2 + (height - 4) * (1 - (v - lo) / span), 1) for v in vals]
         col = UP if vals[-1] >= vals[0] else DOWN
         pl = " ".join(f"{x},{y}" for x, y in zip(xs, ys))
-        return (f'<svg viewBox="0 0 {width} {height}" width="{width}" height="{height}" preserveAspectRatio="none" role="img" '
-                f'aria-label="최근 {n}일 추이" style="max-width:100%;display:block">'
-                f'<polyline fill="none" stroke="{col}" stroke-width="1.6" vector-effect="non-scaling-stroke" points="{pl}"/></svg>')
+        return (f'<svg viewBox="0 0 {width} {height}" width="{width}" height="{height}" role="img" '
+                f'aria-label="최근 {n}일 추이" style="max-width:100%;height:auto;display:block">'
+                f'<line x1="0" x2="{width}" y1="{height - 0.5}" y2="{height - 0.5}" stroke="{GRID}" stroke-width="1" vector-effect="non-scaling-stroke"/>'
+                f'<polyline fill="none" stroke="{col}" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke" points="{pl}"/>'
+                f'<circle cx="{xs[-1]}" cy="{ys[-1]}" r="3.5" fill="{col}"/></svg>')
 
-    ml, mr, mt, mb = 10.0, (62.0 if width < 480 else 76.0), 18.0, 26.0
-    plot_w, plot_h = width - ml - mr, height - mt - mb
     hi, lo = max(vals), min(vals)
     pad = (hi - lo) * 0.1 or abs(hi) * 0.01 or 1.0
     hi, lo = hi + pad, lo - pad
     span = hi - lo
+    ticks = _nice_ticks(lo, hi, 4)
+    last = vals[-1]
+    tag_label = fmt_unit(last, unit)
+    tick_labels = [_fmt_unit_tick(t, unit, span) for t in ticks]
+    ml, mt, mb = 10.0, 18.0, 26.0
+    mr = max(62.0 if width < 480 else 76.0, _label_w(tag_label, *tick_labels) + 18.0)
+    plot_w, plot_h = width - ml - mr, height - mt - mb
 
     def y(v: float) -> float:
         return round(mt + plot_h * (1 - (v - lo) / span), 1)
@@ -349,19 +375,19 @@ def line_chart(points: Iterable[PricePoint], *, unit: str = "", window: int = 20
         return round(ml + plot_w * (i / max(1, n - 1)), 1)
 
     parts: list[str] = []
-    for tick in _nice_ticks(lo, hi, 4):
+    ly = y(last)
+    for tick, label in zip(ticks, tick_labels):
         yy = y(tick)
         parts.append(f'<line x1="{ml}" x2="{width - mr}" y1="{yy}" y2="{yy}" stroke="{GRID}" stroke-width="1" stroke-dasharray="3 4"/>')
-        parts.append(_text(width - mr + 8, yy + 4, fmt_unit(tick, unit) if unit in ("%", "") else f"{tick:,.2f}"))
+        if abs(yy - ly) >= 14:  # 최근값 태그와 겹치는 눈금 라벨은 생략
+            parts.append(_text(width - mr + 8, yy + 4, label))
     pl = " ".join(f"{x(i)},{y(v)}" for i, v in enumerate(vals))
     parts.append(f'<polyline fill="none" stroke="#043B72" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="{pl}"/>')
     for i, p in enumerate(shown):
         parts.append(f'<g><title>{_short_date(p.date)} · {fmt_unit(p.close, unit)}</title>'
                      f'<circle cx="{x(i)}" cy="{y(p.close)}" r="{3 if i == n - 1 else 2}" fill="#043B72"/></g>')
-    last = vals[-1]
-    ly = y(last)
     parts.append(f'<rect x="{width - mr + 4}" y="{ly - 10}" width="{mr - 8}" height="20" fill="{INK}"/>')
-    parts.append(_text(width - mr + 8, ly + 4, fmt_unit(last, unit), "start", fill="#FFFFFF", weight="700"))
+    parts.append(_text(width - mr + 8, ly + 4, tag_label, "start", fill="#FFFFFF", weight="700"))
     idxs = sorted({0, n // 4, n // 2, (3 * n) // 4, n - 1}) if n >= 5 else list(range(n))
     for i in idxs:
         parts.append(_text(x(i), height - 8, _short_date(shown[i].date), "middle"))

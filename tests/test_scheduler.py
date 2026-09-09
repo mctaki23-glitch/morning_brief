@@ -73,6 +73,18 @@ def test_past_date_without_briefing_keeps_root_on_latest(tmp_path):
     assert "대기 중" in out2.read_text(encoding="utf-8")
 
 
+def test_run_keeps_archived_briefing_when_fetch_fails(tmp_path, monkeypatch):
+    """이미 아카이브된 날짜를 다시 실행했는데 수집이 실패하면 대기 페이지 대신 아카이브로 사이트를 재생성한다."""
+    cfg = _cfg(tmp_path)
+    archive.save(cfg.archive_dir, Brief(date=DAY, market_overview="시황.", generated_at=f"{DAY}T06:31:00+09:00", status="published"))
+    monkeypatch.setattr(ingest, "fetch_day", lambda c, d, use_fixtures=False: Fetched(method="none", errors=["preview: 없음"]))
+    out = pipeline.run(cfg, DAY)
+    html = out.read_text(encoding="utf-8")
+    assert f"brief/{DAY}/" in html and "대기 중" not in html
+    st = _status(cfg)
+    assert st["result"] == "published" and st["source"] == "archive" and st["warnings"] == ["preview: 없음"]
+
+
 def test_no_briefing_after_deadline(tmp_path, monkeypatch):
     cfg = _cfg(tmp_path)
     monkeypatch.setattr(ingest, "fetch_day", lambda c, d, use_fixtures=False: Fetched(method="none"))
