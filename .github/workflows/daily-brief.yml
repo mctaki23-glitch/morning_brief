@@ -23,6 +23,10 @@ on:
         description: "게시 감지 대기 루프 사용 (false 면 즉시 1회 수집)"
         required: false
         default: "true"
+      probe:
+        description: "true 면 브리핑 생성 대신 시세 소스 응답만 점검(scripts/probe_sources.py)"
+        required: false
+        default: "false"
 
 permissions:
   contents: write   # archive/ 커밋
@@ -41,7 +45,21 @@ env:
   TELEGRAM_CHANNEL: ${{ vars.TELEGRAM_CHANNEL || 'ehdwl' }}
 
 jobs:
+  # 시세 소스 점검 전용(수동 실행, probe=true): 어떤 소스가 러너에서 응답하는지 로그로 남긴다.
+  probe:
+    if: github.event.inputs.probe == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Probe price sources
+        run: python scripts/probe_sources.py
+
   build:
+    if: github.event.inputs.probe != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 75
     steps:
