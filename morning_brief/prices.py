@@ -1,8 +1,9 @@
 """시세 데이터 조회 — 소스 어댑터 + 아카이브 캐시 + 전일 폴백 (PRD D4 확정: 무료 비공식 조합).
 
-미국: 네이버 해외주식(api.stock.naver.com) → Nasdaq Data API → investing.com(비공식) → Stooq CSV → Yahoo Finance chart API
+미국: Nasdaq Data API(거래량 포함) → 네이버 해외주식(api.stock.naver.com, 거래량 없음) → investing.com(비공식) → Stooq CSV → Yahoo Finance
 한국: 네이버 금융 siseJson → Yahoo Finance(.KS/.KQ)
-(GitHub Actions 러너 실측 2026-09-09: Stooq 는 공용 IP 일일 한도, Yahoo 는 429 로 실패. 네이버는 정상.)
+(GitHub Actions 러너 실측 2026-09-09: Stooq 는 공용 IP 일일 한도, Yahoo 는 429 로 실패. Nasdaq·네이버는 정상.
+ 네이버 해외주식 price 응답 키: closePrice, openPrice, highPrice, lowPrice, localTradedAt, fluctuationsRatio, stockExchangeType — 거래량 없음.)
 
 모든 어댑터는 urllib 만 사용한다(HTTPS_PROXY 환경변수 자동 인식). 성공 시 archive/<date>/prices/<ticker>.json 에
 저장하고, 전부 실패하면 최근 아카이브 캐시(source="cache")를 쓴다. 합성 데이터는 개발·테스트 전용이며
@@ -109,10 +110,11 @@ def _num(v) -> Optional[float]:
 def naver_world_symbols(ticker: str, exchange: Optional[str] = None) -> list[str]:
     """네이버 해외주식 심볼 후보: 나스닥 'TICKER.O', 뉴욕 'TICKER' (거래소를 알면 그것만)."""
     ex = (exchange or "").upper()
-    order = [f"{ticker}.O", ticker, f"{ticker}.N"]
     if ex in ("NYSE", "NYS", "AMEX"):
-        order = [ticker, f"{ticker}.O", f"{ticker}.N"]
-    return order  # 힌트가 틀려도 나머지 후보로 폴백
+        return [f"{ticker}.N", ticker, f"{ticker}.O"]  # 러너 실측: NYSE 종목은 접미사 없는 심볼이 409 를 돌려줌
+    if ex in ("NASDAQ", "NAS"):
+        return [f"{ticker}.O", ticker, f"{ticker}.N"]
+    return [f"{ticker}.O", f"{ticker}.N", ticker]  # 힌트가 없거나 틀려도 나머지 후보로 폴백
 
 
 def from_naver_world(ticker: str, days: int, exchange: Optional[str] = None) -> Optional[PriceSeries]:
@@ -121,8 +123,8 @@ def from_naver_world(ticker: str, days: int, exchange: Optional[str] = None) -> 
         try:
             body = _get(url, referer="https://m.stock.naver.com/")
         except urllib.error.HTTPError as exc:
-            if exc.code in (400, 404):
-                continue  # 심볼 불일치 → 다음 후보
+            if 400 <= exc.code < 600 and exc.code != 429:
+                continue  # 심볼 불일치(400/404/409 등) → 다음 후보
             raise
         series = parse_naver_world(body, ticker, days)
         if series is not None:
@@ -346,8 +348,8 @@ def adapters_for(ticker: str, market: str, days: int, exchange: Optional[str] = 
         suffix = ".KQ" if (exchange or "").upper() == "KOSDAQ" else ".KS"
         return [lambda: from_naver(ticker, days), lambda: from_yahoo(f"{ticker}{suffix}", ticker, days, "KRW")]
     return [
-        lambda: from_naver_world(ticker, days, exchange),
-        lambda: from_nasdaq(ticker, days),
+        lambda: from_nasdaq(ticker, days),  # 거래량 포함
+        lambda: from_naver_world(ticker, days, exchange),  # 안정적이나 거래량 없음
         lambda: from_investing(ticker, days),
         lambda: from_stooq(ticker, days),
         lambda: from_yahoo(ticker, ticker, days, "USD"),

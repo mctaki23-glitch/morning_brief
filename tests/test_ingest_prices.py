@@ -148,8 +148,8 @@ def test_parse_naver_world_and_nasdaq():
     n = prices.parse_nasdaq(nasdaq, "NVDA", 45)
     assert n is not None and n.source == "nasdaq" and n.as_of == "2026-09-08" and n.points[0].close == 169.59
     assert prices.parse_nasdaq({"data": None}, "NVDA", 45) is None
-    assert prices.naver_world_symbols("NVDA") == ["NVDA.O", "NVDA", "NVDA.N"]
-    assert prices.naver_world_symbols("JPM", "NYSE")[0] == "JPM"  # 거래소 힌트 우선, 나머지는 폴백
+    assert prices.naver_world_symbols("NVDA")[0] == "NVDA.O" and len(prices.naver_world_symbols("NVDA")) == 3
+    assert prices.naver_world_symbols("JPM", "NYSE")[0] == "JPM.N"  # 거래소 힌트 우선, 나머지는 폴백
 
 
 
