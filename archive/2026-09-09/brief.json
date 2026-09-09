@@ -3,7 +3,7 @@
   "source_channel": "ehdwl",
   "status": "published",
   "posted_at": "2026-09-09T05:27:39+09:00",
-  "generated_at": "2026-09-09T14:47:22+09:00",
+  "generated_at": "2026-09-09T15:11:57+09:00",
   "market_overview": "09/08 미 증시, AI, 반도체 강세에도 제약주 부진과 국제유가 상승 여파로 부진\n\n미 증시는 지난 주말부터 이어진 중동 불안 속 국제유가 상승에 따른 금리 변화에 하락 출발. 특히 임상 등 개별적인 요인에 크게 하락한 제약주와 AI 대체 우려가 재 부각된 소프트웨어 등이 부진을 보이며 다우지수가 1% 넘게 하락. 반면, 반도체를 비롯한 AI 관련 기업들은 주요 컨퍼런스 등에 강세를 보이며 나스닥의 하락은 제한되는 차별화가 진행. 이후 제한적인 등락을 보이다 장 마감 앞두고 미군이 이란 유조선 공격 소식에 국제유가의 상승이 확대되자 지수에 더욱 부담(다우 -1.18%, 나스닥 -0.32%, S&P500 -0.58%, 러셀2000 -0.52%, 필라델피아 반도체 지수 +1.30%)",
   "kr_outlook": "견조한 AI 산업과 컨퍼런스 효과, 그리고 만기일 앞둔 선물 거래, 젠슨 황 기대\n\nMSCI 한국 증시 ETF는 0.55% 상승, MSCI 신흥지수 ETF도 0.19% 상승. 필라델피아 반도체 지수는 1.30% 상승한 가운데 러셀2000지수는 0.52% 하락. 다우 운송지수는 1.00% 하락. KOSPI 야간 선물은 한 때 2% 가까이 상승하기도 했지만 미군의 대 이란 공격이 진행되자 상승분을 반납하며 0.8%까지 상승분 축소. 전일 서울 환시에서 달러/원 환율은 1,345.60원을 기록. NDF 달러/원 환율 1개월물은 1,340.70원을 기록.",
   "indices": [
@@ -45,6 +45,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 2113,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "STX",
         "points": [
@@ -426,6 +428,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 2158,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "000660",
         "points": [
@@ -786,8 +790,8 @@
             "open": 1795000.0,
             "high": 1883000.0,
             "low": 1795000.0,
-            "close": 1851000.0,
-            "volume": 3020423.0
+            "close": 1856000.0,
+            "volume": 3155345.0
           }
         ],
         "currency": "KRW",
@@ -807,6 +811,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 2182,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "WDC",
         "points": [
@@ -1188,6 +1194,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 2229,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "SNDK",
         "points": [
@@ -1569,6 +1577,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 2269,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "MU",
         "points": [
@@ -1950,6 +1960,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 2339,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "005930",
         "points": [
@@ -2310,8 +2322,8 @@
             "open": 269500.0,
             "high": 275000.0,
             "low": 267500.0,
-            "close": 269500.0,
-            "volume": 13654723.0
+            "close": 270000.0,
+            "volume": 14485164.0
           }
         ],
         "currency": "KRW",
@@ -2331,6 +2343,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 2507,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "NVDA",
         "points": [
@@ -2712,6 +2726,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 2549,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "QCOM",
         "points": [
@@ -3093,6 +3109,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 2616,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "AVGO",
         "points": [
@@ -3474,6 +3492,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 2743,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "AMD",
         "points": [
@@ -3855,6 +3875,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 2857,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "INTC",
         "points": [
@@ -4236,6 +4258,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 2939,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "GLW",
         "points": [
@@ -4617,6 +4641,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 3136,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "LITE",
         "points": [
@@ -4998,6 +5024,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 3150,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "COHR",
         "points": [
@@ -5379,6 +5407,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 3164,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "CIEN",
         "points": [
@@ -5760,6 +5790,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 3226,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "BE",
         "points": [
@@ -6141,6 +6173,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 3333,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "OKLO",
         "points": [
@@ -6522,6 +6556,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 3349,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "SMR",
         "points": [
@@ -6903,6 +6939,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 3378,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "GEV",
         "points": [
@@ -7284,6 +7322,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 3398,
+      "kind": "stock",
+      "unit": "",
       "prices": null,
       "slug": ""
     },
@@ -7298,6 +7338,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 3410,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "VRT",
         "points": [
@@ -7679,6 +7721,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 3423,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "CEG",
         "points": [
@@ -8060,6 +8104,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 3443,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "VST",
         "points": [
@@ -8441,6 +8487,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 3506,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "TSLA",
         "points": [
@@ -8822,6 +8870,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 3694,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "GM",
         "points": [
@@ -9203,6 +9253,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 3704,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "F",
         "points": [
@@ -9584,6 +9636,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 3823,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "QS",
         "points": [
@@ -9965,6 +10019,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 3855,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "ALB",
         "points": [
@@ -10346,6 +10402,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 3928,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "MSFT",
         "points": [
@@ -10727,6 +10785,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 3958,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "GOOGL",
         "points": [
@@ -11108,6 +11168,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 3977,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "META",
         "points": [
@@ -11489,6 +11551,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 3993,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "AMZN",
         "points": [
@@ -11870,6 +11934,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 4173,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "AAPL",
         "points": [
@@ -12251,6 +12317,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 4257,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "ORCL",
         "points": [
@@ -12632,6 +12700,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 4285,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "PLTR",
         "points": [
@@ -13013,6 +13083,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 4299,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "CRM",
         "points": [
@@ -13394,6 +13466,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 4318,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "NOW",
         "points": [
@@ -13775,6 +13849,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 4333,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "ADBE",
         "points": [
@@ -14156,6 +14232,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 4568,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "IONQ",
         "points": [
@@ -14537,6 +14615,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 4733,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "QBTS",
         "points": [
@@ -14918,6 +14998,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 4750,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "RGTI",
         "points": [
@@ -15299,6 +15381,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 4881,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "LAES",
         "points": [
@@ -15680,6 +15764,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 4894,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "ARQQ",
         "points": [
@@ -16061,6 +16147,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 4949,
+      "kind": "stock",
+      "unit": "",
       "prices": null,
       "slug": ""
     },
@@ -16075,6 +16163,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 5121,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "RKLB",
         "points": [
@@ -16456,6 +16546,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 5142,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "LUNR",
         "points": [
@@ -16837,6 +16929,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 5204,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "ASTS",
         "points": [
@@ -17218,6 +17312,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 5300,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "NVS",
         "points": [
@@ -17599,6 +17695,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 5374,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "AMGN",
         "points": [
@@ -17980,6 +18078,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 5390,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "LLY",
         "points": [
@@ -18361,6 +18461,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 5485,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "IONS",
         "points": [
@@ -18742,6 +18844,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 5505,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "SRPT",
         "points": [
@@ -19123,6 +19227,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 5562,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "SYK",
         "points": [
@@ -19504,6 +19610,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 5650,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "BSX",
         "points": [
@@ -19885,6 +19993,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 5755,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "ABT",
         "points": [
@@ -20266,6 +20376,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 5767,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "MDT",
         "points": [
@@ -20647,6 +20759,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 5977,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "MSTR",
         "points": [
@@ -21028,6 +21142,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 5995,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "HOOD",
         "points": [
@@ -21409,6 +21525,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 6013,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "COIN",
         "points": [
@@ -21790,6 +21908,8 @@
       "evidence_verified": true,
       "message_id": null,
       "order": 6028,
+      "kind": "stock",
+      "unit": "",
       "prices": {
         "ticker": "CRCL",
         "points": [
@@ -22158,6 +22278,998 @@
         "source": "nasdaq",
         "as_of": "2026-09-08"
       },
+      "slug": ""
+    }
+  ],
+  "macros": [
+    {
+      "name": "브렌트유",
+      "ticker": "BRENT",
+      "market": "MACRO",
+      "direction": "FLAT",
+      "change_pct": null,
+      "reason_summary": "그리고 전일 후티 반군의 사우디 원유시설 공격에 따른 공급 불안, OPEC+의 정례회담에서 현재 공급 정책 유지, 호르무즈 해협 통항의 지난 5월 이후 최저치 기록하자 국제유가가 브렌트 기준 98달러를 기록.",
+      "evidence": "그리고 전일 후티 반군의 사우디 원유시설 공격에 따른 공급 불안, OPEC+의 정례회담에서 현재 공급 정책 유지, 호르무즈 해협 통항의 지난 5월 이후 최저치 기록하자 국제유가가 브렌트 기준 98달러를 기록.",
+      "evidence_verified": true,
+      "message_id": null,
+      "order": 470,
+      "kind": "macro",
+      "unit": "USD/bbl",
+      "prices": null,
+      "slug": ""
+    },
+    {
+      "name": "비트코인",
+      "ticker": "BTC",
+      "market": "MACRO",
+      "direction": "DOWN",
+      "change_pct": null,
+      "reason_summary": "비트코인은 국제유가가 높은 수준을 이어가자 매물 출회되며 하락.",
+      "evidence": "비트코인은 국제유가가 높은 수준을 이어가자 매물 출회되며 하락.",
+      "evidence_verified": true,
+      "message_id": null,
+      "order": 5821,
+      "kind": "macro",
+      "unit": "USD",
+      "prices": {
+        "ticker": "MACRO_BTC",
+        "points": [
+          {
+            "date": "2026-07-27",
+            "open": 65343.824510845894,
+            "high": 65343.824510845894,
+            "low": 65343.824510845894,
+            "close": 65343.824510845894,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-07-28",
+            "open": 63701.35288114535,
+            "high": 63701.35288114535,
+            "low": 63701.35288114535,
+            "close": 63701.35288114535,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-07-29",
+            "open": 63881.94327943538,
+            "high": 63881.94327943538,
+            "low": 63881.94327943538,
+            "close": 63881.94327943538,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-07-30",
+            "open": 63916.59794922001,
+            "high": 63916.59794922001,
+            "low": 63916.59794922001,
+            "close": 63916.59794922001,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-07-31",
+            "open": 64743.33714554026,
+            "high": 64743.33714554026,
+            "low": 64743.33714554026,
+            "close": 64743.33714554026,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-01",
+            "open": 62820.08613814001,
+            "high": 62820.08613814001,
+            "low": 62820.08613814001,
+            "close": 62820.08613814001,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-02",
+            "open": 62772.57726413174,
+            "high": 62772.57726413174,
+            "low": 62772.57726413174,
+            "close": 62772.57726413174,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-03",
+            "open": 63504.41559755184,
+            "high": 63504.41559755184,
+            "low": 63504.41559755184,
+            "close": 63504.41559755184,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-04",
+            "open": 63465.19968911304,
+            "high": 63465.19968911304,
+            "low": 63465.19968911304,
+            "close": 63465.19968911304,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-05",
+            "open": 64062.173729779366,
+            "high": 64062.173729779366,
+            "low": 64062.173729779366,
+            "close": 64062.173729779366,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-06",
+            "open": 64608.705388357404,
+            "high": 64608.705388357404,
+            "low": 64608.705388357404,
+            "close": 64608.705388357404,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-07",
+            "open": 64262.74830979173,
+            "high": 64262.74830979173,
+            "low": 64262.74830979173,
+            "close": 64262.74830979173,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-08",
+            "open": 64879.7560855934,
+            "high": 64879.7560855934,
+            "low": 64879.7560855934,
+            "close": 64879.7560855934,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-09",
+            "open": 64917.23929330571,
+            "high": 64917.23929330571,
+            "low": 64917.23929330571,
+            "close": 64917.23929330571,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-10",
+            "open": 64856.097825382276,
+            "high": 64856.097825382276,
+            "low": 64856.097825382276,
+            "close": 64856.097825382276,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-11",
+            "open": 63915.71213556821,
+            "high": 63915.71213556821,
+            "low": 63915.71213556821,
+            "close": 63915.71213556821,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-12",
+            "open": 63537.55988964766,
+            "high": 63537.55988964766,
+            "low": 63537.55988964766,
+            "close": 63537.55988964766,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-13",
+            "open": 63408.625697113624,
+            "high": 63408.625697113624,
+            "low": 63408.625697113624,
+            "close": 63408.625697113624,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-14",
+            "open": 63429.17906286841,
+            "high": 63429.17906286841,
+            "low": 63429.17906286841,
+            "close": 63429.17906286841,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-15",
+            "open": 62984.28959582886,
+            "high": 62984.28959582886,
+            "low": 62984.28959582886,
+            "close": 62984.28959582886,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-16",
+            "open": 63031.04825975698,
+            "high": 63031.04825975698,
+            "low": 63031.04825975698,
+            "close": 63031.04825975698,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-17",
+            "open": 62843.70368466329,
+            "high": 62843.70368466329,
+            "low": 62843.70368466329,
+            "close": 62843.70368466329,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-18",
+            "open": 64491.345282946255,
+            "high": 64491.345282946255,
+            "low": 64491.345282946255,
+            "close": 64491.345282946255,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-19",
+            "open": 64686.25782561655,
+            "high": 64686.25782561655,
+            "low": 64686.25782561655,
+            "close": 64686.25782561655,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-20",
+            "open": 69291.0104297816,
+            "high": 69291.0104297816,
+            "low": 69291.0104297816,
+            "close": 69291.0104297816,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-21",
+            "open": 73020.94563440893,
+            "high": 73020.94563440893,
+            "low": 73020.94563440893,
+            "close": 73020.94563440893,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-22",
+            "open": 78317.77716345884,
+            "high": 78317.77716345884,
+            "low": 78317.77716345884,
+            "close": 78317.77716345884,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-23",
+            "open": 77081.02299000922,
+            "high": 77081.02299000922,
+            "low": 77081.02299000922,
+            "close": 77081.02299000922,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-24",
+            "open": 77712.3200924702,
+            "high": 77712.3200924702,
+            "low": 77712.3200924702,
+            "close": 77712.3200924702,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-25",
+            "open": 78973.88693602335,
+            "high": 78973.88693602335,
+            "low": 78973.88693602335,
+            "close": 78973.88693602335,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-26",
+            "open": 78511.2331116067,
+            "high": 78511.2331116067,
+            "low": 78511.2331116067,
+            "close": 78511.2331116067,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-27",
+            "open": 79018.03405750773,
+            "high": 79018.03405750773,
+            "low": 79018.03405750773,
+            "close": 79018.03405750773,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-28",
+            "open": 80268.37474707834,
+            "high": 80268.37474707834,
+            "low": 80268.37474707834,
+            "close": 80268.37474707834,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-29",
+            "open": 77820.76428719184,
+            "high": 77820.76428719184,
+            "low": 77820.76428719184,
+            "close": 77820.76428719184,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-30",
+            "open": 78225.13950818499,
+            "high": 78225.13950818499,
+            "low": 78225.13950818499,
+            "close": 78225.13950818499,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-31",
+            "open": 77658.23133225394,
+            "high": 77658.23133225394,
+            "low": 77658.23133225394,
+            "close": 77658.23133225394,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-09-01",
+            "open": 78552.77932895812,
+            "high": 78552.77932895812,
+            "low": 78552.77932895812,
+            "close": 78552.77932895812,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-09-02",
+            "open": 77416.44110979848,
+            "high": 77416.44110979848,
+            "low": 77416.44110979848,
+            "close": 77416.44110979848,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-09-03",
+            "open": 77297.13347191992,
+            "high": 77297.13347191992,
+            "low": 77297.13347191992,
+            "close": 77297.13347191992,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-09-04",
+            "open": 81264.70153038795,
+            "high": 81264.70153038795,
+            "low": 81264.70153038795,
+            "close": 81264.70153038795,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-09-05",
+            "open": 79671.25767420157,
+            "high": 79671.25767420157,
+            "low": 79671.25767420157,
+            "close": 79671.25767420157,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-09-06",
+            "open": 79821.69873179746,
+            "high": 79821.69873179746,
+            "low": 79821.69873179746,
+            "close": 79821.69873179746,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-09-07",
+            "open": 80329.3478460037,
+            "high": 80329.3478460037,
+            "low": 80329.3478460037,
+            "close": 80329.3478460037,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-09-08",
+            "open": 79093.4641898418,
+            "high": 79093.4641898418,
+            "low": 79093.4641898418,
+            "close": 79093.4641898418,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-09-09",
+            "open": 78925.05009680652,
+            "high": 78925.05009680652,
+            "low": 78925.05009680652,
+            "close": 78925.05009680652,
+            "volume": 0.0
+          }
+        ],
+        "currency": "USD",
+        "source": "coingecko",
+        "as_of": "2026-09-09"
+      },
+      "slug": ""
+    },
+    {
+      "name": "달러/원 환율",
+      "ticker": "USDKRW",
+      "market": "MACRO",
+      "direction": "DOWN",
+      "change_pct": null,
+      "reason_summary": "전일 서울 환시에서 달러/원 환율은 1,345.60원을 기록.",
+      "evidence": "전일 서울 환시에서 달러/원 환율은 1,345.60원을 기록.",
+      "evidence_verified": true,
+      "message_id": null,
+      "order": 6347,
+      "kind": "macro",
+      "unit": "KRW",
+      "prices": {
+        "ticker": "MACRO_USDKRW",
+        "points": [
+          {
+            "date": "2026-07-07",
+            "open": 1517.2,
+            "high": 1517.2,
+            "low": 1517.2,
+            "close": 1517.2,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-07-08",
+            "open": 1507.0,
+            "high": 1507.0,
+            "low": 1507.0,
+            "close": 1507.0,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-07-09",
+            "open": 1507.0,
+            "high": 1507.0,
+            "low": 1507.0,
+            "close": 1507.0,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-07-10",
+            "open": 1502.0,
+            "high": 1502.0,
+            "low": 1502.0,
+            "close": 1502.0,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-07-13",
+            "open": 1499.5,
+            "high": 1499.5,
+            "low": 1499.5,
+            "close": 1499.5,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-07-14",
+            "open": 1491.0,
+            "high": 1491.0,
+            "low": 1491.0,
+            "close": 1491.0,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-07-15",
+            "open": 1488.5,
+            "high": 1488.5,
+            "low": 1488.5,
+            "close": 1488.5,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-07-16",
+            "open": 1491.0,
+            "high": 1491.0,
+            "low": 1491.0,
+            "close": 1491.0,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-07-20",
+            "open": 1478.5,
+            "high": 1478.5,
+            "low": 1478.5,
+            "close": 1478.5,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-07-21",
+            "open": 1482.5,
+            "high": 1482.5,
+            "low": 1482.5,
+            "close": 1482.5,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-07-22",
+            "open": 1479.0,
+            "high": 1479.0,
+            "low": 1479.0,
+            "close": 1479.0,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-07-23",
+            "open": 1476.5,
+            "high": 1476.5,
+            "low": 1476.5,
+            "close": 1476.5,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-07-24",
+            "open": 1462.5,
+            "high": 1462.5,
+            "low": 1462.5,
+            "close": 1462.5,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-07-27",
+            "open": 1466.0,
+            "high": 1466.0,
+            "low": 1466.0,
+            "close": 1466.0,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-07-28",
+            "open": 1455.2,
+            "high": 1455.2,
+            "low": 1455.2,
+            "close": 1455.2,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-07-29",
+            "open": 1446.0,
+            "high": 1446.0,
+            "low": 1446.0,
+            "close": 1446.0,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-07-30",
+            "open": 1426.2,
+            "high": 1426.2,
+            "low": 1426.2,
+            "close": 1426.2,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-07-31",
+            "open": 1440.0,
+            "high": 1440.0,
+            "low": 1440.0,
+            "close": 1440.0,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-03",
+            "open": 1430.8,
+            "high": 1430.8,
+            "low": 1430.8,
+            "close": 1430.8,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-04",
+            "open": 1431.0,
+            "high": 1431.0,
+            "low": 1431.0,
+            "close": 1431.0,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-05",
+            "open": 1423.5,
+            "high": 1423.5,
+            "low": 1423.5,
+            "close": 1423.5,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-06",
+            "open": 1424.5,
+            "high": 1424.5,
+            "low": 1424.5,
+            "close": 1424.5,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-07",
+            "open": 1411.0,
+            "high": 1411.0,
+            "low": 1411.0,
+            "close": 1411.0,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-10",
+            "open": 1419.5,
+            "high": 1419.5,
+            "low": 1419.5,
+            "close": 1419.5,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-11",
+            "open": 1413.5,
+            "high": 1413.5,
+            "low": 1413.5,
+            "close": 1413.5,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-12",
+            "open": 1419.0,
+            "high": 1419.0,
+            "low": 1419.0,
+            "close": 1419.0,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-13",
+            "open": 1420.2,
+            "high": 1420.2,
+            "low": 1420.2,
+            "close": 1420.2,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-14",
+            "open": 1417.5,
+            "high": 1417.5,
+            "low": 1417.5,
+            "close": 1417.5,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-18",
+            "open": 1413.5,
+            "high": 1413.5,
+            "low": 1413.5,
+            "close": 1413.5,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-19",
+            "open": 1390.0,
+            "high": 1390.0,
+            "low": 1390.0,
+            "close": 1390.0,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-20",
+            "open": 1394.8,
+            "high": 1394.8,
+            "low": 1394.8,
+            "close": 1394.8,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-21",
+            "open": 1387.0,
+            "high": 1387.0,
+            "low": 1387.0,
+            "close": 1387.0,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-24",
+            "open": 1384.0,
+            "high": 1384.0,
+            "low": 1384.0,
+            "close": 1384.0,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-25",
+            "open": 1383.5,
+            "high": 1383.5,
+            "low": 1383.5,
+            "close": 1383.5,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-26",
+            "open": 1386.0,
+            "high": 1386.0,
+            "low": 1386.0,
+            "close": 1386.0,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-27",
+            "open": 1382.0,
+            "high": 1382.0,
+            "low": 1382.0,
+            "close": 1382.0,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-28",
+            "open": 1381.0,
+            "high": 1381.0,
+            "low": 1381.0,
+            "close": 1381.0,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-08-31",
+            "open": 1369.5,
+            "high": 1369.5,
+            "low": 1369.5,
+            "close": 1369.5,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-09-01",
+            "open": 1375.5,
+            "high": 1375.5,
+            "low": 1375.5,
+            "close": 1375.5,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-09-02",
+            "open": 1360.3,
+            "high": 1360.3,
+            "low": 1360.3,
+            "close": 1360.3,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-09-03",
+            "open": 1358.5,
+            "high": 1358.5,
+            "low": 1358.5,
+            "close": 1358.5,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-09-04",
+            "open": 1349.5,
+            "high": 1349.5,
+            "low": 1349.5,
+            "close": 1349.5,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-09-07",
+            "open": 1347.0,
+            "high": 1347.0,
+            "low": 1347.0,
+            "close": 1347.0,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-09-08",
+            "open": 1341.5,
+            "high": 1341.5,
+            "low": 1341.5,
+            "close": 1341.5,
+            "volume": 0.0
+          },
+          {
+            "date": "2026-09-09",
+            "open": 1336.4,
+            "high": 1336.4,
+            "low": 1336.4,
+            "close": 1336.4,
+            "volume": 0.0
+          }
+        ],
+        "currency": "KRW",
+        "source": "naver",
+        "as_of": "2026-09-09"
+      },
+      "slug": ""
+    },
+    {
+      "name": "WTI 원유",
+      "ticker": "WTI",
+      "market": "MACRO",
+      "direction": "UP",
+      "change_pct": 1.0,
+      "reason_summary": "국제유가는 지난 주말부터 이어진 미국과 이란의 군사적 충돌, 그로 인한 호르무즈 해협 통항량 감소 등에 상승.",
+      "evidence": "국제유가는 지난 주말부터 이어진 미국과 이란의 군사적 충돌, 그로 인한 호르무즈 해협 통항량 감소 등에 상승.",
+      "evidence_verified": true,
+      "message_id": null,
+      "order": 6466,
+      "kind": "macro",
+      "unit": "USD/bbl",
+      "prices": null,
+      "slug": ""
+    },
+    {
+      "name": "미국 천연가스",
+      "ticker": "NATGAS",
+      "market": "MACRO",
+      "direction": "DOWN",
+      "change_pct": -2.0,
+      "reason_summary": "미국 천연가스는 기온 안정에 따른 냉방 수요 감소 기대와 공급 증가 소식에 2% 하락.",
+      "evidence": "미국 천연가스는 기온 안정에 따른 냉방 수요 감소 기대와 공급 증가 소식에 2% 하락.",
+      "evidence_verified": true,
+      "message_id": null,
+      "order": 6685,
+      "kind": "macro",
+      "unit": "USD/MMBtu",
+      "prices": null,
+      "slug": ""
+    },
+    {
+      "name": "달러 인덱스",
+      "ticker": "DXY",
+      "market": "MACRO",
+      "direction": "DOWN",
+      "change_pct": null,
+      "reason_summary": "달러화는 소비자 기대 조사 결과 기대 물가가 안정을 보이자 여타 환율에 대해 약세.",
+      "evidence": "달러화는 소비자 기대 조사 결과 기대 물가가 안정을 보이자 여타 환율에 대해 약세.",
+      "evidence_verified": true,
+      "message_id": null,
+      "order": 6767,
+      "kind": "macro",
+      "unit": "pt",
+      "prices": null,
+      "slug": ""
+    },
+    {
+      "name": "미국 10년물 국채 금리",
+      "ticker": "US10Y",
+      "market": "MACRO",
+      "direction": "UP",
+      "change_pct": null,
+      "reason_summary": "국채 금리는 높은 국제유가, 전일 유럽 국채 금리 상승 등을 반영하며 한 때 10년물 국채 금리가 4.8%를 기록하기도 했음.",
+      "evidence": "국채 금리는 높은 국제유가, 전일 유럽 국채 금리 상승 등을 반영하며 한 때 10년물 국채 금리가 4.8%를 기록하기도 했음.",
+      "evidence_verified": true,
+      "message_id": null,
+      "order": 7014,
+      "kind": "macro",
+      "unit": "%",
+      "prices": null,
+      "slug": ""
+    },
+    {
+      "name": "금",
+      "ticker": "GOLD",
+      "market": "MACRO",
+      "direction": "DOWN",
+      "change_pct": -0.8,
+      "reason_summary": "금은 달러 약세 불구 높은 국제유가 등에 따른 물가 불안에 0.8% 하락.",
+      "evidence": "금은 달러 약세 불구 높은 국제유가 등에 따른 물가 불안에 0.8% 하락.",
+      "evidence_verified": true,
+      "message_id": null,
+      "order": 7302,
+      "kind": "macro",
+      "unit": "USD/oz",
+      "prices": null,
+      "slug": ""
+    },
+    {
+      "name": "은",
+      "ticker": "SILVER",
+      "market": "MACRO",
+      "direction": "UP",
+      "change_pct": null,
+      "reason_summary": "은은 제한적인 상승.",
+      "evidence": "은은 제한적인 상승.",
+      "evidence_verified": true,
+      "message_id": null,
+      "order": 7344,
+      "kind": "macro",
+      "unit": "USD/oz",
+      "prices": null,
+      "slug": ""
+    },
+    {
+      "name": "구리",
+      "ticker": "COPPER",
+      "market": "MACRO",
+      "direction": "UP",
+      "change_pct": null,
+      "reason_summary": "구리 및 비철금속은 주석을 제외하고 대부분 상승.",
+      "evidence": "구리 및 비철금속은 주석을 제외하고 대부분 상승.",
+      "evidence_verified": true,
+      "message_id": null,
+      "order": 7356,
+      "kind": "macro",
+      "unit": "USD/lb",
+      "prices": null,
+      "slug": ""
+    },
+    {
+      "name": "밀",
+      "ticker": "WHEAT",
+      "market": "MACRO",
+      "direction": "UP",
+      "change_pct": null,
+      "reason_summary": "농작물은 밀이 러시아-우크라이나 중재 기대가 약화된 가운데 물류 중심지인 흑해 지역 선박 공격이 지속되자 상승.",
+      "evidence": "농작물은 밀이 러시아-우크라이나 중재 기대가 약화된 가운데 물류 중심지인 흑해 지역 선박 공격이 지속되자 상승.",
+      "evidence_verified": true,
+      "message_id": null,
+      "order": 7518,
+      "kind": "macro",
+      "unit": "USD/bu",
+      "prices": null,
+      "slug": ""
+    },
+    {
+      "name": "대두",
+      "ticker": "SOYBEAN",
+      "market": "MACRO",
+      "direction": "UP",
+      "change_pct": null,
+      "reason_summary": "대두는 미 농무부의 작황보고서에서 우수, 양호 비율이 하락하고 작황지에 대한 건조한 기후로 인한 작황 부진 이슈가 영향을 주며 상승.",
+      "evidence": "대두는 미 농무부의 작황보고서에서 우수, 양호 비율이 하락하고 작황지에 대한 건조한 기후로 인한 작황 부진 이슈가 영향을 주며 상승.",
+      "evidence_verified": true,
+      "message_id": null,
+      "order": 7581,
+      "kind": "macro",
+      "unit": "USD/bu",
+      "prices": null,
+      "slug": ""
+    },
+    {
+      "name": "옥수수",
+      "ticker": "CORN",
+      "market": "MACRO",
+      "direction": "DOWN",
+      "change_pct": null,
+      "reason_summary": "반면, 옥수수는 우수, 양호 비율이 크게 낮은 가운데 유럽 가뭄 소식에도 최근 크게 상승을 했던 점을 반영 차익 매물에 하락.",
+      "evidence": "반면, 옥수수는 우수, 양호 비율이 크게 낮은 가운데 유럽 가뭄 소식에도 최근 크게 상승을 했던 점을 반영 차익 매물에 하락.",
+      "evidence_verified": true,
+      "message_id": null,
+      "order": 7656,
+      "kind": "macro",
+      "unit": "USD/bu",
+      "prices": null,
+      "slug": ""
+    },
+    {
+      "name": "코코아",
+      "ticker": "COCOA",
+      "market": "MACRO",
+      "direction": "DOWN",
+      "change_pct": null,
+      "reason_summary": "코코아는 가나와 코트디부아르 가뭄 우려 등에도 현물 공급과 재고 개선 등에 크게 하락.",
+      "evidence": "코코아는 가나와 코트디부아르 가뭄 우려 등에도 현물 공급과 재고 개선 등에 크게 하락.",
+      "evidence_verified": true,
+      "message_id": null,
+      "order": 7727,
+      "kind": "macro",
+      "unit": "USD/t",
+      "prices": null,
+      "slug": ""
+    },
+    {
+      "name": "커피",
+      "ticker": "COFFEE",
+      "market": "MACRO",
+      "direction": "DOWN",
+      "change_pct": null,
+      "reason_summary": "커피는 브라질 수확 종료에도 기록적인 생산과 수출 증가가 공급 부담으로 작용하며 하락.",
+      "evidence": "커피는 브라질 수확 종료에도 기록적인 생산과 수출 증가가 공급 부담으로 작용하며 하락.",
+      "evidence_verified": true,
+      "message_id": null,
+      "order": 7776,
+      "kind": "macro",
+      "unit": "USc/lb",
+      "prices": null,
+      "slug": ""
+    },
+    {
+      "name": "설탕",
+      "ticker": "SUGAR",
+      "market": "MACRO",
+      "direction": "FLAT",
+      "change_pct": null,
+      "reason_summary": "설탕은 옐니뇨로 인한 유럽 가뭄에 따른 작황 불안에도 인도의 가격 안정 정책에 보합권 등락",
+      "evidence": "설탕은 옐니뇨로 인한 유럽 가뭄에 따른 작황 불안에도 인도의 가격 안정 정책에 보합권 등락",
+      "evidence_verified": true,
+      "message_id": null,
+      "order": 7825,
+      "kind": "macro",
+      "unit": "USc/lb",
+      "prices": null,
       "slug": ""
     }
   ],
