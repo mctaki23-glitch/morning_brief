@@ -1,18 +1,20 @@
 """일일 브리핑 파이프라인 오케스트레이션.
 
-수집(ingest) → 요약/구조화(summarize) → 시세·차트(prices) → 렌더(render).
+수집(ingest) → 요약/구조화(summarize) → 시세·차트(prices) → 아카이브 저장 → 렌더(render) → 상태 기록.
 """
 
 from __future__ import annotations
 
+import json
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 from zoneinfo import ZoneInfo
 
-from . import ingest, prices, render, summarize
+from . import archive, ingest, prices, render, summarize
 from .config import Config
+from .ingest import Fetched
 from .models import Brief
 from .stock_master import StockMaster
 
@@ -26,7 +28,8 @@ def today_kst(cfg: Config) -> str:
 
 
 def build_brief(cfg: Config, raw: str, date_str: str, *, msg_count: int = 1, fetch_method: str = "fixture",
-                message_ids: Optional[list[int]] = None, posted_at: str = "", master: Optional[StockMaster] = None) -> Brief:
+                message_ids: Optional[list[int]] = None, posted_at: str = "", master: Optional[StockMaster] = None,
+                cache_dir: Optional[Path] = None) -> Brief:
     """원문 텍스트 → 요약·시세가 채워진 Brief (렌더 직전 상태)."""
     master = master or StockMaster.load()
     print(f"[2/4] 요약: {'Claude (' + cfg.model + ')' if cfg.has_claude else '규칙 기반'}")
@@ -37,7 +40,9 @@ def build_brief(cfg: Config, raw: str, date_str: str, *, msg_count: int = 1, fet
     for m in summary.stocks:
         if not m.ticker:
             continue
-        m.prices = prices.get_prices(m.ticker, m.market, days=cfg.price_days, allow_synthetic=not cfg.production)
+        entry = master.resolve(m.ticker)
+        m.prices = prices.get_prices(m.ticker, m.market, days=cfg.price_days, allow_synthetic=not cfg.production,
+                                     cache_dir=cache_dir, exchange=entry.exchange if entry else None)
         if m.prices is None:
             continue
         sources[m.prices.source] += 1
@@ -58,16 +63,64 @@ def build_brief(cfg: Config, raw: str, date_str: str, *, msg_count: int = 1, fet
     )
 
 
+def write_status(cfg: Config, **fields) -> Path:
+    out = Path(cfg.output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    payload = {"last_run_at": now_kst(cfg).isoformat(timespec="seconds"), **fields}
+    path = out / "status.json"
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return path
+
+
+def publish_status(cfg: Config, date_str: str, status: str, fetched: Optional[Fetched] = None) -> Path:
+    """브리핑이 없을 때: 아카이브 기반 사이트 재생성 + 루트에 상태 페이지 게시."""
+    out = Path(cfg.output_dir)
+    rebuild_site(cfg)
+    dates = archive.list_dates(cfg.archive_dir)
+    latest = dates[-1] if dates else (render.collect_archive(out)[0]["date"] if render.collect_archive(out) else None)
+    root_html = render.render_status(date_str, status, latest=latest, checked_at=now_kst(cfg).isoformat(timespec="seconds"),
+                                     logo_svg=cfg.logo_svg())
+    render.write_shared_pages(out, logo_svg=cfg.logo_svg(), root_html=root_html)
+    write_status(cfg, result=status, brief_date=date_str, message_count=0, latest=latest,
+                 warnings=(fetched.errors if fetched else []))
+    return out / "index.html"
+
+
+def rebuild_site(cfg: Config) -> int:
+    """아카이브의 모든 날짜를 사이트로 재생성한다(과거 브리핑 보존). 생성한 날짜 수를 돌려준다."""
+    n = 0
+    for date_str in archive.list_dates(cfg.archive_dir):
+        brief = archive.load(cfg.archive_dir, date_str)
+        if brief is None:
+            continue
+        render.render_site(brief, cfg.output_dir, base_url=cfg.base_url, logo_svg=cfg.logo_svg())
+        n += 1
+    return n
+
+
 def run(cfg: Config, date_str: Optional[str] = None, use_fixtures: bool = False) -> Path:
     date_str = date_str or today_kst(cfg)
     master = StockMaster.load()
 
-    print(f"[1/4] 수집: {cfg.channel} · {date_str}")
-    raw, msg_count = ingest.fetch_briefing(cfg, date_str, use_fixtures=use_fixtures)
-    print(f"       메시지 {msg_count}건 종합")
-    fetch_method = "fixture" if (use_fixtures or not cfg.has_telegram) else "session"
+    print(f"[1/4] 수집: {cfg.channel} · {date_str} ({'샘플' if use_fixtures else '공개 미리보기 → 세션'})")
+    fetched = ingest.fetch_day(cfg, date_str, use_fixtures=use_fixtures)
+    if not fetched.ok:
+        print("       브리핑이 없습니다 → 상태 페이지 게시")
+        return publish_status(cfg, date_str, "waiting", fetched)
+    print(f"       메시지 {fetched.count}건 종합 ({fetched.method})")
 
-    brief = build_brief(cfg, raw, date_str, msg_count=msg_count, fetch_method=fetch_method, master=master)
+    cache_dir = archive.date_dir(cfg.archive_dir, date_str) / "prices" if fetched.method != "fixture" else None
+    brief = build_brief(cfg, fetched.text, date_str, msg_count=fetched.count, fetch_method=fetched.method,
+                        message_ids=fetched.ids, posted_at=fetched.posted_at_iso(cfg.timezone), master=master, cache_dir=cache_dir)
+
+    if fetched.method != "fixture":
+        archive.save(cfg.archive_dir, brief)  # 소스 오브 트루스 (샘플 데이터는 저장하지 않음)
+        rebuild_site(cfg)  # 과거 날짜 포함 재생성
 
     print(f"[4/4] 렌더: {cfg.output_dir}")
-    return render.render_site(brief, cfg.output_dir, base_url=cfg.base_url, logo_svg=cfg.logo_svg())
+    index = render.render_site(brief, cfg.output_dir, base_url=cfg.base_url, logo_svg=cfg.logo_svg())
+    write_status(cfg, result="published", brief_date=date_str, posted_at=brief.posted_at, message_count=brief.message_count,
+                 stock_count=len(brief.stocks), summarizer=brief.summarizer, model=brief.model, price_source=brief.price_source,
+                 fetch_method=brief.fetch_method, unmapped=brief.unmapped, evidence_failures=brief.evidence_failures,
+                 warnings=fetched.errors)
+    return index

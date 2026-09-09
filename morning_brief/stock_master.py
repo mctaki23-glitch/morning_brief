@@ -16,6 +16,7 @@ class StockEntry:
     ticker: str
     market: str
     names: list[str]
+    exchange: str = ""  # KR: KOSPI | KOSDAQ (시세 심볼 접미사 결정)
 
     @property
     def display_name(self) -> str:
@@ -39,7 +40,7 @@ class StockMaster:
     @classmethod
     def load(cls, path: Path | str = _DATA) -> "StockMaster":
         raw = json.loads(Path(path).read_text(encoding="utf-8"))
-        entries = [StockEntry(ticker=r["ticker"], market=r["market"], names=r["names"]) for r in raw]
+        entries = [StockEntry(ticker=r["ticker"], market=r["market"], names=r["names"], exchange=r.get("exchange", "")) for r in raw]
         return cls(entries)
 
     def resolve(self, name_or_ticker: Optional[str]) -> Optional[StockEntry]:

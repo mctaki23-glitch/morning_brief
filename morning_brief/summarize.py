@@ -123,21 +123,27 @@ def _summarize_with_claude(text: str, cfg: Config, master: StockMaster) -> Summa
     import anthropic  # 선택적 의존성
 
     client = anthropic.Anthropic(api_key=cfg.anthropic_api_key)
+    # Claude Opus 5: 적응형 사고 기본. 강제 tool_choice 대신 auto + 명시 지시 (사고 모드와의 호환성 확보).
     resp = client.messages.create(
         model=cfg.model,
         max_tokens=16000,
+        thinking={"type": "adaptive"},
         system=_SYSTEM,
         tools=[_EXTRACT_TOOL],
-        tool_choice={"type": "tool", "name": "extract_brief"},
+        tool_choice={"type": "auto", "disable_parallel_tool_use": True},
         messages=[{
             "role": "user",
-            "content": ("다음은 오늘 텔레그램에 올라온 시황 브리핑 원문입니다. extract_brief 도구로 구조화해 주세요.\n\n"
-                        "<브리핑>\n" + text + "\n</브리핑>"),
+            "content": ("다음은 오늘 텔레그램에 올라온 시황 브리핑 원문입니다. 반드시 extract_brief 도구를 한 번 호출해 "
+                        "구조화 결과만 돌려주세요.\n\n<브리핑>\n" + text + "\n</브리핑>"),
         }],
     )
+    if resp.stop_reason == "refusal":
+        raise RuntimeError("모델이 요청을 거부했습니다(refusal).")
     data = next((b.input for b in resp.content if b.type == "tool_use"), None)
     if not data:
-        raise RuntimeError("tool_use 블록을 찾지 못했습니다.")
+        data = _json_from_text("".join(getattr(b, "text", "") for b in resp.content if b.type == "text"))
+    if not data:
+        raise RuntimeError("tool_use 블록(또는 JSON 응답)을 찾지 못했습니다.")
 
     indices = [
         IndexSnapshot(name=i.get("name", ""), value=i.get("value"), change_pct=i.get("change_pct"))
@@ -177,6 +183,19 @@ def _summarize_with_claude(text: str, cfg: Config, master: StockMaster) -> Summa
         summarizer="claude", kr_outlook=(data.get("kr_outlook") or "").strip(), model=cfg.model,
         prompt_version=PROMPT_VERSION, unmapped=unmapped, evidence_failures=failures,
     )
+
+
+def _json_from_text(text: str) -> Optional[dict]:
+    """도구 호출 대신 본문에 JSON 을 쓴 경우의 방어적 파싱."""
+    import json
+    m = re.search(r"\{.*\}", text, re.DOTALL)
+    if not m:
+        return None
+    try:
+        data = json.loads(m.group(0))
+    except json.JSONDecodeError:
+        return None
+    return data if isinstance(data, dict) and "stocks" in data else None
 
 
 # ── 규칙 기반 폴백 ───────────────────────────────────────────
