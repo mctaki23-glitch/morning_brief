@@ -102,7 +102,7 @@ morning_brief/
   stock_master.py 종목명·별칭 ↔ 티커/거래소 매핑 (data/stocks.json)
   prices.py       시세 어댑터(Nasdaq/네이버/investing.com/Stooq/Yahoo) + 아카이브 캐시 + 합성[개발 전용]
   macro.py        매크로 자산(금리·유가·금·환율·원자재·비트코인) 언급 추출 (data/macro.json)
-  macro_prices.py 매크로 시세 어댑터(Nasdaq 원자재 · FRED · CoinGecko · 네이버 시장지표)
+  macro_prices.py 매크로 시세 어댑터(네이버 시장지표 원자재·국채 OHLC → 미 재무부 수익률 CSV → CoinGecko → FRED 폴백)
   chart.py        인라인 SVG 캔들차트(거래량·MA·툴팁) / 미니 캔들
   theme.py        미래에셋 CI 토큰·CSS·폰트
   render.py       정적 사이트(브리핑 · 종목 · 아카이브 · 상태 페이지 · OG 메타)
