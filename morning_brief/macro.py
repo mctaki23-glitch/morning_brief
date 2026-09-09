@@ -69,6 +69,12 @@ def extract_macros(text: str, instruments: Optional[list[MacroInstrument]] = Non
         hits.sort(key=score)
         pos, sent = hits[0]
         pct = None if inst.unit in ("%", "pt") else _pct_move(sent)
+        if pct is None and inst.unit not in ("%", "pt"):
+            # 대표 문장에 등락률이 없으면 같은 자산을 다룬 다른 문장(예: '… 1%대 상승')에서 가져온다
+            for _, other in hits[1:]:
+                pct = _pct_move(other)
+                if pct is not None:
+                    break
         if pct is not None and pct != 0:
             direction = "UP" if pct > 0 else "DOWN"  # 명시 등락률이 있으면 그 부호가 방향
         else:
