@@ -63,10 +63,10 @@ def run_scheduled(
             return pipeline.run_fetched(cfg, date_str, fetched)
         if now >= deadline_at:
             print("[scheduler] 마감 시각 경과, 브리핑 없음")
-            return pipeline.publish_status(cfg, date_str, "no_briefing", fetched)
+            return pipeline.publish_status(cfg, date_str, "no_briefing", fetched, today=now.strftime("%Y-%m-%d"))
         if now >= target_at:
             print("[scheduler] 목표 시각 경과, 미게시 → 대기 중 페이지 게시 (다음 예약 잡이 계속 감지)")
-            return pipeline.publish_status(cfg, date_str, "waiting", fetched)
+            return pipeline.publish_status(cfg, date_str, "waiting", fetched, today=now.strftime("%Y-%m-%d"))
         if (now - started).total_seconds() >= max_wait_sec:
             print("[scheduler] 최대 대기 시간 경과 (목표 시각 전) → 아카이브 기반 사이트만 재생성")
             pipeline.rebuild_site(cfg)
