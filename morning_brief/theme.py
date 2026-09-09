@@ -108,6 +108,14 @@ details.raw{margin-top:18px;border:1px solid var(--hair2);padding:10px 14px;back
 details.raw summary{cursor:pointer;font-size:14px;color:var(--navy);font-weight:600}
 details.raw pre{white-space:pre-wrap;font-family:inherit;font-size:14px;line-height:1.6;color:var(--body);margin:10px 0 0}
 
+/* 브리핑 전문 */
+.fulltext .empty{margin:0 0 6px}
+.msg{border-top:1px solid var(--hair2);padding:16px 0 18px}
+.msg:last-child{padding-bottom:4px}
+.msg-h{display:flex;gap:14px;align-items:baseline;font-size:13.5px;color:var(--muted);margin-bottom:8px}
+.msg-h .num{font-family:var(--en)}
+.msg-b{font-size:16px;line-height:1.75;color:var(--body);white-space:pre-wrap;overflow-wrap:anywhere;max-width:76ch}
+
 /* 푸터 */
 .foot{margin-top:48px;border-top:1px solid var(--hair2);padding-top:14px;font-size:13.5px;line-height:1.6;color:var(--muted)}
 .foot p{margin:0 0 8px}

@@ -103,6 +103,7 @@ class Brief:
     raw_text: str = ""
     message_count: int = 1  # 그날 종합한 텔레그램 메시지 수
     message_ids: list[int] = field(default_factory=list)
+    messages: list[dict] = field(default_factory=list)  # [{id, posted_at(KST ISO), text}] 당일 채널 전문
     fetch_method: str = "fixture"  # fixture | preview | session
     summarizer: str = "rule-based"  # rule-based | claude
     model: str = ""  # 요약에 사용한 모델 ID

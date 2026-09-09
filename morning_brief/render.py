@@ -317,6 +317,7 @@ def render_brief(brief: Brief, *, base_url: str = "", logo_svg: Optional[str] = 
         outlook = ('<section class="sec outlook" id="kr"><div class="rule"></div><h2>한국 증시 관전 포인트</h2>'
                    + "".join(f"<p>{_esc(p)}</p>" for p in _paragraphs(brief.kr_outlook)) + "</section>")
 
+    fulltext = _fulltext(brief)
     controls = (
         '<div class="controls">'
         '<div class="seg" role="group" aria-label="정렬"><button type="button" data-sort="order" aria-pressed="true">언급순</button>'
@@ -331,7 +332,7 @@ def render_brief(brief: Brief, *, base_url: str = "", logo_svg: Optional[str] = 
         f'<section class="sec" id="indices"><div class="rule"></div><h2>주요 지수</h2>{_indices(brief)}</section>'
         f'<section class="sec" id="stocks-sec"><div class="rule"></div><div class="sec-head">'
         f'<h2>오늘의 종목<span class="n" id="stock-count">{len(stocks)}</span></h2>{controls}</div>{_stock_table(brief, stocks)}</section>'
-        f"{outlook}{_foot(brief)}</div>"
+        f"{outlook}{fulltext}{_foot(brief)}</div>"
         + "".join(_sheet_overlay(brief, m) for m in stocks)
     )
     desc = _first_sentence(brief.market_overview, 120) or f"{brief.date} 시황 정리 및 종목별 서머리"
@@ -350,6 +351,28 @@ def render_stock(brief: Brief, m: StockMention, *, base_url: str = "", logo_svg:
         description=m.reason_summary or f"{m.name} 등락 이유 및 캔들차트 ({brief.date})",
         url=_join_url(base_url, f"brief/{brief.date}/stock/{m.slug}.html"),
         og_image=_join_url(base_url, f"brief/{brief.date}/og.png"), root=root, fonts=fonts,
+    )
+
+
+def _fulltext(brief: Brief) -> str:
+    """당일 채널에 게시된 모든 메시지 전문 (시간순). 원문 줄바꿈을 그대로 보존한다."""
+    msgs = brief.messages or ([{"id": None, "posted_at": brief.posted_at, "text": brief.raw_text}] if brief.raw_text else [])
+    if not msgs:
+        return ""
+    items = []
+    for i, m in enumerate(msgs, 1):
+        t = hhmm(m.get("posted_at") or "")
+        link = (f'<a href="https://t.me/{_esc(brief.source_channel)}/{m["id"]}" target="_blank" rel="noopener">원문 메시지</a>'
+                if m.get("id") else "")
+        items.append(
+            f'<article class="msg" id="m-{m.get("id") or i}"><div class="msg-h"><span class="num">{i}/{len(msgs)}</span>'
+            f'{f"<span class=num>{t}</span>" if t else ""}{link}</div>'
+            f'<div class="msg-b">{_esc((m.get("text") or "").strip())}</div></article>'
+        )
+    return (
+        f'<section class="sec fulltext" id="full"><div class="rule"></div><h2>브리핑 전문<span class="n">{len(msgs)}건</span></h2>'
+        f'<p class="empty">당일 채널에 게시된 메시지를 시간순으로 모두 담았습니다. 요약·종목 정보는 이 전문에서 추출했습니다.</p>'
+        f'{"".join(items)}</section>'
     )
 
 

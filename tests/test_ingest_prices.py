@@ -35,13 +35,16 @@ PREVIEW_HTML = """
 <div class="tgme_widget_message_wrap"><div class="tgme_widget_message js-widget_message" data-post="ehdwl/5013">
   <div class="tgme_widget_message_text js-message_text">어제 오후 코멘트</div>
   <time datetime="2026-09-08T05:00:00+00:00"></time></div></div>
+<div class="tgme_widget_message_wrap"><div class="tgme_widget_message js-widget_message" data-post="ehdwl/5014">
+  <div class="tgme_widget_message_text js-message_text">[장중 코멘트] 코스피 반도체 강세 지속.</div>
+  <time datetime="2026-09-09T05:00:00+00:00"></time></div></div>
 </body></html>
 """
 
 
 def test_parse_preview_extracts_ids_times_and_text():
     msgs = ingest.parse_preview(PREVIEW_HTML)
-    assert [m.id for m in msgs] == [5011, 5012, 5013]
+    assert [m.id for m in msgs] == [5011, 5012, 5013, 5014]
     first = msgs[0]
     assert first.text.startswith("[서상영의 미국 증시 시황 ①] 9월 9일\n■ 시황 요약\n")
     assert "상승 마감" in first.text and "📈" in first.text  # 인라인 태그 안 텍스트 유지
@@ -53,8 +56,8 @@ def test_fetch_day_uses_preview_and_filters_window(monkeypatch):
     monkeypatch.setattr(ingest, "_http_get", lambda url: PREVIEW_HTML)
     cfg = Config(production=True)
     f = ingest.fetch_day(cfg, "2026-09-09")
-    assert f.method == "preview" and f.ids == [5011, 5012]  # 5013 은 전날(KST 14:00) → 제외
-    assert f.count == 2 and "엔비디아(NVDA)" in f.text
+    assert f.method == "preview" and f.ids == [5011, 5012, 5014]  # 5013 은 전날(KST 14:00) → 제외, 5014 는 당일 14:00 → 포함
+    assert f.count == 3 and "엔비디아(NVDA)" in f.text and "장중 코멘트" in f.text
     assert f.posted_at_iso("Asia/Seoul") == "2026-09-09T06:12:03+09:00"
 
 

@@ -141,6 +141,8 @@ def test_end_to_end_generates_site(tmp_path: Path):
     assert len(stock_pages) == len(data["stocks"])
 
     html = index.read_text(encoding="utf-8")
+    assert "브리핑 전문" in html and "순환매에 유의할 필요가 있습니다" in html  # 당일 메시지 전문 포함
+    assert data["messages"] and data["messages"][0]["text"].startswith("[서상영의 미국 증시 시황 ①]")
     for needle in ("시황 요약", "주요 지수", "오늘의 종목", "한국 증시 관전 포인트", 'id="s-nvda"', "MA20", "등락순", 'class="chart-sm"',
                    '<meta name="robots" content="noindex, nofollow">',
                    f'<meta property="og:image" content="https://example.test/mb/brief/{FIXTURE_DATE}/og.png">'):

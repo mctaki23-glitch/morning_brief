@@ -5,8 +5,8 @@
 2. Telethon(MTProto) 개인 세션 — TELEGRAM_API_ID/HASH/SESSION 이 있을 때 폴백.
 3. 샘플 브리핑(fixture) — 개발·테스트 전용. 운영 모드(cfg.production)에서는 절대 사용하지 않는다.
 
-초장문 브리핑은 여러 메시지로 분할 게시되므로, 대상 일자(KST) 새벽 창(00:00~12:00)의 메시지를
-시간순으로 이어붙여 하나의 브리핑으로 재조립한다.
+초장문 브리핑은 여러 메시지로 분할 게시되므로, 대상 일자(KST) 하루 전체(00:00~24:00)에 게시된 메시지를
+시간순으로 이어붙여 하나의 브리핑으로 재조립한다(당일 채널의 모든 내용을 포함).
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ _FIXTURE = Path(__file__).parent / "data" / "sample_briefing.txt"
 _MSG_SEP = "\n\n"
 _UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36"
 _TIMEOUT = 20
-MORNING_END_HOUR = 12  # 대상 일자의 00:00~12:00(KST) 메시지를 브리핑으로 본다
+DAY_END_HOUR = 24  # 대상 일자 00:00~24:00(KST) 에 게시된 모든 메시지를 포함한다
 
 
 @dataclass
@@ -229,14 +229,14 @@ def fetch_session(cfg: Config, start: datetime, end: datetime) -> list[Message]:
 
 
 # ── 진입점 ────────────────────────────────────────────────────
-def day_window(date_str: str, tz: str, end_hour: int = MORNING_END_HOUR) -> tuple[datetime, datetime]:
+def day_window(date_str: str, tz: str, end_hour: int = DAY_END_HOUR) -> tuple[datetime, datetime]:
     day = datetime.strptime(date_str, "%Y-%m-%d").date()
     start = datetime.combine(day, time.min, tzinfo=ZoneInfo(tz))
     return start, start + timedelta(hours=end_hour)
 
 
 def fetch_day(cfg: Config, date_str: str, use_fixtures: bool = False) -> Fetched:
-    """대상 일자(KST 새벽 창)의 브리핑 메시지를 수집한다.
+    """대상 일자(KST 하루 전체)의 채널 메시지를 수집한다.
 
     운영 모드에서는 수집 실패·미게시 시 빈 결과를 돌려주고(호출자가 '대기 중' 처리), 샘플로 대체하지 않는다.
     """

@@ -29,7 +29,7 @@ def today_kst(cfg: Config) -> str:
 
 def build_brief(cfg: Config, raw: str, date_str: str, *, msg_count: int = 1, fetch_method: str = "fixture",
                 message_ids: Optional[list[int]] = None, posted_at: str = "", master: Optional[StockMaster] = None,
-                cache_dir: Optional[Path] = None) -> Brief:
+                cache_dir: Optional[Path] = None, messages: Optional[list[dict]] = None) -> Brief:
     """원문 텍스트 → 요약·시세가 채워진 Brief (렌더 직전 상태)."""
     master = master or StockMaster.load()
     print(f"[2/4] 요약: {'Claude (' + cfg.model + ')' if cfg.has_claude else '규칙 기반'}")
@@ -57,7 +57,7 @@ def build_brief(cfg: Config, raw: str, date_str: str, *, msg_count: int = 1, fet
         date=date_str, source_channel=cfg.channel, status="published", posted_at=posted_at,
         generated_at=now_kst(cfg).isoformat(timespec="seconds"),
         market_overview=summary.overview, kr_outlook=summary.kr_outlook, indices=summary.indices, stocks=summary.stocks,
-        raw_text=raw, message_count=msg_count, message_ids=message_ids or [], fetch_method=fetch_method,
+        raw_text=raw, message_count=msg_count, message_ids=message_ids or [], messages=messages or [], fetch_method=fetch_method,
         summarizer=summary.summarizer, model=summary.model, prompt_version=summary.prompt_version,
         price_source=price_source, unmapped=summary.unmapped, evidence_failures=summary.evidence_failures,
     )
@@ -113,8 +113,11 @@ def run_fetched(cfg: Config, date_str: str, fetched: Fetched) -> Path:
     """수집 결과 → 요약 · 시세 · 아카이브 · 렌더 · 상태 기록."""
     master = StockMaster.load()
     cache_dir = archive.date_dir(cfg.archive_dir, date_str) / "prices" if fetched.method != "fixture" else None
+    tz = ZoneInfo(cfg.timezone)
+    messages = [{"id": m.id, "posted_at": m.posted_at.astimezone(tz).isoformat(timespec="seconds"), "text": m.text} for m in fetched.messages]
     brief = build_brief(cfg, fetched.text, date_str, msg_count=fetched.count, fetch_method=fetched.method,
-                        message_ids=fetched.ids, posted_at=fetched.posted_at_iso(cfg.timezone), master=master, cache_dir=cache_dir)
+                        message_ids=fetched.ids, posted_at=fetched.posted_at_iso(cfg.timezone), master=master, cache_dir=cache_dir,
+                        messages=messages)
 
     if fetched.method != "fixture":
         archive.save(cfg.archive_dir, brief)  # 소스 오브 트루스 (샘플 데이터는 저장하지 않음)
