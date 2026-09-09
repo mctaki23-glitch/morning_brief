@@ -100,15 +100,18 @@ def rebuild_site(cfg: Config) -> int:
 
 def run(cfg: Config, date_str: Optional[str] = None, use_fixtures: bool = False) -> Path:
     date_str = date_str or today_kst(cfg)
-    master = StockMaster.load()
-
     print(f"[1/4] 수집: {cfg.channel} · {date_str} ({'샘플' if use_fixtures else '공개 미리보기 → 세션'})")
     fetched = ingest.fetch_day(cfg, date_str, use_fixtures=use_fixtures)
     if not fetched.ok:
         print("       브리핑이 없습니다 → 상태 페이지 게시")
         return publish_status(cfg, date_str, "waiting", fetched)
     print(f"       메시지 {fetched.count}건 종합 ({fetched.method})")
+    return run_fetched(cfg, date_str, fetched)
 
+
+def run_fetched(cfg: Config, date_str: str, fetched: Fetched) -> Path:
+    """수집 결과 → 요약 · 시세 · 아카이브 · 렌더 · 상태 기록."""
+    master = StockMaster.load()
     cache_dir = archive.date_dir(cfg.archive_dir, date_str) / "prices" if fetched.method != "fixture" else None
     brief = build_brief(cfg, fetched.text, date_str, msg_count=fetched.count, fetch_method=fetched.method,
                         message_ids=fetched.ids, posted_at=fetched.posted_at_iso(cfg.timezone), master=master, cache_dir=cache_dir)

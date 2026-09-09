@@ -152,3 +152,20 @@ def test_end_to_end_generates_site(tmp_path: Path):
 
     archive = (tmp_path / "archive" / "index.html").read_text(encoding="utf-8")
     assert FIXTURE_DATE in archive and "2026년 7월" in archive and "엔비디아" in archive
+
+
+def test_og_card_default_and_chrome(tmp_path: Path, monkeypatch):
+    from morning_brief import og
+
+    out = tmp_path / "og.png"
+    assert og.write_og_card(out, date_label="2026-09-09", headline="시황 요약") == "default"  # conftest: MORNING_BRIEF_OG=off
+    assert out.stat().st_size > 1024
+    if og.find_chrome() is None:
+        pytest.skip("Chrome/Chromium 없음")
+    monkeypatch.setenv("MORNING_BRIEF_OG", "on")
+    out2 = tmp_path / "og2.png"
+    assert og.write_og_card(out2, date_label="2026-09-09", weekday="수", headline="금리 인하 기대로 3대 지수 상승 마감",
+                            foot_left="텔레그램 사제콩이_서상영 · 종목 12개") == "chrome"
+    import struct
+    w, h = struct.unpack(">II", out2.read_bytes()[16:24])
+    assert (w, h) == (1200, 630)

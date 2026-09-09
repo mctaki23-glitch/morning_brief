@@ -1,30 +1,54 @@
 name: Daily Morning Brief
 
-# 매일 아침 06:30 KST 에 그날 올라온 브리핑을 기반으로 사이트를 생성해
-# GitHub Pages 로 배포한다. (06:30 KST = 21:30 UTC 전일)
+# 06:30 KST 목표 생성 (PRD D2 확정: 조기 예약 + 대기 루프)
+# GitHub 예약 실행은 1.5~2시간 지연될 수 있어 05:00~08:30 KST(20:00~23:30 UTC) 30분 간격으로 예약한다.
+# 각 잡은 게시 감지 루프(morning_brief.scheduler)를 돌리며, 이미 생성된 날짜면 사이트만 재생성하고 즉시 끝난다.
 on:
   schedule:
+    - cron: "0 20 * * *"
+    - cron: "30 20 * * *"
+    - cron: "0 21 * * *"
     - cron: "30 21 * * *"
-  workflow_dispatch: {} # 수동 실행 (테스트용)
+    - cron: "0 22 * * *"
+    - cron: "30 22 * * *"
+    - cron: "0 23 * * *"
+    - cron: "30 23 * * *"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "대상 일자 YYYY-MM-DD (비우면 오늘 KST). 과거 일자 재생성용"
+        required: false
+        default: ""
+      scheduled:
+        description: "게시 감지 대기 루프 사용 (false 면 즉시 1회 수집)"
+        required: false
+        default: "true"
 
 permissions:
-  contents: read
+  contents: write   # archive/ 커밋
   pages: write
   id-token: write
 
-# 동시 실행 방지 (대기 중 실행이 취소되지 않도록 cancel-in-progress: false)
+# 같은 날 여러 예약 잡이 겹치면 순서대로 실행(취소하지 않음). 뒤따르는 잡은 아카이브 확인 후 즉시 종료한다.
 concurrency:
-  group: pages
+  group: daily-brief
   cancel-in-progress: false
+
+env:
+  MORNING_BRIEF_ENV: production
+  MORNING_BRIEF_BASE_URL: ${{ vars.MORNING_BRIEF_BASE_URL || 'https://mctaki23-glitch.github.io/morning_brief' }}
+  MORNING_BRIEF_MODEL: ${{ vars.MORNING_BRIEF_MODEL || 'claude-opus-5' }}
+  TELEGRAM_CHANNEL: ${{ vars.TELEGRAM_CHANNEL || 'ehdwl' }}
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
-      # Pages 는 Settings → Pages → Source: GitHub Actions 로 1회 활성화 필요.
-      # (Actions 토큰으로는 Pages 사이트 생성이 막혀 있어 자동 활성화 불가)
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
@@ -35,17 +59,55 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Generate site (오늘 KST 브리핑)
+      # OG 카드(HTML → PNG) 한글 렌더용 폰트. 러너에는 Chrome 이 기본 설치되어 있다.
+      - name: Install CJK fonts for OG card
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk >/dev/null
+
+      - name: Generate site (게시 감지 대기 루프)
         env:
           TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
           TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
           TELEGRAM_SESSION: ${{ secrets.TELEGRAM_SESSION }}
-          TELEGRAM_CHANNEL: ${{ vars.TELEGRAM_CHANNEL || 'ehdwl' }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          MORNING_BRIEF_MODEL: ${{ vars.MORNING_BRIEF_MODEL || 'claude-opus-4-8' }}
         run: |
-          # 시크릿이 없으면 자동으로 fixture 폴백으로 동작하므로 CI가 깨지지 않는다.
-          python -m morning_brief run --out site
+          ARGS="--production --out site"
+          if [ -n "${{ github.event.inputs.date }}" ]; then ARGS="$ARGS --date ${{ github.event.inputs.date }}"; fi
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event.inputs.scheduled }}" = "true" ]; then ARGS="$ARGS --scheduled"; fi
+          python -m morning_brief run $ARGS
+
+      - name: Job summary
+        if: always()
+        run: |
+          echo "## Morning Brief 실행 상태" >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat site/status.json 2>/dev/null >> "$GITHUB_STEP_SUMMARY" || echo '{"result": "no status"}' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      # 아카이브(소스 오브 트루스)를 리포지토리에 커밋 — 과거 브리핑은 여기서 재생성된다.
+      - name: Commit archive
+        run: |
+          if [ -n "$(git status --porcelain archive)" ]; then
+            git config user.name "morning-brief-bot"
+            git config user.email "morning-brief-bot@users.noreply.github.com"
+            git add archive
+            git commit -m "archive: $(date -u +%Y-%m-%dT%H:%MZ) brief data [skip ci]"
+            git pull --rebase --autostash origin "${GITHUB_REF_NAME}" || true
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          else
+            echo "아카이브 변경 없음"
+          fi
+
+      - name: Notify (옵션, 봇 토큰이 있을 때만)
+        if: always()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_NOTIFY_CHAT_ID: ${{ secrets.TELEGRAM_NOTIFY_CHAT_ID }}
+        run: |
+          if [ "${{ job.status }}" != "success" ]; then
+            python -m morning_brief notify --text "[Morning Brief] 워크플로우 실패: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          else
+            python -m morning_brief notify --status site/status.json --site-url "$MORNING_BRIEF_BASE_URL"
+          fi
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
