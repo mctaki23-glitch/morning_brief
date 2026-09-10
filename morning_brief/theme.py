@@ -57,6 +57,11 @@ a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{o
 .when .links a{border:1px solid var(--hair);border-radius:2px;padding:3px 9px;color:var(--navy);line-height:1.3}
 .when .links a:hover{background:var(--s2);color:var(--ink)}
 
+/* 과거 브리핑 페이지 상단 안내(최신 브리핑 링크) */
+.newer{display:block;margin-top:14px;padding:10px 14px;border:1px solid var(--orange);border-radius:2px;background:var(--s2);color:var(--body);font-size:14.5px;line-height:1.5}
+.newer strong{color:var(--navy);font-weight:700}
+.newer:hover{background:var(--s1)}
+
 /* 섹션 */
 .sec{margin-top:48px}
 .rule{height:1px;background:var(--orange);margin-bottom:16px}

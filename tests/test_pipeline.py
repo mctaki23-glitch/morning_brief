@@ -169,7 +169,7 @@ def test_end_to_end_generates_site(tmp_path: Path):
     assert "onepage" not in html  # 단일 페이지로 통합
 
     root = (tmp_path / "index.html").read_text(encoding="utf-8")
-    assert "http-equiv" in root and f"brief/{FIXTURE_DATE}/" in root
+    assert f'<base href="brief/{FIXTURE_DATE}/">' in root and "시황 요약" in root  # 루트는 최신 브리핑 본문(리다이렉트 아님)
 
     archive = (tmp_path / "archive" / "index.html").read_text(encoding="utf-8")
     assert FIXTURE_DATE in archive and "2026년 7월" in archive and "엔비디아" in archive

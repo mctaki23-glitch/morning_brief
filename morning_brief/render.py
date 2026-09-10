@@ -321,7 +321,7 @@ _BRIEF_JS = """<script>
     if(open&&open!==id){var prev=el(open); if(prev) prev.classList.remove('open');}
     var d=el(id); d.classList.add('open'); document.body.classList.add('sheet-open'); open=id;
     var sh=d.querySelector('.sheet'); if(sh) sh.scrollTop=0;
-    if(push){try{history.pushState({sheet:id},'','#'+id);}catch(e){}}
+    if(push){try{history.pushState({sheet:id},'',location.pathname+location.search+'#'+id);}catch(e){}}
     var c=d.querySelector('.close'); if(c){try{c.focus({preventScroll:true});}catch(e){}}
   }
   function hide(viaHistory){
@@ -368,7 +368,7 @@ _BRIEF_JS = """<script>
 </script>"""
 
 
-def render_brief(brief: Brief, *, base_url: str = "", logo_svg: Optional[str] = None, fonts=()) -> str:
+def render_brief(brief: Brief, *, base_url: str = "", logo_svg: Optional[str] = None, fonts=(), latest_date: Optional[str] = None) -> str:
     _dedupe_slugs(brief.stocks)
     for m in brief.macros:
         m.slug = slugify(m)
@@ -397,8 +397,12 @@ def render_brief(brief: Brief, *, base_url: str = "", logo_svg: Optional[str] = 
         '<button type="button" data-market="US" aria-pressed="false">미국</button>'
         '<button type="button" data-market="KR" aria-pressed="false">한국</button></div></div>'
     )
+    newer = ""
+    if latest_date and latest_date > brief.date:
+        newer = (f'<a class="newer" href="../{_esc(latest_date)}/">이 페이지는 {_esc(brief.date)} 브리핑입니다. '
+                 f'<strong>최신 브리핑({_esc(latest_date)}) 보기 ›</strong></a>')
     body = (
-        f'<div class="page" id="top">{_mast(brief, root, logo_svg)}'
+        f'<div class="page" id="top">{_mast(brief, root, logo_svg)}{newer}'
         f'<section class="sec" id="overview"><div class="rule"></div><h2>시황 요약</h2>{overview}</section>'
         f'<section class="sec" id="indices"><div class="rule"></div><h2>주요 지수</h2>{_indices(brief)}</section>'
         f'<section class="sec" id="stocks-sec"><div class="rule"></div><div class="sec-head">'
@@ -592,6 +596,17 @@ def render_archive(entries: list[dict], *, logo_svg: Optional[str] = None, fonts
     return _page(f"{PRODUCT} · 지난 브리핑", body, description="시황 브리핑 아카이브", script=_ARCHIVE_JS, root=root, fonts=fonts)
 
 
+def latest_as_root(out: Path, date_str: str) -> str:
+    """루트(index.html)에 최신 브리핑 페이지를 그대로 싣는다. 리다이렉트 대신 본문을 제공하므로 주소창이 날짜 URL 로 바뀌지 않고,
+    루트를 북마크한 사용자는 새로고침만으로 항상 최신 브리핑을 본다. 상대 링크·폰트는 <base> 로 날짜 폴더 기준으로 해석된다."""
+    page = out / "brief" / date_str / "index.html"
+    if not page.exists():
+        return render_redirect(f"brief/{date_str}/")
+    html = page.read_text(encoding="utf-8")
+    base = f'<base href="brief/{_esc(date_str)}/">'
+    return html.replace("<head><meta charset=\"utf-8\">", f"<head><meta charset=\"utf-8\">{base}", 1) if "<head>" in html else html
+
+
 def render_redirect(target: str) -> str:
     return (
         '<!doctype html><html lang="ko"><head><meta charset="utf-8">'
@@ -623,7 +638,8 @@ def render_status(date_str: str, status: str, *, latest: Optional[str] = None, c
 
 
 # ── 사이트 생성 ────────────────────────────────────────────────
-def render_site(brief: Brief, out_dir: str | Path, *, base_url: str = "", logo_svg: Optional[str] = None) -> Path:
+def render_site(brief: Brief, out_dir: str | Path, *, base_url: str = "", logo_svg: Optional[str] = None,
+                latest_date: Optional[str] = None) -> Path:
     out = Path(out_dir)
     date_dir = out / "brief" / brief.date
     stock_dir = date_dir / "stock"
@@ -633,7 +649,8 @@ def render_site(brief: Brief, out_dir: str | Path, *, base_url: str = "", logo_s
     _dedupe_slugs(brief.stocks)
     for m in brief.stocks:
         (stock_dir / f"{m.slug}.html").write_text(render_stock(brief, m, base_url=base_url, logo_svg=logo_svg, fonts=fonts), encoding="utf-8")
-    date_dir.joinpath("index.html").write_text(render_brief(brief, base_url=base_url, logo_svg=logo_svg, fonts=fonts), encoding="utf-8")
+    date_dir.joinpath("index.html").write_text(render_brief(brief, base_url=base_url, logo_svg=logo_svg, fonts=fonts, latest_date=latest_date),
+                                               encoding="utf-8")
     date_dir.joinpath("data.json").write_text(dump_json(brief), encoding="utf-8")
 
     headline = _first_sentence(brief.market_overview, 70) or "시황 요약"
@@ -669,7 +686,7 @@ def write_shared_pages(out: Path, *, logo_svg: Optional[str] = None, root_html: 
     (out / "archive").mkdir(parents=True, exist_ok=True)
     (out / "archive" / "index.html").write_text(render_archive(entries, logo_svg=logo_svg, fonts=fonts), encoding="utf-8")
     if root_html is None:
-        root_html = render_redirect(f"brief/{entries[0]['date']}/") if entries else render_status("", "no_briefing", logo_svg=logo_svg, fonts=fonts)
+        root_html = latest_as_root(out, entries[0]["date"]) if entries else render_status("", "no_briefing", logo_svg=logo_svg, fonts=fonts)
     (out / "index.html").write_text(root_html, encoding="utf-8")
     (out / "robots.txt").write_text("User-agent: *\nDisallow: /\n", encoding="utf-8")
 
