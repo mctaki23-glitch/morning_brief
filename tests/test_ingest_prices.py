@@ -287,3 +287,31 @@ def test_clip_before_drops_sessions_on_or_after_brief_date():
     short = prices.clip_before(PriceSeries("X", list(pts[-2:]), "USD", "naver", "2026-09-10"), "2026-09-09")
     assert len(short.points) == 2
     assert prices.clip_before(None, "2026-09-10") is None
+
+
+def test_get_prices_freshens_stale_nasdaq_series_from_naver(monkeypatch):
+    from morning_brief import prices
+    from morning_brief.models import PricePoint, PriceSeries
+
+    def pts(dates, vol=100.0):
+        return [PricePoint(d, 10, 11, 9, 10.5, vol) for d in dates]
+
+    stale = PriceSeries("META", pts(["2026-09-04", "2026-09-05", "2026-09-08"]), "USD", "nasdaq", "2026-09-08")
+    fresh = PriceSeries("META", pts(["2026-09-05", "2026-09-08", "2026-09-09", "2026-09-10"], vol=0.0), "USD", "naver", "2026-09-10")
+    calls = {"naver": 0}
+    monkeypatch.setattr(prices, "from_nasdaq", lambda ticker, days, today=None: stale)
+
+    def fake_naver(ticker, days, exchange=None):
+        calls["naver"] += 1
+        return fresh
+    monkeypatch.setattr(prices, "from_naver_world", fake_naver)
+    monkeypatch.setattr(prices.time, "sleep", lambda s: None)
+
+    s = prices.get_prices("META", "US", days=45, allow_synthetic=False, freshen_through="2026-09-09")
+    assert [p.date for p in s.points] == ["2026-09-04", "2026-09-05", "2026-09-08", "2026-09-09"]  # 09-10 은 through 이후라 제외
+    assert s.source == "nasdaq+naver" and s.as_of == "2026-09-09" and calls["naver"] == 1
+
+    # 이미 최신이면 보충 호출 없음
+    stale.points = pts(["2026-09-08", "2026-09-09"]); stale.source = "nasdaq"
+    s2 = prices.get_prices("META", "US", days=45, allow_synthetic=False, freshen_through="2026-09-09")
+    assert s2.source == "nasdaq" and calls["naver"] == 1
