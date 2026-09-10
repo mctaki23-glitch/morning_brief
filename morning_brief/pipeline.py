@@ -41,8 +41,8 @@ def build_brief(cfg: Config, raw: str, date_str: str, *, msg_count: int = 1, fet
         if not m.ticker:
             continue
         entry = master.resolve(m.ticker)
-        m.prices = prices.get_prices(m.ticker, m.market, days=cfg.price_days, allow_synthetic=not cfg.production,
-                                     cache_dir=cache_dir, exchange=entry.exchange if entry else None)
+        m.prices = prices.clip_before(prices.get_prices(m.ticker, m.market, days=cfg.price_days, allow_synthetic=not cfg.production,
+                                                        cache_dir=cache_dir, exchange=entry.exchange if entry else None), date_str)
         if m.prices is None:
             continue
         sources[m.prices.source] += 1
@@ -61,7 +61,7 @@ def build_brief(cfg: Config, raw: str, date_str: str, *, msg_count: int = 1, fet
         inst = by_id.get(mm.ticker or "")
         if inst is None:
             continue
-        mm.prices = macro_prices.get_series(inst, days=cfg.price_days, cache_dir=cache_dir, allow_synthetic=not cfg.production)
+        mm.prices = prices.clip_before(macro_prices.get_series(inst, days=cfg.price_days, cache_dir=cache_dir, allow_synthetic=not cfg.production), date_str)
         if mm.prices is not None and mm.prices.change_pct is not None and mm.direction == "FLAT":
             mm.direction = "UP" if mm.prices.change_pct > 0 else "DOWN" if mm.prices.change_pct < 0 else "FLAT"
 
@@ -71,8 +71,8 @@ def build_brief(cfg: Config, raw: str, date_str: str, *, msg_count: int = 1, fet
         if inst is None:
             continue
         snap.ticker = inst.id
-        snap.prices = macro_prices.get_series(inst, days=cfg.price_days, cache_dir=cache_dir, allow_synthetic=not cfg.production,
-                                              key=f"INDEX_{inst.id}")
+        snap.prices = prices.clip_before(macro_prices.get_series(inst, days=cfg.price_days, cache_dir=cache_dir, allow_synthetic=not cfg.production,
+                                                                 key=f"INDEX_{inst.id}"), date_str)
         if snap.prices is not None and snap.value is None and not snap.prices.source.startswith("proxy:"):
             snap.value = snap.prices.last_close
 
