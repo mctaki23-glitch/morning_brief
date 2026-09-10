@@ -53,6 +53,24 @@ def _fmt_tick(value: float, currency: str, span: float) -> str:
     return f"{value:,.0f}"
 
 
+def fmt_ymd(d: str) -> str:
+    """'2026-09-08' → '2026.09.08'. ISO 형식이 아니면 빈 문자열(합성 데이터의 D-3 등)."""
+    if len(d) == 10 and d[4] == "-" and d[7] == "-":
+        return d.replace("-", ".")
+    return ""
+
+
+def fmt_range(points: Iterable[PricePoint], window: int = 20) -> str:
+    """차트 하단 기간 표기: '2026.08.12 – 2026.09.09' (표시 구간의 첫 봉 ~ 마지막 봉). 날짜를 알 수 없으면 빈 문자열."""
+    shown = list(points)[-window:]
+    if not shown:
+        return ""
+    a, b = fmt_ymd(shown[0].date), fmt_ymd(shown[-1].date)
+    if not a or not b:
+        return ""
+    return a if a == b else f"{a} – {b}"
+
+
 def _short_date(d: str) -> str:
     """'2026-09-08' → '09-08'. 그 외 형식(D-3 등)은 그대로."""
     if len(d) == 10 and d[4] == "-" and d[7] == "-":

@@ -309,4 +309,31 @@ def test_index_prices_round_trip_and_tiles(tmp_path: Path):
     assert loaded.indices[2].prices is None
     html = render.render_brief(loaded)
     assert html.count('class="spark"') == 2 and "IWM ETF 추이" in html and "45,123" in html
+    assert "최근 20일" in html  # 합성 데이터(D-n 날짜)는 기간을 알 수 없어 기본 문구
     assert 'class="c down"' in html and 'class="c up"' in html
+
+
+def test_every_chart_shows_its_period(tmp_path: Path):
+    """목록 미니 차트 · 매크로 미니 차트 · 지수 타일 · 상세 시트 차트 하단에 연.월.일 기간을 표기한다."""
+    from morning_brief import chart, render
+    from morning_brief.models import Brief, IndexSnapshot, PricePoint, PriceSeries, StockMention
+
+    def series(key, n=25, start=1):
+        pts = [PricePoint(f"2026-08-{start + i:02d}" if start + i <= 31 else f"2026-09-{start + i - 31:02d}", 10 + i, 11 + i, 9 + i, 10.5 + i, 100) for i in range(n)]
+        return PriceSeries(key, pts, "USD", "nasdaq", pts[-1].date)
+
+    assert chart.fmt_ymd("2026-09-08") == "2026.09.08" and chart.fmt_ymd("D-3") == ""
+    s = series("META")
+    assert chart.fmt_range(s.points) == "2026.08.06 – 2026.08.25"  # 표시 구간(마지막 20봉)
+    assert chart.fmt_range([]) == ""
+
+    brief = Brief(date="2026-09-10", market_overview="시황.", generated_at="2026-09-10T08:03:02+09:00", status="published",
+                  indices=[IndexSnapshot(name="다우", value=45000.0, change_pct=-0.5, ticker="DJI", prices=series("INDEX_DJI"))],
+                  stocks=[StockMention(name="메타", ticker="META", market="US", direction="UP", change_pct=6.55, reason_summary="이유.",
+                                       evidence="이유.", evidence_verified=True, prices=series("META"))],
+                  macros=[StockMention(name="금", ticker="GOLD", market="MACRO", kind="macro", unit="USD/oz", direction="DOWN",
+                                       reason_summary="금 코멘트.", evidence="금 코멘트.", prices=series("MACRO_GOLD"))])
+    html = render.render_brief(brief)
+    assert html.count('<div class="c-dates">2026.08.06 – 2026.08.25</div>') == 2  # 종목 · 매크로 미니 차트
+    assert '<div class="note">2026.08.06 – 2026.08.25</div>' in html  # 지수 타일
+    assert html.count('<p class="chart-note">2026.08.06 – 2026.08.25 · ') >= 2  # 상세 시트(종목 · 매크로)
