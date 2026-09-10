@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import json
 from collections import Counter
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Optional
 from zoneinfo import ZoneInfo
@@ -36,13 +36,16 @@ def build_brief(cfg: Config, raw: str, date_str: str, *, msg_count: int = 1, fet
     summary = summarize.summarize(raw, cfg, master)
 
     print(f"[3/4] 시세·차트: {len(summary.stocks)}개 종목")
+    # 브리핑이 다루는 미국 세션 = 브리핑 일자(KST) 전날. 새벽 실행에서 Nasdaq 일봉이 아직 그 날을 포함하지 않으면 네이버로 보충한다.
+    us_session = (date.fromisoformat(date_str) - timedelta(days=1)).isoformat() if len(date_str) == 10 else None
     sources: Counter[str] = Counter()
     for m in summary.stocks:
         if not m.ticker:
             continue
         entry = master.resolve(m.ticker)
         m.prices = prices.clip_before(prices.get_prices(m.ticker, m.market, days=cfg.price_days, allow_synthetic=not cfg.production,
-                                                        cache_dir=cache_dir, exchange=entry.exchange if entry else None), date_str)
+                                                        cache_dir=cache_dir, exchange=entry.exchange if entry else None,
+                                                        freshen_through=us_session), date_str)
         if m.prices is None:
             continue
         sources[m.prices.source] += 1

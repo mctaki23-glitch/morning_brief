@@ -369,7 +369,10 @@ def adapters_for(ticker: str, market: str, days: int, exchange: Optional[str] = 
 
 
 def get_prices(ticker: str, market: str = "US", days: int = 45, *, allow_synthetic: bool = True,
-               cache_dir: Optional[Path] = None, exchange: Optional[str] = None) -> Optional[PriceSeries]:
+               cache_dir: Optional[Path] = None, exchange: Optional[str] = None,
+               freshen_through: Optional[str] = None) -> Optional[PriceSeries]:
+    """freshen_through: 이 날짜(미국 세션 일자)까지의 봉이 있어야 한다. 1순위 소스(Nasdaq 은 새벽에 전일 봉이 아직 없음)가
+    그보다 오래됐으면 네이버 세계주식에서 최신 봉을 받아 덧붙인다."""
     time.sleep(0.15)  # 소스별 rate limit 예방
     for fetch in adapters_for(ticker, market, days, exchange):
         try:
@@ -378,6 +381,8 @@ def get_prices(ticker: str, market: str = "US", days: int = 45, *, allow_synthet
             print(f"[prices] {ticker}: {exc!r}")
             continue
         if series is not None:
+            if freshen_through and market == "US" and series.source != "naver" and series.points[-1].date < freshen_through:
+                series = freshen(series, ticker, days, exchange, freshen_through)
             print(f"[prices] {ticker} ← {series.source} ({series.as_of}, {len(series.points)}봉)")
             if cache_dir is not None:
                 save_cache(cache_dir, series)
@@ -390,6 +395,26 @@ def get_prices(ticker: str, market: str = "US", days: int = 45, *, allow_synthet
     if not allow_synthetic:
         return None
     return synthetic(ticker, market, days)
+
+
+def freshen(series: PriceSeries, ticker: str, days: int, exchange: Optional[str], through: str) -> PriceSeries:
+    """네이버 세계주식 일봉에서 series 마지막 봉 이후 ~ through 까지의 봉을 가져와 덧붙인다(거래량은 없으면 0)."""
+    try:
+        fresh = from_naver_world(ticker, days, exchange)
+    except _NET_ERRORS as exc:
+        print(f"[prices] {ticker}: 최신 봉 보충 실패 {exc!r}")
+        return series
+    if fresh is None:
+        return series
+    last = series.points[-1].date
+    extra = [p for p in fresh.points if last < p.date <= through]
+    if not extra:
+        return series
+    series.points = (series.points + extra)[-days:]
+    series.as_of = series.points[-1].date
+    series.source = f"{series.source}+naver"
+    print(f"[prices] {ticker}: {last} 이후 봉 {len(extra)}개를 네이버에서 보충 (~{series.as_of})")
+    return series
 
 
 def synthetic(ticker: str, market: str, days: int) -> PriceSeries:
