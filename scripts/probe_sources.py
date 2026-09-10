@@ -103,6 +103,19 @@ def naver_items(body: str) -> str:
     return f"{len(items)} items\n" + "\n".join(lines)
 
 
+# ── 지수 시세 후보 (다우 · 나스닥 · S&P500 · 러셀2000 · 필라델피아 반도체 · 코스피 · 코스닥) ──
+for code in (".DJI", ".IXIC", ".INX", ".SPX", ".RUT", ".SOX", "KOSPI", "KOSDAQ"):
+    PROBES.append((f"naver index {code}", f"https://api.stock.naver.com/index/{urllib.parse.quote(code)}/price?page=1&pageSize=3", NAVER_H, 20))
+PROBES.append(("naver index basic .DJI", "https://api.stock.naver.com/index/.DJI/basic", NAVER_H, 20))
+for sym in ("SPX", "COMP", "INDU", "RUT", "SOX", "DJIA", "NDX"):
+    PROBES.append((f"nasdaq index {sym}", nasdaq(sym, "index"), NASDAQ_H, 20))
+for sym in ("KOSPI", "KOSDAQ"):
+    PROBES.append((f"naver siseJson {sym}", f"https://api.finance.naver.com/siseJson.naver?symbol={sym}&requestType=1&startTime={START:%Y%m%d}&endTime={END:%Y%m%d}&timeframe=day",
+                   {"User-Agent": _p._UA, "Accept": "*/*", "Referer": "https://finance.naver.com/"}, 20))
+for path in ("worldstock/index/.DJI/price", "index/.DJI/prices"):
+    PROBES.append((f"naver alt {path}", f"https://api.stock.naver.com/{path}?page=1&pageSize=3", NAVER_H, 20))
+
+
 if __name__ == "__main__":
     for label, url, headers, timeout in PROBES:
         status, body = fetch(url, headers, timeout)
