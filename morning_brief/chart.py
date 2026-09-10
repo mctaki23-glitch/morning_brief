@@ -335,7 +335,7 @@ def _fmt_unit_tick(value: float, unit: str, span: float) -> str:
 
 
 def line_chart(points: Iterable[PricePoint], *, unit: str = "", window: int = 20, width: int = 680, height: int = 260,
-               compact: bool = False, change_pct: Optional[float] = None) -> str:
+               compact: bool = False, change_pct: Optional[float] = None, color: Optional[str] = None) -> str:
     """종가 라인 차트 — 네이비 선, 점선 그리드, 우측 값축, 날짜축, 최근값 태그. compact 는 목록용 스파크라인."""
     pts = list(points)
     if not pts:
@@ -348,7 +348,7 @@ def line_chart(points: Iterable[PricePoint], *, unit: str = "", window: int = 20
         span = (hi - lo) or abs(hi) * 0.01 or 1.0
         xs = [round(width / max(1, n - 1) * i, 1) for i in range(n)]
         ys = [round(2 + (height - 4) * (1 - (v - lo) / span), 1) for v in vals]
-        col = UP if vals[-1] >= vals[0] else DOWN
+        col = color or (UP if vals[-1] >= vals[0] else DOWN)
         pl = " ".join(f"{x},{y}" for x, y in zip(xs, ys))
         return (f'<svg viewBox="0 0 {width} {height}" width="{width}" height="{height}" role="img" '
                 f'aria-label="최근 {n}일 추이" style="max-width:100%;height:auto;display:block">'

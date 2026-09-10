@@ -159,6 +159,8 @@ def test_end_to_end_generates_site(tmp_path: Path):
     assert "브리핑 전문" not in html  # 원문 전문 섹션은 페이지에 넣지 않는다(2026-09-09 사용자 지시). 데이터에는 보존
     assert data["messages"] and data["messages"][0]["text"].startswith("[서상영의 미국 증시 시황 ①]")
     assert 'class="btn-more" href="#s-nvda"' in html and '<span class="nm"><a' not in html  # 상세는 버튼(과 차트)으로 연다
+    assert "history.pushState" in html and "html.js .detail.open{display:block}" in html  # 닫을 때 #top 으로 점프하지 않는 JS 시트
+    assert 'class="tile"' in html and 'class="spark"' in html and '<div class="note">최근 20일</div>' in html  # 지수 타일 스파크라인
     assert 'class="mini-link" href="#s-nvda"' in html
     for needle in ("시황 요약", "주요 지수", "오늘의 종목", "한국 증시 관전 포인트", 'id="s-nvda"', "MA20", "등락순", 'class="chart-sm"',
                    '<meta name="robots" content="noindex, nofollow">',
@@ -287,3 +289,24 @@ def test_macro_section_renders_with_line_and_candle_charts(tmp_path: Path, monke
     assert "bp" in html  # 금리는 bp 표기
     assert macro_prices.is_close_only(yields) and not macro_prices.is_close_only(gold)
     assert 'stroke="#043B72" stroke-width="2"' in html  # 라인 차트(종가만 있는 시계열)
+
+
+def test_index_prices_round_trip_and_tiles(tmp_path: Path):
+    from morning_brief import archive, prices, render
+    from morning_brief.models import Brief, IndexSnapshot
+
+    dow = prices.synthetic("INDEX_DJI", "US", 30)
+    proxy = prices.synthetic("INDEX_RUT", "US", 30)
+    proxy.source = "proxy:IWM"
+    brief = Brief(date="2026-09-10", market_overview="시황.", generated_at="2026-09-10T08:03:02+09:00", status="published", indices=[
+        IndexSnapshot(name="다우", value=45123.4, change_pct=-0.77, ticker="DJI", prices=dow),
+        IndexSnapshot(name="러셀2000", change_pct=-1.32, ticker="RUT", prices=proxy),
+        IndexSnapshot(name="코스피", change_pct=0.5),
+    ])
+    archive.save(tmp_path, brief)
+    loaded = archive.load(tmp_path, "2026-09-10")
+    assert loaded.indices[0].prices is not None and len(loaded.indices[0].prices.points) == 30 and loaded.indices[0].ticker == "DJI"
+    assert loaded.indices[2].prices is None
+    html = render.render_brief(loaded)
+    assert html.count('class="spark"') == 2 and "IWM ETF 추이" in html and "45,123" in html
+    assert 'class="c down"' in html and 'class="c up"' in html

@@ -56,24 +56,36 @@ def load(archive_dir: str | Path, date_str: str) -> Optional[Brief]:
     return brief
 
 
+def _series_from(prices: Optional[dict], fallback_ticker: str = "") -> Optional[PriceSeries]:
+    if not prices:
+        return None
+    return PriceSeries(ticker=prices.get("ticker", fallback_ticker), currency=prices.get("currency", "USD"),
+                       source=prices.get("source", "cache"), as_of=prices.get("as_of", ""),
+                       points=[PricePoint(**p) for p in prices.get("points", [])])
+
+
 def _mentions_from(items: list[dict]) -> list[StockMention]:
     out = []
     for s in items:
         s = dict(s)
-        prices = s.pop("prices", None)
-        series = None
-        if prices:
-            series = PriceSeries(ticker=prices.get("ticker", s.get("ticker") or ""), currency=prices.get("currency", "USD"),
-                                 source=prices.get("source", "cache"), as_of=prices.get("as_of", ""),
-                                 points=[PricePoint(**p) for p in prices.get("points", [])])
+        series = _series_from(s.pop("prices", None), s.get("ticker") or "")
         out.append(StockMention(**{k: v for k, v in s.items() if k in StockMention.__dataclass_fields__}, prices=series))
+    return out
+
+
+def _indices_from(items: list[dict]) -> list[IndexSnapshot]:
+    out = []
+    for i in items:
+        i = dict(i)
+        series = _series_from(i.pop("prices", None), i.get("ticker") or "")
+        out.append(IndexSnapshot(**{k: v for k, v in i.items() if k in IndexSnapshot.__dataclass_fields__}, prices=series))
     return out
 
 
 def brief_from_dict(data: dict) -> Brief:
     stocks = _mentions_from(data.get("stocks", []))
     macros = _mentions_from(data.get("macros", []))
-    indices = [IndexSnapshot(**{k: v for k, v in i.items() if k in IndexSnapshot.__dataclass_fields__}) for i in data.get("indices", [])]
+    indices = _indices_from(data.get("indices", []))
     fields = {k: v for k, v in data.items() if k in Brief.__dataclass_fields__ and k not in ("stocks", "macros", "indices")}
     return Brief(**fields, stocks=stocks, macros=macros, indices=indices)
 

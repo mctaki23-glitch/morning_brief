@@ -8,6 +8,10 @@
 - investing_pair   : investing.com 일봉 (고정 pair id: 금 8830, WTI 8849, 미 10년물 23705 …) — OHLC (사용자 허용 2026-09-09)
 - treasury         : 미 재무부 일별 국채 수익률 곡선 CSV (10 Yr, 2 Yr …) — 종가만
 - stooq            : Stooq 선물 일봉 (gc.f, cl.f …) — OHLCV, 러너 IP 는 일일 한도에 걸릴 수 있어 마지막 폴백
+- naver_index      : api.stock.naver.com/index/<code>/price 세계 지수 일봉 (.DJI .IXIC .INX .SOX) — OHLC
+- nasdaq_index     : api.nasdaq.com assetclass=index (COMP, SOX, NDX) — OHLC
+- naver_sise       : finance.naver.com siseJson (KOSPI, KOSDAQ) — OHLCV
+- nasdaq_proxy     : 지수 데이터가 없을 때 대표 ETF 일봉(예: 러셀2000 → IWM). source 가 'proxy:<ETF>' 로 표시된다
 종가만 있는 시계열은 open=high=low=close 로 채우고 차트는 라인으로 그린다. 캐시·폴백 규칙은 prices 와 같다.
 """
 
@@ -188,9 +192,38 @@ def from_stooq_symbol(symbol: str, key: str, days: int) -> Optional[PriceSeries]
     return _p.parse_stooq(body, key, days, currency="USD")
 
 
+# ── 지수 (네이버 세계지수 · Nasdaq index · 네이버 국내지수) ────────
+def from_naver_index(code: str, key: str, days: int) -> Optional[PriceSeries]:
+    url = f"https://api.stock.naver.com/index/{urllib.parse.quote(code)}/price?pageSize={min(max(days, 20), 60)}&page=1"
+    try:
+        body = _p._get(url, referer="https://m.stock.naver.com/")
+    except urllib.error.HTTPError as exc:
+        if 400 <= exc.code < 600 and exc.code != 429:
+            return None  # 409 등: 네이버에 없는 지수 코드 → 다음 소스
+        raise
+    return _p.parse_naver_world(body, key, days)
+
+
+def from_naver_sise(code: str, key: str, days: int) -> Optional[PriceSeries]:
+    series = _p.from_naver(code, days)
+    if series is not None:
+        series.ticker = key
+        series.currency = "KRW"
+    return series
+
+
+def from_nasdaq_proxy(symbol: str, key: str, days: int) -> Optional[PriceSeries]:
+    series = _p.from_nasdaq(symbol, days)
+    if series is not None:
+        series.ticker = key
+        series.source = f"proxy:{symbol}"
+    return series
+
+
 # ── 진입점 ───────────────────────────────────────────────────
-def get_series(inst: MacroInstrument, days: int = 45, *, cache_dir: Optional[Path] = None, allow_synthetic: bool = True) -> Optional[PriceSeries]:
-    key = f"MACRO_{inst.id}"
+def get_series(inst: MacroInstrument, days: int = 45, *, cache_dir: Optional[Path] = None, allow_synthetic: bool = True,
+               key: Optional[str] = None) -> Optional[PriceSeries]:
+    key = key or f"MACRO_{inst.id}"
     for kind, symbol in inst.sources:
         try:
             if kind == "nasdaq_commodity":
@@ -209,6 +242,14 @@ def get_series(inst: MacroInstrument, days: int = 45, *, cache_dir: Optional[Pat
                 series = from_treasury(symbol, key, days)
             elif kind == "stooq":
                 series = from_stooq_symbol(symbol, key, days)
+            elif kind == "naver_index":
+                series = from_naver_index(symbol, key, days)
+            elif kind == "nasdaq_index":
+                series = from_nasdaq_asset(symbol, key, days, "index")
+            elif kind == "naver_sise":
+                series = from_naver_sise(symbol, key, days)
+            elif kind == "nasdaq_proxy":
+                series = from_nasdaq_proxy(symbol, key, days)
             else:
                 continue
         except _p._NET_ERRORS as exc:

@@ -16,6 +16,7 @@ from . import summarize as _s
 from .models import StockMention
 
 _DATA = Path(__file__).parent / "data" / "macro.json"
+INDICES_DATA = Path(__file__).parent / "data" / "indices.json"  # 주요 지수(다우 · 나스닥 · S&P500 · 러셀2000 · 필라델피아 반도체 · 코스피 · 코스닥)
 _PCT_MOVE_RE = re.compile(r"([+\-−]?\d+(?:\.\d+)?)\s*%\s*대?\s*(?:가까이|넘게|이상)?\s*(상승|하락|급등|급락|강세|약세|올|내|반등|밀)")
 
 

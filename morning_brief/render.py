@@ -183,9 +183,17 @@ def _indices(brief: Brief) -> str:
     tiles = []
     for i in brief.indices:
         disp, cls = fmt_pct(i.change_pct)
+        spark, note = "", ""
+        if i.prices and len(i.prices.points) >= 2:
+            col = {"up": chart.UP, "down": chart.DOWN}.get(cls, chart.DOWN)
+            spark = f'<div class="spark">{chart.line_chart(i.prices.points, compact=True, width=300, height=72, color=col)}</div>'
+            if i.prices.source.startswith("proxy:"):
+                note = f'<div class="note">{_esc(i.prices.source.split(":", 1)[1])} ETF 추이</div>'
+            else:
+                note = '<div class="note">최근 20일</div>'
         tiles.append(
-            f'<div class="tile"><div class="l">{_esc(i.name)}</div><div class="v">{fmt_index_value(i.value)}</div>'
-            f'<div class="c {cls}">{disp}</div></div>'
+            f'<div class="tile"><div class="t-head"><div class="l">{_esc(i.name)}</div><div class="c {cls}">{disp}</div></div>'
+            f'<div class="v">{fmt_index_value(i.value)}</div>{spark}{note}</div>'
         )
     return f'<div class="tiles">{"".join(tiles)}</div>'
 
@@ -299,6 +307,38 @@ def _sheet_overlay(brief: Brief, m: StockMention) -> str:
 
 _BRIEF_JS = """<script>
 (function(){
+  /* 상세 시트: JS 가 있으면 클래스로 열고 닫는다(:target 은 무JS 폴백). 닫을 때 #top 으로 점프하지 않아 스크롤 위치가 유지된다. */
+  document.documentElement.classList.add('js');
+  var open=null;
+  function el(id){return id?document.getElementById(id):null;}
+  function isSheet(id){return /^[sx]-/.test(id)&&!!el(id)&&el(id).classList.contains('detail');}
+  function show(id,push){
+    if(open&&open!==id){var prev=el(open); if(prev) prev.classList.remove('open');}
+    var d=el(id); d.classList.add('open'); document.body.classList.add('sheet-open'); open=id;
+    var sh=d.querySelector('.sheet'); if(sh) sh.scrollTop=0;
+    if(push){try{history.pushState({sheet:id},'','#'+id);}catch(e){}}
+    var c=d.querySelector('.close'); if(c){try{c.focus({preventScroll:true});}catch(e){}}
+  }
+  function hide(viaHistory){
+    if(!open) return;
+    var d=el(open); if(d) d.classList.remove('open');
+    document.body.classList.remove('sheet-open'); open=null;
+    if(viaHistory){
+      if(history.state&&history.state.sheet){history.back();}
+      else{try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}}
+    }
+  }
+  document.addEventListener('click',function(e){
+    var a=e.target.closest?e.target.closest('a[href^="#"]'):null; if(!a) return;
+    var id=a.getAttribute('href').slice(1);
+    if(isSheet(id)){e.preventDefault(); show(id,true); return;}
+    if(id==='top'&&a.closest('.detail')){e.preventDefault(); hide(true);}
+  });
+  window.addEventListener('popstate',function(){var id=location.hash.slice(1); if(isSheet(id)) show(id,false); else hide(false);});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&open) hide(true);});
+  var initial=location.hash.slice(1); if(isSheet(initial)) show(initial,false);
+})();
+(function(){
   var table=document.getElementById('stocks'); if(!table) return;
   var body=table.querySelector('tbody'); var rows=Array.prototype.slice.call(body.querySelectorAll('tr'));
   var sort='order', market='all';
@@ -319,7 +359,6 @@ _BRIEF_JS = """<script>
     });
   }
   bind('data-sort',function(v){sort=v;}); bind('data-market',function(v){market=v;});
-  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&location.hash&&location.hash!=='#top'){location.hash='#top';}});
 })();
 </script>"""
 

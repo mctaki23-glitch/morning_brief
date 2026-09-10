@@ -63,6 +63,8 @@ class IndexSnapshot:
     name: str
     value: Optional[float] = None
     change_pct: Optional[float] = None
+    ticker: Optional[str] = None            # data/indices.json 의 id (DJI, IXIC, SPX …)
+    prices: Optional[PriceSeries] = None    # 최근 시세(타일 스파크라인용). 없으면 등락률만 표시
 
 
 @dataclass

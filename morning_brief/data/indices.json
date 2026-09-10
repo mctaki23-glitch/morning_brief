@@ -1,0 +1,95 @@
+[
+  {
+    "id": "DJI",
+    "name": "다우",
+    "unit": "pt",
+    "sources": [
+      [
+        "naver_index",
+        ".DJI"
+      ]
+    ]
+  },
+  {
+    "id": "IXIC",
+    "name": "나스닥",
+    "unit": "pt",
+    "sources": [
+      [
+        "naver_index",
+        ".IXIC"
+      ],
+      [
+        "nasdaq_index",
+        "COMP"
+      ]
+    ]
+  },
+  {
+    "id": "SPX",
+    "name": "S&P500",
+    "unit": "pt",
+    "sources": [
+      [
+        "naver_index",
+        ".INX"
+      ]
+    ]
+  },
+  {
+    "id": "RUT",
+    "name": "러셀2000",
+    "unit": "pt",
+    "sources": [
+      [
+        "naver_index",
+        ".RUT"
+      ],
+      [
+        "nasdaq_index",
+        "RUT"
+      ],
+      [
+        "nasdaq_proxy",
+        "IWM"
+      ]
+    ]
+  },
+  {
+    "id": "SOX",
+    "name": "필라델피아 반도체",
+    "unit": "pt",
+    "sources": [
+      [
+        "naver_index",
+        ".SOX"
+      ],
+      [
+        "nasdaq_index",
+        "SOX"
+      ]
+    ]
+  },
+  {
+    "id": "KOSPI",
+    "name": "코스피",
+    "unit": "pt",
+    "sources": [
+      [
+        "naver_sise",
+        "KOSPI"
+      ]
+    ]
+  },
+  {
+    "id": "KOSDAQ",
+    "name": "코스닥",
+    "unit": "pt",
+    "sources": [
+      [
+        "naver_sise",
+        "KOSDAQ"
+      ]
+    ]
+  }
+]

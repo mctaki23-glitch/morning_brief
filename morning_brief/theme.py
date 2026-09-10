@@ -30,9 +30,11 @@ CSS = r"""
 --kr:'KoPub Dotum','KoPubDotum','KoPub Dotum Pro','KoPubDotum_Pro','Noto Sans KR','Spoqa Han Sans Neo','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
 --en:'Inter','Aptos','Segoe UI',system-ui,sans-serif}
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
+html{-webkit-text-size-adjust:100%;scrollbar-gutter:stable}
 body{margin:0;background:var(--canvas);color:var(--body);font-family:var(--kr);font-size:17px;line-height:1.65;
 -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;overflow-x:hidden}
+body::before{content:"";display:block;height:4px;background:var(--orange)}
+body.sheet-open{overflow:hidden}
 a{color:var(--navy);text-decoration:none}
 a:hover{color:var(--active)}
 a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
@@ -41,38 +43,43 @@ a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{o
 .page{max-width:1200px;margin:0 auto;padding:28px 32px 64px}
 
 /* 헤더 */
-.mast{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;padding-bottom:16px;border-bottom:1px solid var(--hair2)}
+.mast{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;padding-bottom:18px;border-bottom:1px solid var(--hair)}
 .logo-slot{height:24px;margin-bottom:10px;display:flex;align-items:center}
 .logo-slot:empty{display:none}
 .logo-slot svg,.logo-slot img{height:24px;width:auto;display:block}
-.brand .title{font-size:22px;font-weight:700;color:var(--ink);line-height:1.2;letter-spacing:-.3px}
+.brand .title{font-size:24px;font-weight:700;color:var(--ink);line-height:1.2;letter-spacing:-.4px}
 .brand .title a{color:inherit}
 .brand .sub{font-size:14px;color:var(--muted);margin-top:4px}
 .when{text-align:right}
 .when .date{font-family:var(--en);font-size:17px;font-weight:600;color:var(--ink)}
 .when .date .wd{font-family:var(--kr);font-weight:500;color:var(--muted);margin-left:4px}
-.when .links{font-size:14px;margin-top:2px}
-.when .links a+a{margin-left:12px}
+.when .links{font-size:13.5px;margin-top:6px;display:flex;gap:6px;justify-content:flex-end}
+.when .links a{border:1px solid var(--hair);border-radius:2px;padding:3px 9px;color:var(--navy);line-height:1.3}
+.when .links a:hover{background:var(--s2);color:var(--ink)}
 
 /* 섹션 */
-.sec{margin-top:40px}
-.rule{height:1px;background:var(--orange);margin-bottom:14px}
-.sec h2{font-size:24px;line-height:1.3;font-weight:700;color:var(--ink);margin:0 0 12px;letter-spacing:-.3px}
-.sec h2 .n{font-family:var(--en);font-weight:500;color:var(--muted);font-size:17px;margin-left:6px}
+.sec{margin-top:48px}
+.rule{height:1px;background:var(--orange);margin-bottom:16px}
+.sec h2{font-size:24px;line-height:1.3;font-weight:700;color:var(--ink);margin:0 0 14px;letter-spacing:-.3px}
+.sec h2 .n{font-family:var(--en);font-weight:600;color:var(--muted);font-size:13px;margin-left:8px;border:1px solid var(--hair);border-radius:2px;padding:1px 7px;vertical-align:3px}
 .sec-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
 .sec-head h2{margin:0}
 .lead{font-size:19px;line-height:1.7;margin:0;max-width:68ch;color:var(--body)}
 .lead+.lead{margin-top:12px}
-.lead.headline{font-size:21px;font-weight:700;color:var(--ink);line-height:1.45;letter-spacing:-.3px}
+.lead.headline{font-size:23px;font-weight:700;color:var(--ink);line-height:1.4;letter-spacing:-.4px;max-width:60ch}
 .empty{color:var(--muted);font-size:15px;margin:0}
 
 /* 지수 보드 */
-.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
-.tile{border:1px solid var(--hair);padding:12px 14px;background:var(--canvas);min-width:0}
-.tile .l{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tile .v{font-family:var(--en);font-size:26px;font-weight:700;color:var(--navy);line-height:1.1;margin:4px 0 2px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.tile{border:1px solid var(--hair);border-radius:4px;padding:14px 16px 12px;background:var(--canvas);min-width:0;display:flex;flex-direction:column}
+.tile .t-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.tile .l{font-size:13.5px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.1px}
+.tile .v{font-family:var(--en);font-size:24px;font-weight:700;color:var(--ink);line-height:1.1;margin:6px 0 0}
 .tile .v:empty{display:none}
-.tile .c{font-family:var(--en);font-size:15px;font-weight:600}
+.tile .c{font-family:var(--en);font-size:15px;font-weight:700;white-space:nowrap}
+.tile .spark{margin-top:10px}
+.tile .spark svg{display:block;width:100%;height:auto}
+.tile .note{font-size:11.5px;color:var(--muted2);margin-top:6px;font-family:var(--en)}
 
 /* 컨트롤 (세그먼트) */
 .controls{display:flex;gap:8px;flex-wrap:wrap}
@@ -88,7 +95,8 @@ table{border-collapse:collapse;width:100%;font-size:15px;line-height:1.5}
 thead th{background:var(--soft);color:var(--ink);font-weight:700;text-align:left;padding:9px 12px;border-bottom:1px solid var(--hair);white-space:nowrap;font-size:14px}
 tbody td{padding:10px 12px;border-bottom:1px solid var(--hair2);vertical-align:middle}
 tbody tr:last-child td{border-bottom:0}
-tbody tr:hover td{background:var(--s2)}
+tbody tr:nth-child(even) td{background:var(--s2)}
+tbody tr:hover td{background:var(--s1)}
 th.r,td.r{text-align:right}
 .stocks tr[hidden]{display:none}
 .stocks .nm{font-weight:700;color:var(--ink)}
@@ -97,7 +105,7 @@ th.r,td.r{text-align:right}
 .stocks .mk{font-size:11px;color:var(--muted);border:1px solid var(--hair);padding:0 5px;margin-left:6px;vertical-align:1px}
 .stocks .chg{font-family:var(--en);font-weight:700;white-space:nowrap}
 .macro td.val{font-family:var(--en);font-weight:600;color:var(--ink);white-space:nowrap}
-.stocks .why{color:var(--muted);font-size:14px}
+.stocks .why{color:var(--body);font-size:14.5px;line-height:1.55}
 .stocks td.mini{width:160px}
 .stocks .mini-link{display:block;width:150px}
 .stocks .mini svg{display:block;width:100%;height:auto}
@@ -123,9 +131,11 @@ details.raw pre{white-space:pre-wrap;font-family:inherit;font-size:14px;line-hei
 /* 종목 서머리 (오버레이 시트, :target 기반 — JS 없이 동작) */
 .detail{position:fixed;inset:0;z-index:50;display:none}
 .detail:target{display:block}
+html.js .detail:target:not(.open){display:none}
+html.js .detail.open{display:block}
 .detail .scrim{position:absolute;inset:0;background:rgba(26,26,26,.55)}
 .sheet{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(760px,calc(100vw - 32px));max-height:calc(100vh - 48px);
-overflow:auto;background:var(--canvas);border:1px solid var(--hair);border-radius:4px;padding:22px 24px 24px}
+overflow:auto;overscroll-behavior:contain;background:var(--canvas);border:1px solid var(--hair);border-radius:4px;padding:22px 24px 24px}
 .sheet .close{position:absolute;top:10px;right:10px;width:40px;height:40px;display:grid;place-items:center;color:var(--muted);font-size:22px;line-height:1;border:1px solid transparent;border-radius:2px}
 .sheet .close:hover{color:var(--ink);border-color:var(--hair)}
 .s-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding-right:48px}
@@ -185,6 +195,11 @@ table.ohlcv th:first-child,table.ohlcv td:first-child{text-align:left}
  .stocks tbody tr[hidden]{display:none}
  .stocks tbody td{display:block;padding:0;border:0}
  .stocks tbody tr:hover td{background:transparent}
+ .stocks tbody tr:nth-child(even) td{background:transparent}
+ .stocks tbody tr:nth-child(even){background:var(--s2)}
+ .tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .tile{padding:12px 12px 10px} .tile .v{font-size:20px}
+ .tile .t-head{align-items:flex-start} .tile .l{white-space:normal;line-height:1.3}
  .stocks tbody tr:hover{background:var(--s2)}
  .stocks td.nm-cell{grid-area:nm} .stocks td.chg{grid-area:chg;text-align:right} .stocks td.why{grid-area:why} .stocks td.mini{grid-area:mini;margin-top:6px}
  .stocks td.more{grid-area:more;margin-top:10px;text-align:right}
