@@ -245,13 +245,32 @@ def test_index_adapters_dispatch(monkeypatch):
         raise AssertionError(url)
 
     monkeypatch.setattr(prices, "_get", fake_get)
-    dji = macro_prices.get_series(MacroInstrument(id="DJI", name="다우", unit="pt", sources=[["naver_index", ".DJI"]]), days=45,
+    dji = macro_prices.get_series(MacroInstrument(id="DJI", name="다우", unit="pt", sources=[["naver_world_index", ".DJI"]]), days=45,
                                   allow_synthetic=False, key="INDEX_DJI")
     assert dji is not None and dji.ticker == "INDEX_DJI" and dji.points[-1].close == 45123.4 and dji.source == "naver"
     kospi = macro_prices.get_series(MacroInstrument(id="KOSPI", name="코스피", unit="pt", sources=[["naver_sise", "KOSPI"]]), days=45,
                                     allow_synthetic=False, key="INDEX_KOSPI")
     assert kospi is not None and kospi.ticker == "INDEX_KOSPI" and kospi.currency == "KRW" and kospi.points[-1].close == 3140.7
     # 네이버에 없는 지수(409)는 조용히 다음 소스로 넘어가고, 소스가 다 실패하면 None
-    rut = macro_prices.get_series(MacroInstrument(id="RUT", name="러셀2000", unit="pt", sources=[["naver_index", ".RUT"]]), days=45,
+    rut = macro_prices.get_series(MacroInstrument(id="RUT", name="러셀2000", unit="pt", sources=[["naver_world_index", ".RUT"]]), days=45,
                                   allow_synthetic=False, key="INDEX_RUT")
     assert rut is None
+
+
+def test_macro_marketindex_adapter_not_shadowed_by_world_index(monkeypatch):
+    """marketindex(금·유가 등) 어댑터와 세계지수 어댑터는 서로 다른 엔드포인트를 써야 한다."""
+    from morning_brief import macro_prices, prices
+    from morning_brief.macro import MacroInstrument
+
+    seen = []
+
+    def fake_get(url, referer=None):
+        seen.append(url)
+        return '[{"localTradedAt":"2026-09-09T16:00:00-05:00","closePrice":"4,460.70","openPrice":"4,399.00","highPrice":"4,470.00","lowPrice":"4,390.00"},' \
+               '{"localTradedAt":"2026-09-08T16:00:00-05:00","closePrice":"4,439.00","openPrice":"4,400.00","highPrice":"4,450.00","lowPrice":"4,380.00"}]'
+
+    monkeypatch.setattr(prices, "_get", fake_get)
+    gold = macro_prices.get_series(MacroInstrument(id="GOLD", name="금", unit="USD/oz", sources=[["naver_index", "metals/GCcv1"]]), days=45, allow_synthetic=False)
+    assert gold is not None and gold.points[-1].close == 4460.7 and "/marketindex/metals/GCcv1/prices" in seen[-1]
+    dji = macro_prices.get_series(MacroInstrument(id="DJI", name="다우", unit="pt", sources=[["naver_world_index", ".DJI"]]), days=45, allow_synthetic=False, key="INDEX_DJI")
+    assert dji is not None and "/index/.DJI/price" in seen[-1]

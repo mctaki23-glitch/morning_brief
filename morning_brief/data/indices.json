@@ -5,7 +5,7 @@
     "unit": "pt",
     "sources": [
       [
-        "naver_index",
+        "naver_world_index",
         ".DJI"
       ]
     ]
@@ -16,7 +16,7 @@
     "unit": "pt",
     "sources": [
       [
-        "naver_index",
+        "naver_world_index",
         ".IXIC"
       ],
       [
@@ -31,7 +31,7 @@
     "unit": "pt",
     "sources": [
       [
-        "naver_index",
+        "naver_world_index",
         ".INX"
       ]
     ]
@@ -42,7 +42,7 @@
     "unit": "pt",
     "sources": [
       [
-        "naver_index",
+        "naver_world_index",
         ".RUT"
       ],
       [
@@ -61,7 +61,7 @@
     "unit": "pt",
     "sources": [
       [
-        "naver_index",
+        "naver_world_index",
         ".SOX"
       ],
       [

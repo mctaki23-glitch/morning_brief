@@ -8,7 +8,7 @@
 - investing_pair   : investing.com 일봉 (고정 pair id: 금 8830, WTI 8849, 미 10년물 23705 …) — OHLC (사용자 허용 2026-09-09)
 - treasury         : 미 재무부 일별 국채 수익률 곡선 CSV (10 Yr, 2 Yr …) — 종가만
 - stooq            : Stooq 선물 일봉 (gc.f, cl.f …) — OHLCV, 러너 IP 는 일일 한도에 걸릴 수 있어 마지막 폴백
-- naver_index      : api.stock.naver.com/index/<code>/price 세계 지수 일봉 (.DJI .IXIC .INX .SOX) — OHLC
+- naver_world_index: api.stock.naver.com/index/<code>/price 세계 지수 일봉 (.DJI .IXIC .INX .SOX) — OHLC
 - nasdaq_index     : api.nasdaq.com assetclass=index (COMP, SOX, NDX) — OHLC
 - naver_sise       : finance.naver.com siseJson (KOSPI, KOSDAQ) — OHLCV
 - nasdaq_proxy     : 지수 데이터가 없을 때 대표 ETF 일봉(예: 러셀2000 → IWM). source 가 'proxy:<ETF>' 로 표시된다
@@ -193,7 +193,8 @@ def from_stooq_symbol(symbol: str, key: str, days: int) -> Optional[PriceSeries]
 
 
 # ── 지수 (네이버 세계지수 · Nasdaq index · 네이버 국내지수) ────────
-def from_naver_index(code: str, key: str, days: int) -> Optional[PriceSeries]:
+def from_naver_world_index(code: str, key: str, days: int) -> Optional[PriceSeries]:
+    """세계 지수 일봉 — marketindex 용 from_naver_index 와 다른 엔드포인트(/index/<code>/price)."""
     url = f"https://api.stock.naver.com/index/{urllib.parse.quote(code)}/price?pageSize={min(max(days, 20), 60)}&page=1"
     try:
         body = _p._get(url, referer="https://m.stock.naver.com/")
@@ -213,7 +214,12 @@ def from_naver_sise(code: str, key: str, days: int) -> Optional[PriceSeries]:
 
 
 def from_nasdaq_proxy(symbol: str, key: str, days: int) -> Optional[PriceSeries]:
-    series = _p.from_nasdaq(symbol, days)
+    """대표 ETF(IWM 등) 일봉. Nasdaq API 는 ETF 를 assetclass=etf 로 구분하므로 etf → stocks 순으로 시도."""
+    series = None
+    for assetclass in ("etf", "stocks"):
+        series = from_nasdaq_asset(symbol, key, days, assetclass)
+        if series is not None:
+            break
     if series is not None:
         series.ticker = key
         series.source = f"proxy:{symbol}"
@@ -242,8 +248,8 @@ def get_series(inst: MacroInstrument, days: int = 45, *, cache_dir: Optional[Pat
                 series = from_treasury(symbol, key, days)
             elif kind == "stooq":
                 series = from_stooq_symbol(symbol, key, days)
-            elif kind == "naver_index":
-                series = from_naver_index(symbol, key, days)
+            elif kind == "naver_world_index":
+                series = from_naver_world_index(symbol, key, days)
             elif kind == "nasdaq_index":
                 series = from_nasdaq_asset(symbol, key, days, "index")
             elif kind == "naver_sise":
