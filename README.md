@@ -70,7 +70,7 @@ python -m morning_brief rebuild                       # 아카이브 전체로 �
 
 ## 매일 06:30 자동 실행 (GitHub Actions + Pages)
 
-[`.github/workflows/daily-brief.yml`](.github/workflows/daily-brief.yml) 은 **05:00~08:30 KST 30분 간격 8개 예약**으로 실행됩니다.
+[`.github/workflows/daily-brief.yml`](.github/workflows/daily-brief.yml) 은 **04:52~08:22 KST 사이 9개 예약**(:07 · :22 · :52 등 한산한 분)으로 실행됩니다. GitHub 예약은 매시 :00·:30 에 1~2시간 지연·누락이 잦아 정각 예약을 피했습니다.
 GitHub 예약 실행이 1.5~2시간 지연되는 점을 감안한 설계입니다(PRD 8장). 각 잡은:
 
 1. 오늘 아카이브가 이미 있으면 사이트만 재생성하고 즉시 종료 (idempotent)
