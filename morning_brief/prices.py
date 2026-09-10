@@ -308,6 +308,18 @@ def _finish(points: list[PricePoint], ticker: str, currency: str, source: str, d
     return PriceSeries(ticker=ticker, points=points, currency=currency, source=source, as_of=points[-1].date)
 
 
+def clip_before(series: Optional[PriceSeries], date_str: str) -> Optional[PriceSeries]:
+    """브리핑 일자(KST) 이전 세션만 남긴다 — 브리핑은 전일 미국장·전일 국내장을 다루므로, 과거 일자 재생성이나
+    장중 재실행에서 섞여 들어오는 당일·이후 봉을 제외한다. 2봉 미만이 되면 원본을 그대로 둔다."""
+    if series is None or not date_str:
+        return series
+    kept = [pt for pt in series.points if pt.date < date_str]
+    if len(kept) >= 2 and len(kept) != len(series.points):
+        series.points = kept
+        series.as_of = kept[-1].date
+    return series
+
+
 # ── 캐시 (archive/<date>/prices/<ticker>.json) ───────────────
 def series_to_dict(s: PriceSeries) -> dict:
     return {"ticker": s.ticker, "currency": s.currency, "source": s.source, "as_of": s.as_of, "points": [asdict(p) for p in s.points]}

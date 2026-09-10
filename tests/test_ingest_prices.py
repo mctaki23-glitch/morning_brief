@@ -274,3 +274,16 @@ def test_macro_marketindex_adapter_not_shadowed_by_world_index(monkeypatch):
     assert gold is not None and gold.points[-1].close == 4460.7 and "/marketindex/metals/GCcv1/prices" in seen[-1]
     dji = macro_prices.get_series(MacroInstrument(id="DJI", name="다우", unit="pt", sources=[["naver_world_index", ".DJI"]]), days=45, allow_synthetic=False, key="INDEX_DJI")
     assert dji is not None and "/index/.DJI/price" in seen[-1]
+
+
+def test_clip_before_drops_sessions_on_or_after_brief_date():
+    from morning_brief import prices
+    from morning_brief.models import PricePoint, PriceSeries
+
+    pts = [PricePoint(f"2026-09-{d:02d}", 1, 2, 0.5, 1.5, 10) for d in (7, 8, 9, 10)]
+    s = prices.clip_before(PriceSeries("X", list(pts), "USD", "naver", "2026-09-10"), "2026-09-10")
+    assert [p.date for p in s.points] == ["2026-09-07", "2026-09-08", "2026-09-09"] and s.as_of == "2026-09-09"
+    # 남는 봉이 2개 미만이면 원본 유지, None 은 그대로
+    short = prices.clip_before(PriceSeries("X", list(pts[-2:]), "USD", "naver", "2026-09-10"), "2026-09-09")
+    assert len(short.points) == 2
+    assert prices.clip_before(None, "2026-09-10") is None
