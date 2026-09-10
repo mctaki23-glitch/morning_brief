@@ -109,6 +109,7 @@ th.r,td.r{text-align:right}
 .stocks td.mini{width:160px}
 .stocks .mini-link{display:block;width:150px}
 .stocks .mini svg{display:block;width:100%;height:auto}
+.c-dates{font-family:var(--en);font-size:11px;line-height:1.2;color:var(--muted2);margin-top:4px;white-space:nowrap;letter-spacing:.1px}
 .stocks .more{white-space:nowrap;text-align:right}
 .btn-more{display:inline-block;font-size:13px;font-weight:600;line-height:1;color:var(--navy);border:1px solid var(--navy);border-radius:2px;padding:7px 10px;white-space:nowrap;text-decoration:none}
 .btn-more:hover{background:var(--navy);color:#FFFFFF}
@@ -205,6 +206,7 @@ table.ohlcv th:first-child,table.ohlcv td:first-child{text-align:left}
  .stocks td.more{grid-area:more;margin-top:10px;text-align:right}
  .stocks td.mini{width:auto} .stocks .mini-link{width:100%}
  .stocks .mini svg{width:100%;height:auto}
+ .c-dates{font-size:12px;margin-top:6px}
  .btn-more{padding:9px 14px;font-size:14px}
  .chart-lg{display:none} .chart-sm{display:block}
  .sheet{left:0;right:0;top:auto;bottom:0;transform:none;width:100%;max-height:92vh;border-radius:4px 4px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom))}

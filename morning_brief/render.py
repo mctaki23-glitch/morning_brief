@@ -188,10 +188,11 @@ def _indices(brief: Brief) -> str:
         if i.prices and len(i.prices.points) >= 2:
             col = {"up": chart.UP, "down": chart.DOWN}.get(cls, chart.DOWN)
             spark = f'<div class="spark">{chart.line_chart(i.prices.points, compact=True, width=300, height=72, color=col)}</div>'
+            dates = chart.fmt_range(i.prices.points) or "최근 20일"
             if i.prices.source.startswith("proxy:"):
-                note = f'<div class="note">{_esc(i.prices.source.split(":", 1)[1])} ETF 추이</div>'
+                note = f'<div class="note">{_esc(i.prices.source.split(":", 1)[1])} ETF 추이 · {dates}</div>'
             else:
-                note = '<div class="note">최근 20일</div>'
+                note = f'<div class="note">{dates}</div>'
         tiles.append(
             f'<div class="tile"><div class="t-head"><div class="l">{_esc(i.name)}</div><div class="c {cls}">{disp}</div></div>'
             f'<div class="v">{fmt_index_value(i.value)}</div>{spark}{note}</div>'
@@ -207,7 +208,7 @@ def _stock_table(brief: Brief, stocks: list[StockMention]) -> str:
         pct = m.price_change_pct()
         disp, cls = fmt_pct(pct)
         mini = _mini_link(f"#s-{m.slug}", m.name, chart.candlestick(m.prices.points, compact=True, width=MINI_W, height=MINI_H)
-                          if m.prices and m.prices.points else "")
+                          if m.prices and m.prices.points else "", m.prices.points if m.prices else None)
         tk = f'<span class="tk">{_esc(m.ticker)}</span>' if m.ticker else ""
         mk = f'<span class="mk">{"미국" if m.market == "US" else "한국"}</span>'
         warn = "" if m.evidence_verified else '<span class="badge-warn">근거 미검증</span>'
@@ -234,10 +235,12 @@ def _more_button(href: str, name: str) -> str:
     return f'<a class="btn-more" href="{href}" aria-label="{_esc(name)} 상세 보기">상세 보기<span aria-hidden="true"> ›</span></a>'
 
 
-def _mini_link(href: str, name: str, svg: str) -> str:
+def _mini_link(href: str, name: str, svg: str, points=None) -> str:
     if not svg:
         return ""
-    return f'<a class="mini-link" href="{href}" aria-label="{_esc(name)} 차트 크게 보기">{svg}</a>'
+    dates = chart.fmt_range(points) if points else ""
+    caption = f'<div class="c-dates">{dates}</div>' if dates else ""
+    return f'<a class="mini-link" href="{href}" aria-label="{_esc(name)} 차트 크게 보기">{svg}{caption}</a>'
 
 
 def _sheet_body(brief: Brief, m: StockMention, *, share_href: str = "") -> str:
@@ -265,7 +268,8 @@ def _sheet_body(brief: Brief, m: StockMention, *, share_href: str = "") -> str:
         src = _SOURCE_LABEL.get(m.prices.source, m.prices.source)
         as_of = m.prices.as_of or m.prices.points[-1].date
         basis = f"{_esc(as_of)} {'장중 시세' if as_of == brief.date else '종가'} 기준"
-        note = f'<p class="chart-note">최근 {n}영업일 · 거래량 · MA5/MA20 · {_esc(src)} · {basis}</p>'
+        period = chart.fmt_range(m.prices.points)
+        note = f'<p class="chart-note">{(period + " · ") if period else ""}최근 {n}영업일 · 거래량 · MA5/MA20 · {_esc(src)} · {basis}</p>'
         table = f'<details class="data"><summary>데이터 표(OHLCV)</summary>{chart.data_table(m.prices.points, m.prices.currency)}</details>'
     else:
         svg = chart.empty(message="시세 준비 중")
@@ -471,7 +475,8 @@ def _macro_section(brief: Brief) -> str:
         rows.append(
             f'<tr><td class="nm-cell"><span class="nm">{_esc(m.name)}</span><span class="tk">{_esc(m.unit)}</span></td>'
             f'<td class="val r">{_esc(value)}</td><td class="chg r {cls}">{disp}</td>'
-            f'<td class="mini">{_mini_link(f"#x-{m.slug}", m.name, _macro_mini(m))}</td><td class="why">{_esc(m.reason_summary) or "—"}</td>'
+            f'<td class="mini">{_mini_link(f"#x-{m.slug}", m.name, _macro_mini(m), m.prices.points if m.prices else None)}</td>'
+            f'<td class="why">{_esc(m.reason_summary) or "—"}</td>'
             f'<td class="more">{_more_button(f"#x-{m.slug}", m.name)}</td></tr>'
         )
     return (
@@ -490,7 +495,8 @@ def _macro_sheet_body(brief: Brief, m: StockMention) -> str:
                  f'<span class="chg {cls}">{disp}</span>' + (f"<small>{_esc(sub)}</small>" if sub else ""))
         src = _SOURCE_LABEL.get(m.prices.source, m.prices.source)
         n = min(20, len(m.prices.points))
-        note = f'<p class="chart-note">최근 {n}일 · {_esc(src)} · {_esc(m.prices.as_of or m.prices.points[-1].date)} 기준</p>'
+        period = chart.fmt_range(m.prices.points)
+        note = f'<p class="chart-note">{(period + " · ") if period else ""}최근 {n}일 · {_esc(src)} · {_esc(m.prices.as_of or m.prices.points[-1].date)} 기준</p>'
         table = f'<details class="data"><summary>데이터 표</summary>{chart.data_table(m.prices.points, m.prices.currency)}</details>'
     else:
         price = f'<span class="chg {cls}">{disp}</span>'
