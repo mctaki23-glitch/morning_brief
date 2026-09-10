@@ -56,6 +56,7 @@ python -m morning_brief run --production --scheduled  # 06:30 목표 게시 감�
 python -m morning_brief run --production --date 2026-09-08   # 과거 일자 재생성
 python -m morning_brief rebuild                       # 아카이브 전체로 사이트 재생성
 # GitHub Actions 수동 실행 입력: date(과거 일자 재생성) · scheduled(대기 루프) · probe(시세 소스 점검만) · rebuild(수집 없이 사이트만 재생성·배포)
+# 주요 지수 타일의 곡선 차트는 수집 시점에 가져온 지수 시세(data/indices.json 소스)로 그린다 — rebuild 만으로는 과거 날짜에 새로 생기지 않으므로 date= 로 재생성한다
 ```
 
 | 환경변수 | 설명 |

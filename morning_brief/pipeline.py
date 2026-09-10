@@ -65,6 +65,17 @@ def build_brief(cfg: Config, raw: str, date_str: str, *, msg_count: int = 1, fet
         if mm.prices is not None and mm.prices.change_pct is not None and mm.direction == "FLAT":
             mm.direction = "UP" if mm.prices.change_pct > 0 else "DOWN" if mm.prices.change_pct < 0 else "FLAT"
 
+    idx_by_name = {i.name: i for i in macro.load_instruments(macro.INDICES_DATA)}
+    for snap in summary.indices:
+        inst = idx_by_name.get(snap.name)
+        if inst is None:
+            continue
+        snap.ticker = inst.id
+        snap.prices = macro_prices.get_series(inst, days=cfg.price_days, cache_dir=cache_dir, allow_synthetic=not cfg.production,
+                                              key=f"INDEX_{inst.id}")
+        if snap.prices is not None and snap.value is None and not snap.prices.source.startswith("proxy:"):
+            snap.value = snap.prices.last_close
+
     return Brief(
         date=date_str, source_channel=cfg.channel, status="published", posted_at=posted_at,
         generated_at=now_kst(cfg).isoformat(timespec="seconds"),
