@@ -130,7 +130,7 @@ def test_skips_when_already_archived(tmp_path, monkeypatch):
     out = scheduler.run_scheduled(cfg, DAY, now_fn=_clock("07:00"), sleep_fn=lambda s: None)
     assert _status(cfg)["result"] == "skipped"
     assert (Path(cfg.output_dir) / "brief" / DAY / "index.html").exists()  # 아카이브에서 재생성
-    assert "http-equiv" in out.read_text(encoding="utf-8")  # 루트 → 최신 브리핑
+    assert "<base href=\"brief/" in out.read_text(encoding="utf-8")  # 루트 = 최신 브리핑 본문
 
 
 def test_pending_before_target_when_max_wait_exceeded(tmp_path, monkeypatch):
@@ -148,3 +148,18 @@ def test_rebuild_site_from_archive(tmp_path):
     assert (Path(cfg.output_dir) / "brief" / "2026-09-08" / "index.html").exists()
     arc = (Path(cfg.output_dir) / "archive" / "index.html").read_text(encoding="utf-8")
     assert "2026-09-08" in arc and "2026-09-09" in arc
+
+
+def test_root_serves_latest_brief_and_older_pages_link_to_it(tmp_path):
+    """루트 index.html 은 리다이렉트가 아니라 최신 브리핑 본문(<base> 로 날짜 폴더 기준)이고, 과거 날짜 페이지에는 최신 링크 배너가 붙는다."""
+    cfg = _cfg(tmp_path)
+    for d in ("2026-09-10", "2026-09-11"):
+        archive.save(cfg.archive_dir, Brief(date=d, market_overview=f"{d} 시황.", generated_at=f"{d}T07:00:00+09:00", status="published"))
+    assert pipeline.rebuild_site(cfg) == 2
+    root = (Path(cfg.output_dir) / "index.html").read_text(encoding="utf-8")
+    assert '<base href="brief/2026-09-11/">' in root and "2026-09-11 시황." in root and 'http-equiv="refresh"' not in root
+    assert "location.pathname+location.search+'#'+id" in root  # <base> 가 있어도 시트 URL 은 현재 경로 기준
+    older = (Path(cfg.output_dir) / "brief" / "2026-09-10" / "index.html").read_text(encoding="utf-8")
+    assert 'class="newer" href="../2026-09-11/"' in older and "최신 브리핑(2026-09-11) 보기" in older
+    latest = (Path(cfg.output_dir) / "brief" / "2026-09-11" / "index.html").read_text(encoding="utf-8")
+    assert 'class="newer"' not in latest

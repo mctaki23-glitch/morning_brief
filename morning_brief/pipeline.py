@@ -120,11 +120,13 @@ def publish_status(cfg: Config, date_str: str, status: str, fetched: Optional[Fe
 def rebuild_site(cfg: Config) -> int:
     """아카이브의 모든 날짜를 사이트로 재생성한다(과거 브리핑 보존). 생성한 날짜 수를 돌려준다."""
     n = 0
-    for date_str in archive.list_dates(cfg.archive_dir):
+    dates = archive.list_dates(cfg.archive_dir)
+    latest = dates[-1] if dates else None
+    for date_str in dates:
         brief = archive.load(cfg.archive_dir, date_str)
         if brief is None:
             continue
-        render.render_site(brief, cfg.output_dir, base_url=cfg.base_url, logo_svg=cfg.logo_svg())
+        render.render_site(brief, cfg.output_dir, base_url=cfg.base_url, logo_svg=cfg.logo_svg(), latest_date=latest)
         n += 1
     return n
 

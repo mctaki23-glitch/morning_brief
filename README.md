@@ -26,8 +26,8 @@
 산출물 구조:
 
 ```
-site/index.html                      최신 브리핑으로 이동 (미게시 시 '대기 중' 상태 페이지)
-site/brief/<date>/index.html         데일리 브리핑 페이지 (종목명을 누르면 종목 서머리 시트)
+site/index.html                      최신 브리핑 본문을 그대로 제공(리다이렉트 없음, 북마크용 고정 주소) · 미게시 시 '대기 중' 상태 페이지
+site/brief/<date>/index.html         데일리 브리핑 페이지 ('상세 보기' 버튼·차트로 서머리 시트, 과거 날짜엔 최신 브리핑 링크 배너)
 site/brief/<date>/stock/<ticker>.html 종목 서머리 딥링크
 site/brief/<date>/data.json          구조화 데이터 (원문 제외)
 site/brief/<date>/og.png             공유 미리보기 카드 (1200×630)
