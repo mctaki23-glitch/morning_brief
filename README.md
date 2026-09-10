@@ -71,7 +71,7 @@ python -m morning_brief rebuild                       # 아카이브 전체로 �
 
 ## 매일 06:30 자동 실행 (GitHub Actions + Pages)
 
-[`.github/workflows/daily-brief.yml`](.github/workflows/daily-brief.yml) 은 **04:52~08:22 KST 사이 9개 예약**(:07 · :22 · :52 등 한산한 분)으로 실행됩니다. GitHub 예약은 매시 :00·:30 에 1~2시간 지연·누락이 잦아 정각 예약을 피했습니다.
+[`.github/workflows/daily-brief.yml`](.github/workflows/daily-brief.yml) 은 **04:52~08:22 KST 사이 14개 예약**(10~15분 간격, 정각·30분 회피)으로 실행됩니다. GitHub 예약은 지연·누락이 잦아(2026-09-11: 04:52~06:22 예약 6개 전부 미실행, 첫 실행 06:57) 예약만으로는 07:00 완료를 보장할 수 없습니다. 그래서 **외부 트리거**로 Claude Routine 이 매일 06:20·06:45 KST 에 `workflow_dispatch(scheduled=true)` 를 호출합니다(이미 생성된 날은 1분 내 종료). 다른 외부 스케줄러(cron-job.org 등)를 쓰려면 fine-grained PAT(Actions: write)로 같은 API 를 호출하면 됩니다.
 GitHub 예약 실행이 1.5~2시간 지연되는 점을 감안한 설계입니다(PRD 8장). 각 잡은:
 
 1. 오늘 아카이브가 이미 있으면 사이트만 재생성하고 즉시 종료 (idempotent)
