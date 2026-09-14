@@ -213,26 +213,21 @@ def _stock_table(brief: Brief, stocks: list[StockMention]) -> str:
         mk = f'<span class="mk">{"미국" if m.market == "US" else "한국"}</span>'
         warn = "" if m.evidence_verified else '<span class="badge-warn">근거 미검증</span>'
         rows.append(
-            f'<tr data-order="{m.order}" data-pct="{pct if pct is not None else ""}" data-market="{m.market}">'
+            f'<tr data-order="{m.order}" data-pct="{pct if pct is not None else ""}" data-market="{m.market}" '
+            f'data-sheet="s-{m.slug}" tabindex="0" aria-label="{_esc(m.name)} 상세 보기">'
             f'<td class="nm-cell"><span class="nm">{_esc(m.name)}</span>{tk}{mk}</td>'
             f'<td class="chg r {cls}">{disp}</td>'
             f'<td class="mini">{mini}</td>'
-            f'<td class="why">{_esc(m.reason_summary) or "—"}{warn}</td>'
-            f'<td class="more">{_more_button(f"#s-{m.slug}", m.name)}</td></tr>'
+            f'<td class="why">{_esc(m.reason_summary) or "—"}{warn}</td></tr>'
         )
     return (
         '<div class="tbl stocks"><table id="stocks"><thead><tr><th>종목</th><th class="r">등락</th><th>최근 20일</th>'
-        f'<th>등락 이유</th><th class="r">상세</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
+        f'<th>등락 이유</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
     )
 
 
 MINI_W, MINI_H = 320, 110          # 목록 미니 차트 원본 크기(비율 유지 스케일: PC 150px, 모바일 셀 폭)
 CHART_LG, CHART_SM = (680, 380), (360, 330)  # 시트 차트: PC · 모바일 — 세로를 넉넉히 잡아 등락 움직임이 보이게
-
-
-def _more_button(href: str, name: str) -> str:
-    """상세 시트를 여는 버튼(종목명은 링크가 아니라 이 버튼과 차트가 열게 한다)."""
-    return f'<a class="btn-more" href="{href}" aria-label="{_esc(name)} 상세 보기">상세 보기<span aria-hidden="true"> ›</span></a>'
 
 
 def _mini_link(href: str, name: str, svg: str, points=None) -> str:
@@ -334,10 +329,22 @@ _BRIEF_JS = """<script>
     }
   }
   document.addEventListener('click',function(e){
-    var a=e.target.closest?e.target.closest('a[href^="#"]'):null; if(!a) return;
-    var id=a.getAttribute('href').slice(1);
-    if(isSheet(id)){e.preventDefault(); show(id,true); return;}
-    if(id==='top'&&a.closest('.detail')){e.preventDefault(); hide(true);}
+    if(!e.target.closest) return;
+    var a=e.target.closest('a[href^="#"]');
+    if(a){
+      var id=a.getAttribute('href').slice(1);
+      if(isSheet(id)){e.preventDefault(); show(id,true); return;}
+      if(id==='top'&&a.closest('.detail')){e.preventDefault(); hide(true);}
+      return;
+    }
+    if(e.target.closest('a[href]')) return;  /* 행 안의 일반 링크는 그대로 */
+    var row=e.target.closest('tr[data-sheet]');  /* 종목 칸 어디를 눌러도 상세 시트 */
+    if(row&&isSheet(row.getAttribute('data-sheet'))){e.preventDefault(); show(row.getAttribute('data-sheet'),true);}
+  });
+  document.addEventListener('keydown',function(e){
+    if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('tr[data-sheet]')){
+      var id=e.target.getAttribute('data-sheet'); if(isSheet(id)){e.preventDefault(); show(id,true);}
+    }
   });
   window.addEventListener('popstate',function(){var id=location.hash.slice(1); if(isSheet(id)) show(id,false); else hide(false);});
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&open) hide(true);});
@@ -477,18 +484,18 @@ def _macro_section(brief: Brief) -> str:
         disp, cls, sub = _macro_change(m)
         value = chart.fmt_unit(m.prices.last_close, m.unit) if (m.prices and m.prices.last_close is not None) else "—"
         rows.append(
-            f'<tr><td class="nm-cell"><span class="nm">{_esc(m.name)}</span><span class="tk">{_esc(m.unit)}</span></td>'
+            f'<tr data-sheet="x-{m.slug}" tabindex="0" aria-label="{_esc(m.name)} 상세 보기">'
+            f'<td class="nm-cell"><span class="nm">{_esc(m.name)}</span><span class="tk">{_esc(m.unit)}</span></td>'
             f'<td class="val r">{_esc(value)}</td><td class="chg r {cls}">{disp}</td>'
             f'<td class="mini">{_mini_link(f"#x-{m.slug}", m.name, _macro_mini(m), m.prices.points if m.prices else None)}</td>'
-            f'<td class="why">{_esc(m.reason_summary) or "—"}</td>'
-            f'<td class="more">{_more_button(f"#x-{m.slug}", m.name)}</td></tr>'
+            f'<td class="why">{_esc(m.reason_summary) or "—"}</td></tr>'
         )
     return (
         '<section class="sec" id="macro"><div class="rule"></div><div class="sec-head">'
         f'<h2>금리 · 유가 · 금 · 환율<span class="n">{len(brief.macros)}</span></h2>'
         '<span class="empty">브리핑에 언급된 매크로 자산 · 등락은 데이터 기준 전일 대비</span></div>'
         '<div class="tbl stocks macro"><table><thead><tr><th>자산</th><th class="r">현재값</th><th class="r">전일 대비</th>'
-        f'<th>최근 20일</th><th>브리핑 코멘트</th><th class="r">상세</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div></section>'
+        f'<th>최근 20일</th><th>브리핑 코멘트</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div></section>'
     )
 
 
