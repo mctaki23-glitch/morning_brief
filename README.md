@@ -62,6 +62,8 @@ python -m morning_brief run --production --scheduled  # 06:30 목표 게시 감�
 python -m morning_brief run --production --date 2026-09-08   # 과거 일자 재생성
 python -m morning_brief rebuild                       # 아카이브 전체로 사이트 재생성
 # GitHub Actions 수동 실행 입력: date(과거 일자 재생성) · scheduled(대기 루프) · probe(시세 소스 점검만) · rebuild(수집 없이 사이트만 재생성·배포)
+#   · reprocess(date 일자의 아카이브 원문으로 요약·시세 재생성 — 추출 규칙 수정 후 정정용)
+# 종목 서머리는 본문의 '종목명(±x.xx%)' 명시 언급만 대상이다. 등락률 없이 나오는 기관명·기업명(애널리스트 코멘트, 뉴스 문맥)은 시세 분석을 붙이지 않는다.
 # 주요 지수 타일의 곡선 차트는 수집 시점에 가져온 지수 시세(data/indices.json 소스)로 그린다 — rebuild 만으로는 과거 날짜에 새로 생기지 않으므로 date= 로 재생성한다
 ```
 

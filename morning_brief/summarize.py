@@ -344,26 +344,20 @@ def _extract_stocks(text: str, master: StockMaster) -> tuple[list[StockMention],
         if not entry:
             unmapped.append(name)
 
-    # 2) 종목 마스터 스캔 — 등락률 표기 없이 '종목으로서' 언급된 경우만 보완 (예: 한국 종목).
-    #    다른 종목의 명시 등락률이 있는 문장(문맥 언급), 헤더, 등락 서술이 없는 문장, 'X의 …'(소유격) 언급은 제외한다.
-    for entry in master.scan(text):
-        if entry.ticker in mentions:
-            continue
-        sent, pos = _best_sentence(text, spans, entry)
-        if not sent or _is_header(sent) or _MENTION_RE.search(sent) or not _MOVE_RE.search(sent):
-            continue
-        if _possessive_only(sent, entry):
-            continue
-        direction = _direction(sent)
-        others = [e for e in master.scan(sent) if e.ticker != entry.ticker]
-        pct = _signed_pct(sent, direction) if not others else None
-        mentions[entry.ticker] = StockMention(
-            name=entry.display_name, ticker=entry.ticker, market=entry.market, direction=direction,
-            change_pct=pct, reason_summary=_clean_reason(sent), evidence=sent[:400], evidence_verified=True, order=pos,
-        )
-
+    # 2) 등락률 표기가 없는 마스터 이름 언급은 종목 서머리로 만들지 않는다.
+    #    2026-09-11 사용자 지시: 애널리스트·경제 코멘트 속 기관명(골드만삭스 등)이나 뉴스 문맥의 기업명(삼성전자 재고 소식 등)에
+    #    시세 분석이 붙는 오탐이 있었다. 이 채널의 종목 등락 서술은 항상 '종목명(±x.xx%)' 형식이므로 명시 언급만 채택한다.
     ordered = sorted(mentions.values(), key=lambda x: x.order)
     return ordered, unmapped
+
+
+_CONNECTIVE_TAILS = ("하며", "며", "하고", "고", "에", "과", "와", "은", "는", "도", "등", "서", "로", "을", "를")
+
+
+def _is_connective(token: str) -> bool:
+    """'급락하며' '기업들과' '부담에' '보이며' 처럼 조사·연결어미로 끝나는 한국어 단어인지(종목명 앞에 붙어 잡힌 서술어)."""
+    t = token.rstrip(",")
+    return bool(re.fullmatch(r"[가-힣]{2,}", t)) and t.endswith(_CONNECTIVE_TAILS)
 
 
 def _resolve_name(raw: str, master: StockMaster):
@@ -381,42 +375,21 @@ def _resolve_name(raw: str, master: StockMaster):
         entry = master.resolve(cand)
         if entry:
             return cand, entry
-    name = candidates[-1] if len(tokens) == 2 and tokens[0].rstrip(",") in _CONNECTORS else candidates[0]
+    if len(tokens) == 2 and (tokens[0].rstrip(",") in _CONNECTORS or _is_connective(tokens[0])):
+        name = candidates[-1]  # '급락하며 프리포트맥모란', '기업들과 램리서치' → 앞 단어는 서술어·조사
+    else:
+        name = candidates[0]
     name = name.strip(",.")
-    if len(name) < 2 or name.isdigit():
+    if len(name) < 2 or name.isdigit() or name in _NOT_STOCK_WORDS:
         return "", None
     return name, None
 
 
-def _possessive_only(sentence: str, entry: StockEntry) -> bool:
-    """문장 안의 모든 언급이 'X의'(소유격) 형태면 종목 등락이 아닌 문맥 언급으로 본다."""
-    found = False
-    for alias in entry.names:
-        if len(alias) <= 1:
-            continue
-        for m in re.finditer(re.escape(alias), sentence):
-            found = True
-            tail = sentence[m.end():m.end() + 2]
-            if not tail.startswith("의"):
-                return False
-    return found
-
-
-def _best_sentence(text: str, spans, entry: StockEntry) -> tuple[str, int]:
-    """종목이 언급된 문장 중 헤더가 아닌 첫 문장(등락률 포함 문장 우선)."""
-    hits = []
-    for a, b, s in spans:
-        if _mentions_entry(s, entry):
-            hits.append((a, s))
-    if not hits:
-        return "", 10**9
-    for a, s in hits:
-        if not _is_header(s) and _PCT_RE.search(s):
-            return s, a
-    for a, s in hits:
-        if not _is_header(s):
-            return s, a
-    return hits[0][1], hits[0][0]
+# 등락률 괄호 앞에 올 수 있지만 종목이 아닌 말(지수·시장 용어) — 종목 서머리에서 제외한다.
+# 주의: '이틀(+2.75%)' 처럼 종목처럼 쓰인 오타(이튼 → 이틀)는 마스터 별칭으로 흡수한다(stocks.json ETN).
+_NOT_STOCK_WORDS = {"다우", "나스닥", "S&P500", "러셀2000", "코스피", "코스닥", "필라델피아 반도체", "반도체", "전일", "전주", "지난주", "이번주",
+                    "장중", "마감", "지수", "업종", "종목", "시장", "증시", "환율", "금리", "국채", "유가", "달러", "원화", "엔화", "위안", "선물",
+                    "옵션", "거래량", "시가총액", "주가", "종가", "시가", "고가", "저가"}
 
 
 def _mentions_entry(block: str, entry: StockEntry) -> bool:

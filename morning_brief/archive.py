@@ -36,6 +36,11 @@ def save(archive_dir: str | Path, brief: Brief, *, fetched_at: Optional[str] = N
     return d
 
 
+def raw_text(archive_dir: str | Path, date_str: str) -> str:
+    f = date_dir(archive_dir, date_str) / "raw.txt"
+    return f.read_text(encoding="utf-8") if f.exists() else ""
+
+
 def list_dates(archive_dir: str | Path) -> list[str]:
     root = Path(archive_dir)
     if not root.exists():

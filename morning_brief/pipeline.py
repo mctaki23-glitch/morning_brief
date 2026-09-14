@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo
 
 from . import archive, ingest, macro, macro_prices, prices, render, summarize
 from .config import Config
-from .ingest import Fetched
+from .ingest import Fetched, Message
 from .models import Brief
 from .stock_master import StockMaster
 
@@ -147,6 +147,30 @@ def run(cfg: Config, date_str: Optional[str] = None, use_fixtures: bool = False)
         print("       브리핑이 없습니다 → 상태 페이지 게시")
         return publish_status(cfg, date_str, "waiting", fetched)
     print(f"       메시지 {fetched.count}건 종합 ({fetched.method})")
+    return run_fetched(cfg, date_str, fetched)
+
+
+def reprocess(cfg: Config, date_str: str) -> Path:
+    """아카이브의 원문(messages · raw.txt)으로 요약·시세를 다시 만든다(텔레그램 수집 없음). 추출 규칙을 고친 뒤 과거 브리핑을 정정할 때 쓴다."""
+    stored = archive.load(cfg.archive_dir, date_str)
+    if stored is None:
+        raise SystemExit(f"아카이브에 {date_str} 브리핑이 없습니다")
+    fallback_posted = stored.posted_at or f"{date_str}T06:00:00+09:00"
+    msgs: list[Message] = []
+    for m in stored.messages or []:
+        try:
+            posted = datetime.fromisoformat(str(m.get("posted_at") or fallback_posted))
+        except ValueError:
+            posted = datetime.fromisoformat(fallback_posted)
+        if (m.get("text") or "").strip():
+            msgs.append(Message(id=int(m.get("id") or 0), posted_at=posted, text=m["text"]))
+    if not msgs:
+        raw = archive.raw_text(cfg.archive_dir, date_str)
+        if not raw.strip():
+            raise SystemExit(f"아카이브 {date_str} 에 원문이 없습니다")
+        msgs = [Message(id=i or 0, posted_at=datetime.fromisoformat(fallback_posted), text=raw) for i in (stored.message_ids or [0])[:1]]
+    fetched = Fetched(messages=msgs, method=stored.fetch_method if stored.fetch_method not in ("", "fixture") else "preview")
+    print(f"[1/4] 재처리: 아카이브 {date_str} 원문 {len(msgs)}건 (수집 없음)")
     return run_fetched(cfg, date_str, fetched)
 
 
