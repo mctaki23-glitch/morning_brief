@@ -360,5 +360,6 @@ def test_connective_words_are_trimmed_from_captured_names(master: StockMaster):
     names = {m.name: m.ticker for m in _extract_stocks(text, master)[0]}
     assert names == {"프리포트맥모란": "FCX", "서던코퍼": "SCCO", "램리서치": "LRCX", "뉴몬트": "NEM", "엑슨모빌": "XOM", "윌리엄스 소노마": "WSM"}  # 표시 이름은 마스터 대표명
     assert _resolve_name("급락하며 처음보는회사", master) == ("처음보는회사", None)  # 마스터에 없어도 서술어는 뗀다
-    assert _resolve_name("이틀", master) == ("", None) and _resolve_name("연속 이틀", master) == ("", None)  # 일반 명사는 종목이 아님
+    assert _resolve_name("지수", master) == ("", None) and _resolve_name("전일 환율", master) == ("", None)  # 시장 용어는 종목이 아님
+    assert _resolve_name("이틀", master)[1].ticker == "ETN"  # 채널 원문의 '이틀(+2.75%)' 은 이튼(Eaton) 표기 → 마스터 별칭으로 매핑
     assert _resolve_name("엘리번스 헬스", master)[0] == "엘리번스 헬스"
