@@ -620,7 +620,8 @@
   "market": "US",
   "names": [
    "이튼",
-   "Eaton"
+   "Eaton",
+   "이틀"
   ],
   "exchange": "NYSE"
  },
@@ -980,7 +981,9 @@
   "names": [
    "아스테라랩스",
    "아스테라 랩스",
-   "Astera Labs"
+   "Astera Labs",
+   "아스트라랩스",
+   "아스트라 랩스"
   ],
   "exchange": "NASDAQ"
  },
@@ -1028,7 +1031,8 @@
   "market": "US",
   "names": [
    "크라우드스트라이크",
-   "CrowdStrike"
+   "CrowdStrike",
+   "크라우드 스트라이크"
   ],
   "exchange": "NASDAQ"
  },
@@ -1234,5 +1238,61 @@
    "Chevron"
   ],
   "exchange": "NYSE"
+ },
+ {
+  "ticker": "STM",
+  "market": "US",
+  "names": [
+   "ST마이크로",
+   "ST마이크로일렉트로닉스",
+   "STMicro"
+  ],
+  "exchange": "NYSE"
+ },
+ {
+  "ticker": "BX",
+  "market": "US",
+  "names": [
+   "블랙스톤",
+   "Blackstone"
+  ],
+  "exchange": "NYSE"
+ },
+ {
+  "ticker": "ZS",
+  "market": "US",
+  "names": [
+   "지스케일러",
+   "Zscaler"
+  ],
+  "exchange": "NASDAQ"
+ },
+ {
+  "ticker": "AKAM",
+  "market": "US",
+  "names": [
+   "아카마이",
+   "Akamai"
+  ],
+  "exchange": "NASDAQ"
+ },
+ {
+  "ticker": "NET",
+  "market": "US",
+  "names": [
+   "클라우드플레어",
+   "클라우드 플레어",
+   "Cloudflare"
+  ],
+  "exchange": "NYSE"
+ },
+ {
+  "ticker": "DDOG",
+  "market": "US",
+  "names": [
+   "데이터독",
+   "Datadog"
+  ],
+  "exchange": "NASDAQ"
  }
 ]
