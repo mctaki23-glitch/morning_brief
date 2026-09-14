@@ -38,6 +38,10 @@ on:
         description: "true 면 수집 없이 아카이브로 사이트만 재생성·배포 (디자인 변경 반영용)"
         required: false
         default: "false"
+      reprocess:
+        description: "true 면 date 일자의 아카이브 원문으로 요약·시세를 다시 생성 (수집 없음, 추출 규칙 수정 후 정정용)"
+        required: false
+        default: "false"
 
 permissions:
   contents: write   # archive/ 커밋
@@ -101,6 +105,10 @@ jobs:
         run: |
           if [ "${{ github.event.inputs.rebuild }}" = "true" ]; then
             python -m morning_brief rebuild --production --out site
+            exit 0
+          fi
+          if [ "${{ github.event.inputs.reprocess }}" = "true" ]; then
+            python -m morning_brief reprocess --production --out site --date "${{ github.event.inputs.date }}"
             exit 0
           fi
           ARGS="--production --out site"

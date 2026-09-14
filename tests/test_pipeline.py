@@ -234,7 +234,7 @@ def test_rule_based_on_real_briefing_format(master: StockMaster):
     assert by["MU"].change_pct == -1.61 and by["MU"].reason_summary.startswith("마이크론(-1.61%)은")  # 앞 문장에 붙지 않음
     assert by["000660"].change_pct == 4.83 and by["000660"].market == "KR"  # SK하이닉스 ADR → 000660
     assert by["NVS"].change_pct == -13.93 and by["GLW"].change_pct == 7.56
-    assert "005930" in by and by["005930"].change_pct is None  # 삼성전자: 등락률 표기 없는 언급
+    assert "005930" not in by  # 삼성전자: 재고 뉴스 문맥의 언급(등락률 표기 없음)은 종목 서머리로 만들지 않는다
     for noise in ("GS", "C", "DOCN", "VZ"):  # 문맥 언급(씨티·골드만삭스·디지털오션·버라이존)은 제외
         assert noise not in by, noise
     tickers = [m.ticker for m in r.stocks]
@@ -337,3 +337,27 @@ def test_every_chart_shows_its_period(tmp_path: Path):
     assert html.count('<div class="c-dates">2026.08.06 – 2026.08.25</div>') == 2  # 종목 · 매크로 미니 차트
     assert '<div class="note">2026.08.06 – 2026.08.25</div>' in html  # 지수 타일
     assert html.count('<p class="chart-note">2026.08.06 – 2026.08.25 · ') >= 2  # 상세 시트(종목 · 매크로)
+
+
+def test_only_explicit_pct_mentions_become_stock_summaries(master: StockMaster):
+    """2026-09-11 오탐: 경제 코멘트 속 기관명(골드만삭스)과 뉴스 문맥의 기업명은 시세 분석 대상이 아니다."""
+    from morning_brief.summarize import _extract_stocks
+
+    text = ("실제 골드만삭스나 모건스탠리 등 주요 투자회사들은 오늘 발표된 생산자물가지수 발표 후 근원 PCE물가는 전월 대비 "
+            "0.20% 내외에서 0.24% 상승으로 폭을 상향 조정. 아시아 시장에서 삼성전자와 SK하이닉스의 메모리 재고가 급감하고 있다는 "
+            "소식에 상승 출발. 암젠(-2.25%)은 HSBC가 투자의견을 보유로 하향 조정하자 부진.")
+    mentions, unmapped = _extract_stocks(text, master)
+    tickers = {m.ticker for m in mentions}
+    assert tickers == {"AMGN"} and unmapped == []
+
+
+def test_connective_words_are_trimmed_from_captured_names(master: StockMaster):
+    """'급락하며 프리포트맥모란(-6.59%)' 처럼 앞에 붙은 서술어·조사는 종목명에서 떼고, 두 단어 이름은 유지한다."""
+    from morning_brief.summarize import _extract_stocks, _resolve_name
+
+    text = ("구리 가격이 장중 고점에서 급락하며 프리포트맥모란(-6.59%), 서던코퍼(-7.23%) 등 하락. 광통신 기업들과 램리서치(-5.65%)도 부진. "
+            "금 가격도 약세를 보이며 뉴몬트(-2.00%) 등 금광주도 부진. 물가 부담에 엑손모빌(+0.61%)은 보합. 윌리엄스 소노마(-1.66%) 등 가구 소매업체 하락.")
+    names = {m.name: m.ticker for m in _extract_stocks(text, master)[0]}
+    assert names == {"프리포트맥모란": "FCX", "서던코퍼": "SCCO", "램리서치": "LRCX", "뉴몬트": "NEM", "엑슨모빌": "XOM", "윌리엄스 소노마": "WSM"}  # 표시 이름은 마스터 대표명
+    assert _resolve_name("급락하며 처음보는회사", master) == ("처음보는회사", None)  # 마스터에 없어도 서술어는 뗀다
+    assert _resolve_name("엘리번스 헬스", master)[0] == "엘리번스 헬스"

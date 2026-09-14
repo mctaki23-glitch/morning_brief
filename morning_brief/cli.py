@@ -46,6 +46,15 @@ def _cmd_run(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_reprocess(args: argparse.Namespace) -> int:
+    from .pipeline import reprocess
+
+    cfg = _cfg(args)
+    index_path = reprocess(cfg, args.date)
+    print(f"\n재처리 완료: {index_path}")
+    return 0
+
+
 def _cmd_rebuild(args: argparse.Namespace) -> int:
     from . import render
     from .pipeline import rebuild_site
@@ -107,6 +116,11 @@ def main(argv: list[str] | None = None) -> int:
     p_run.add_argument("--poll", type=int, default=300, help="게시 감지 간격(초, 기본 300)")
     p_run.add_argument("--max-wait", dest="max_wait", type=int, default=2700, help="잡당 최대 대기(초, 기본 2700)")
     p_run.set_defaults(func=_cmd_run)
+
+    p_re = sub.add_parser("reprocess", help="아카이브 원문으로 특정 일자 브리핑을 다시 생성 (수집 없음, 추출 규칙 수정 후 정정용)")
+    _common(p_re)
+    p_re.add_argument("--date", required=True, help="대상 일자 YYYY-MM-DD")
+    p_re.set_defaults(func=_cmd_reprocess)
 
     p_rebuild = sub.add_parser("rebuild", help="아카이브 전체로 사이트 재생성")
     _common(p_rebuild)

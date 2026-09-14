@@ -163,3 +163,21 @@ def test_root_serves_latest_brief_and_older_pages_link_to_it(tmp_path):
     assert 'class="newer" href="../2026-09-11/"' in older and "최신 브리핑(2026-09-11) 보기" in older
     latest = (Path(cfg.output_dir) / "brief" / "2026-09-11" / "index.html").read_text(encoding="utf-8")
     assert 'class="newer"' not in latest
+
+
+def test_reprocess_regenerates_from_archived_messages(tmp_path, monkeypatch):
+    """추출 규칙을 고친 뒤 아카이브 원문으로 브리핑을 다시 만든다(수집 없음)."""
+    from morning_brief import macro_prices
+
+    cfg = _cfg(tmp_path)
+    monkeypatch.setattr(macro_prices, "get_series", lambda *a, **k: None)
+    fetched = _messages("05:30")
+    pipeline.run_fetched(cfg, DAY, fetched)
+    first = archive.load(cfg.archive_dir, DAY)
+    assert first is not None and first.messages and len(first.stocks) > 0
+    monkeypatch.setattr(ingest, "fetch_day", lambda *a, **k: pytest.fail("재처리는 텔레그램을 수집하지 않아야 함"))
+    out = pipeline.reprocess(cfg, DAY)
+    second = archive.load(cfg.archive_dir, DAY)
+    assert out.exists() and second.message_ids == first.message_ids and second.posted_at == first.posted_at
+    assert [m.ticker for m in second.stocks] == [m.ticker for m in first.stocks]
+    assert second.generated_at >= first.generated_at
