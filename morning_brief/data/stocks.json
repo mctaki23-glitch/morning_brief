@@ -1380,5 +1380,16 @@
    "Airbnb"
   ],
   "exchange": "NASDAQ"
+ },
+ {
+  "ticker": "SPCX",
+  "market": "US",
+  "names": [
+   "스페이스X",
+   "스페이스 X",
+   "스페이스엑스",
+   "SpaceX",
+   "SPCX"
+  ]
  }
 ]
