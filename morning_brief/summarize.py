@@ -380,9 +380,14 @@ def _resolve_name(raw: str, master: StockMaster):
     else:
         name = candidates[0]
     name = name.strip(",.")
-    if len(name) < 2 or name.isdigit():
+    if len(name) < 2 or name.isdigit() or name in _NOT_STOCK_WORDS:
         return "", None
     return name, None
+
+
+# '이틀(+1.2%)' 처럼 등락률 괄호 앞에 오는 일반 명사 — 종목명이 아니므로 제외한다
+_NOT_STOCK_WORDS = {"이틀", "사흘", "하루", "전일", "전주", "지난주", "이번주", "장중", "마감", "지수", "업종", "종목", "시장", "증시", "환율", "금리",
+                    "국채", "유가", "달러", "원화", "엔화", "위안", "선물", "옵션", "거래량", "시가총액", "주가", "종가", "시가", "고가", "저가"}
 
 
 def _mentions_entry(block: str, entry: StockEntry) -> bool:
