@@ -7,6 +7,12 @@
 - 운영 URL: https://mctaki23-glitch.github.io/morning_brief/ (고정 링크 → 항상 최신 브리핑)
 - 핵심 화면: 시황 요약 → 주요 지수 → 오늘의 종목 → **종목 서머리 = 캔들차트(거래량·MA5/20) + 등락 이유 + 원문 근거** → 금리·유가·금·환율 서머리(차트 + 브리핑 코멘트)
 
+## 링크
+
+- 짧은 주소: **https://mctaki23-glitch.github.io/** (계정 대표 사이트 저장소 `mctaki23-glitch.github.io` 가 최신 브리핑으로 연결)
+- 날짜 지정: `https://mctaki23-glitch.github.io/2026-09-11` → 그날 브리핑
+- 원 주소: https://mctaki23-glitch.github.io/morning_brief/ (루트가 항상 최신 브리핑 본문)
+
 ## 파이프라인
 
 ```
