@@ -115,9 +115,8 @@ th.r,td.r{text-align:right}
 .stocks .mini-link{display:block;width:150px}
 .stocks .mini svg{display:block;width:100%;height:auto}
 .c-dates{font-family:var(--en);font-size:11px;line-height:1.2;color:var(--muted2);margin-top:4px;white-space:nowrap;letter-spacing:.1px}
-.stocks .more{white-space:nowrap;text-align:right}
-.btn-more{display:inline-block;font-size:13px;font-weight:600;line-height:1;color:var(--navy);border:1px solid var(--navy);border-radius:2px;padding:7px 10px;white-space:nowrap;text-decoration:none}
-.btn-more:hover{background:var(--navy);color:#FFFFFF}
+.stocks tbody tr[data-sheet]{cursor:pointer}
+.stocks tbody tr[data-sheet]:focus-visible{outline:2px solid var(--orange);outline-offset:-2px}
 .badge-warn{display:inline-block;font-size:11px;color:var(--muted);border:1px solid var(--hair);padding:0 5px;margin-left:6px;vertical-align:1px}
 
 /* 관전 포인트 · 원문 */
@@ -195,8 +194,8 @@ table.ohlcv th:first-child,table.ohlcv td:first-child{text-align:left}
 }
 @media(max-width:640px){
  .stocks thead{display:none}
- .stocks tbody tr{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"nm chg" "why why" "mini mini" "more more";gap:2px 10px;padding:12px 14px;border-bottom:1px solid var(--hair2)}
- .macro tbody tr{grid-template-areas:"nm chg" "val val" "why why" "mini mini" "more more"}
+ .stocks tbody tr{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"nm chg" "why why" "mini mini";gap:2px 10px;padding:12px 14px;border-bottom:1px solid var(--hair2)}
+ .macro tbody tr{grid-template-areas:"nm chg" "val val" "why why" "mini mini"}
  .macro td.val{grid-area:val;text-align:left;font-size:17px;margin-top:2px}
  .stocks tbody tr[hidden]{display:none}
  .stocks tbody td{display:block;padding:0;border:0}
@@ -208,11 +207,9 @@ table.ohlcv th:first-child,table.ohlcv td:first-child{text-align:left}
  .tile .t-head{align-items:flex-start} .tile .l{white-space:normal;line-height:1.3}
  .stocks tbody tr:hover{background:var(--s2)}
  .stocks td.nm-cell{grid-area:nm} .stocks td.chg{grid-area:chg;text-align:right} .stocks td.why{grid-area:why} .stocks td.mini{grid-area:mini;margin-top:6px}
- .stocks td.more{grid-area:more;margin-top:10px;text-align:right}
  .stocks td.mini{width:auto} .stocks .mini-link{width:100%}
  .stocks .mini svg{width:100%;height:auto}
  .c-dates{font-size:12px;margin-top:6px}
- .btn-more{padding:9px 14px;font-size:14px}
  .chart-lg{display:none} .chart-sm{display:block}
  .sheet{left:0;right:0;top:auto;bottom:0;transform:none;width:100%;max-height:92vh;border-radius:4px 4px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom))}
  .sheet::before{content:"";display:block;width:40px;height:3px;background:var(--hair);margin:0 auto 12px}

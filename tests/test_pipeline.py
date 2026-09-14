@@ -158,7 +158,8 @@ def test_end_to_end_generates_site(tmp_path: Path):
     html = index.read_text(encoding="utf-8")
     assert "브리핑 전문" not in html  # 원문 전문 섹션은 페이지에 넣지 않는다(2026-09-09 사용자 지시). 데이터에는 보존
     assert data["messages"] and data["messages"][0]["text"].startswith("[서상영의 미국 증시 시황 ①]")
-    assert 'class="btn-more" href="#s-nvda"' in html and '<span class="nm"><a' not in html  # 상세는 버튼(과 차트)으로 연다
+    assert 'data-sheet="s-nvda" tabindex="0"' in html and "btn-more" not in html and "상세 보기<" not in html  # 종목 칸 어디를 눌러도 시트가 열린다
+    assert "tr[data-sheet]" in html and "e.key==='Enter'" in html  # 행 클릭·Enter 처리 스크립트
     assert "history.pushState" in html and "html.js .detail.open{display:block}" in html  # 닫을 때 #top 으로 점프하지 않는 JS 시트
     assert 'class="tile"' in html and 'class="spark"' in html and '<div class="note">최근 20일</div>' in html  # 지수 타일 스파크라인
     assert 'class="mini-link" href="#s-nvda"' in html
@@ -285,7 +286,7 @@ def test_macro_section_renders_with_line_and_candle_charts(tmp_path: Path, monke
     ])
     html = render.render_brief(brief)
     assert "금리 · 유가 · 금 · 환율" in html and 'id="x-us10y"' in html and 'id="x-gold"' in html
-    assert '<td class="val r">' in html and 'class="btn-more" href="#x-gold"' in html
+    assert '<td class="val r">' in html and 'data-sheet="x-gold"' in html
     assert "bp" in html  # 금리는 bp 표기
     assert macro_prices.is_close_only(yields) and not macro_prices.is_close_only(gold)
     assert 'stroke="#043B72" stroke-width="2"' in html  # 라인 차트(종가만 있는 시계열)
