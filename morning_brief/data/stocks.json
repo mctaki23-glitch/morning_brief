@@ -163,7 +163,10 @@
   "names": [
    "슈퍼마이크로",
    "Supermicro",
-   "SMCI"
+   "SMCI",
+   "슈퍼마이크로 컴퓨터",
+   "슈퍼 마이크로",
+   "Super Micro"
   ],
   "exchange": "NASDAQ"
  },
@@ -234,7 +237,9 @@
   "market": "US",
   "names": [
    "Dell",
-   "DELL"
+   "DELL",
+   "델",
+   "델 테크놀로지스"
   ],
   "exchange": "NYSE"
  },
@@ -1292,6 +1297,87 @@
   "names": [
    "데이터독",
    "Datadog"
+  ],
+  "exchange": "NASDAQ"
+ },
+ {
+  "ticker": "HPE",
+  "market": "US",
+  "names": [
+   "HP엔터",
+   "HP엔터프라이즈",
+   "HPE"
+  ],
+  "exchange": "NYSE"
+ },
+ {
+  "ticker": "ANET",
+  "market": "US",
+  "names": [
+   "아리스타네트웍",
+   "아리스타 네트웍스",
+   "아리스타",
+   "Arista"
+  ],
+  "exchange": "NYSE"
+ },
+ {
+  "ticker": "CSCO",
+  "market": "US",
+  "names": [
+   "시스코시스템",
+   "시스코 시스템즈",
+   "시스코",
+   "Cisco"
+  ],
+  "exchange": "NASDAQ"
+ },
+ {
+  "ticker": "PWR",
+  "market": "US",
+  "names": [
+   "콴타서비스",
+   "콴타 서비스",
+   "Quanta"
+  ],
+  "exchange": "NYSE"
+ },
+ {
+  "ticker": "ADI",
+  "market": "US",
+  "names": [
+   "아날로그디바이스",
+   "아날로그 디바이스",
+   "Analog Devices"
+  ],
+  "exchange": "NASDAQ"
+ },
+ {
+  "ticker": "MPWR",
+  "market": "US",
+  "names": [
+   "모놀리식 파워",
+   "모놀리식파워",
+   "Monolithic Power"
+  ],
+  "exchange": "NASDAQ"
+ },
+ {
+  "ticker": "VICR",
+  "market": "US",
+  "names": [
+   "빅코어",
+   "바이코",
+   "Vicor"
+  ],
+  "exchange": "NASDAQ"
+ },
+ {
+  "ticker": "ABNB",
+  "market": "US",
+  "names": [
+   "에어비앤비",
+   "Airbnb"
   ],
   "exchange": "NASDAQ"
  }

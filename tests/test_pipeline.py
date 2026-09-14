@@ -363,3 +363,17 @@ def test_connective_words_are_trimmed_from_captured_names(master: StockMaster):
     assert _resolve_name("지수", master) == ("", None) and _resolve_name("전일 환율", master) == ("", None)  # 시장 용어는 종목이 아님
     assert _resolve_name("이틀", master)[1].ticker == "ETN"  # 채널 원문의 '이틀(+2.75%)' 은 이튼(Eaton) 표기 → 마스터 별칭으로 매핑
     assert _resolve_name("엘리번스 헬스", master)[0] == "엘리번스 헬스"
+
+
+def test_cpi_components_in_econ_sentences_are_not_stocks(master: StockMaster):
+    """2026-09-12: 소비자물가 품목(에너지·항공료·임대료 …)이 종목 형식 '이름(+x.xx%)' 으로 쓰여도 종목이 아니다."""
+    from morning_brief.summarize import _extract_stocks
+
+    text = ("미국 8월 소비자물가지수가 전월 대비 0.40% 상승하며 시장 예상에 부합했지만 근원 소비자 물가지수는 전월 대비 0.29% 상승해 시장 예상(+0.2%)을 상회. "
+            "품목별로는 국제유가 영향에 에너지(+2.10%)가 상승하며 헤드라인 상승을 견인. 무선 전화 서비스(+5.90%), 항공료(+2.68%), 호텔 숙박(+2.36%)이 근원 물가 상승을 견인. "
+            "다만, 자가주거비(+0.19%)와 임대료(+0.17%)는 둔화됐고 의료서비스(-0.25%) 등이 하락. "
+            "델(+11.98%), HP엔터(+12.44%), 슈퍼마이크로 컴퓨터(+7.28%)등 AI 서버 관련 기업들, 아리스타네트웍(+5.61%), 시스코시스템(+4.37%)등이 상승. "
+            "아날로그디바이스(+4.85%), 모놀리식 파워(+4.08%), 빅코어(+11.15%)등 전력 반도체 기업들도 상승.")
+    mentions, unmapped = _extract_stocks(text, master)
+    assert unmapped == []
+    assert {m.ticker for m in mentions} == {"DELL", "HPE", "SMCI", "ANET", "CSCO", "ADI", "MPWR", "VICR"}

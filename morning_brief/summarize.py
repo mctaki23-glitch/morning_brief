@@ -330,6 +330,8 @@ def _extract_stocks(text: str, master: StockMaster) -> tuple[list[StockMention],
         pct = _to_float(pct_raw)
         key = entry.ticker if entry else _norm(name)
         sent = sentence_at(m.start()) or raw_name
+        if entry is None and _ECON_CONTEXT_RE.search(_paragraph_at(text, m.start())):
+            continue  # 물가·고용 등 경제지표 문단의 세부 항목(에너지(+2.1%), 항공료, 임대료, 시장 예상 …)은 종목이 아니다
         direction = "UP" if (pct or 0) > 0 else "DOWN" if (pct or 0) < 0 else "FLAT"
         if key in mentions:
             cur = mentions[key]
@@ -357,7 +359,12 @@ _CONNECTIVE_TAILS = ("하며", "며", "하고", "고", "에", "과", "와", "은
 def _is_connective(token: str) -> bool:
     """'급락하며' '기업들과' '부담에' '보이며' 처럼 조사·연결어미로 끝나는 한국어 단어인지(종목명 앞에 붙어 잡힌 서술어)."""
     t = token.rstrip(",")
+    if t in _PARTICLES:
+        return True  # '와 임대료', '이 쿼보' 처럼 조사만 따로 잡힌 경우
     return bool(re.fullmatch(r"[가-힣]{2,}", t)) and t.endswith(_CONNECTIVE_TAILS)
+
+
+_PARTICLES = {"와", "과", "및", "이", "가", "은", "는", "도", "등", "에", "로", "을", "를", "의"}
 
 
 def _resolve_name(raw: str, master: StockMaster):
@@ -385,11 +392,22 @@ def _resolve_name(raw: str, master: StockMaster):
     return name, None
 
 
+# 경제지표 서술 문단 — 여기서 나온 마스터 밖 이름은 CPI 품목 등이므로 종목으로 만들지 않는다(마스터에 있는 종목은 영향 없음).
+# 종목 문단에도 흔한 '물가 부담', '고용' 같은 일반 표현은 제외하고 지표 자체를 가리키는 말만 본다.
+_ECON_CONTEXT_RE = re.compile(r"물가지수|CPI|PCE|고용보고서|비농업|실업률|소매판매|GDP|ISM|PMI|전월\s*대비|전년\s*대비|품목별|근원|기대\s*인플레")
+
+
+def _paragraph_at(text: str, pos: int) -> str:
+    """pos 를 포함하는 문단(줄바꿈 사이 구간)."""
+    a = text.rfind("\n", 0, pos) + 1
+    b = text.find("\n", pos)
+    return text[a:] if b < 0 else text[a:b]
+
 # 등락률 괄호 앞에 올 수 있지만 종목이 아닌 말(지수·시장 용어) — 종목 서머리에서 제외한다.
 # 주의: '이틀(+2.75%)' 처럼 종목처럼 쓰인 오타(이튼 → 이틀)는 마스터 별칭으로 흡수한다(stocks.json ETN).
 _NOT_STOCK_WORDS = {"다우", "나스닥", "S&P500", "러셀2000", "코스피", "코스닥", "필라델피아 반도체", "반도체", "전일", "전주", "지난주", "이번주",
                     "장중", "마감", "지수", "업종", "종목", "시장", "증시", "환율", "금리", "국채", "유가", "달러", "원화", "엔화", "위안", "선물",
-                    "옵션", "거래량", "시가총액", "주가", "종가", "시가", "고가", "저가"}
+                    "옵션", "거래량", "시가총액", "주가", "종가", "시가", "고가", "저가", "시장 예상", "예상", "예상치", "컨센서스", "전망"}
 
 
 def _mentions_entry(block: str, entry: StockEntry) -> bool:
