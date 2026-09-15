@@ -166,7 +166,9 @@
    "SMCI",
    "슈퍼마이크로 컴퓨터",
    "슈퍼 마이크로",
-   "Super Micro"
+   "Super Micro",
+   "슈퍼 마이크로 컴퓨터",
+   "슈퍼마이크로컴퓨터"
   ],
   "exchange": "NASDAQ"
  },
@@ -236,9 +238,9 @@
   "ticker": "DELL",
   "market": "US",
   "names": [
+   "델",
    "Dell",
    "DELL",
-   "델",
    "델 테크놀로지스"
   ],
   "exchange": "NYSE"
@@ -967,7 +969,9 @@
   "names": [
    "뱅크오브아메리카",
    "BofA",
-   "Bank of America"
+   "Bank of America",
+   "BOA",
+   "뱅크 오브 아메리카"
   ],
   "exchange": "NYSE"
  },
@@ -1391,5 +1395,36 @@
    "SpaceX",
    "SPCX"
   ]
+ },
+ {
+  "ticker": "MS",
+  "market": "US",
+  "names": [
+   "모건스탠리",
+   "모건 스탠리",
+   "Morgan Stanley"
+  ],
+  "exchange": "NYSE"
+ },
+ {
+  "ticker": "COST",
+  "market": "US",
+  "names": [
+   "코스트코",
+   "Costco"
+  ],
+  "exchange": "NASDAQ"
+ },
+ {
+  "ticker": "PG",
+  "market": "US",
+  "names": [
+   "P&G",
+   "프록터앤드갬블",
+   "프록터 앤 갬블",
+   "프록터앤갬블",
+   "Procter & Gamble"
+  ],
+  "exchange": "NYSE"
  }
 ]

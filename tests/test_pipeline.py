@@ -361,6 +361,7 @@ def test_connective_words_are_trimmed_from_captured_names(master: StockMaster):
     names = {m.name: m.ticker for m in _extract_stocks(text, master)[0]}
     assert names == {"프리포트맥모란": "FCX", "서던코퍼": "SCCO", "램리서치": "LRCX", "뉴몬트": "NEM", "엑슨모빌": "XOM", "윌리엄스 소노마": "WSM"}  # 표시 이름은 마스터 대표명
     assert _resolve_name("급락하며 처음보는회사", master) == ("처음보는회사", None)  # 마스터에 없어도 서술어는 뗀다
+    assert _resolve_name("마이크로 컴퓨터", master) == ("마이크로 컴퓨터", None)  # '마이크로' 는 조사가 아니다(2026-09-15 '컴퓨터' 오탐)
     assert _resolve_name("지수", master) == ("", None) and _resolve_name("전일 환율", master) == ("", None)  # 시장 용어는 종목이 아님
     assert _resolve_name("이틀", master)[1].ticker == "ETN"  # 채널 원문의 '이틀(+2.75%)' 은 이튼(Eaton) 표기 → 마스터 별칭으로 매핑
     assert _resolve_name("엘리번스 헬스", master)[0] == "엘리번스 헬스"
@@ -378,3 +379,22 @@ def test_cpi_components_in_econ_sentences_are_not_stocks(master: StockMaster):
     mentions, unmapped = _extract_stocks(text, master)
     assert unmapped == []
     assert {m.ticker for m in mentions} == {"DELL", "HPE", "SMCI", "ANET", "CSCO", "ADI", "MPWR", "VICR"}
+
+
+def test_three_word_names_resolve_whole(master: StockMaster):
+    """2026-09-15: '슈퍼 마이크로 컴퓨터(-8.40%)' 가 '컴퓨터' 로 잘려 미매핑 행이 되었다. 세 단어 이름을 통째로 잡아 SMCI 로 매핑한다."""
+    from morning_brief.summarize import _MENTION_RE, _extract_stocks
+
+    text = "델(-5.85%), 슈퍼 마이크로 컴퓨터(-8.40%) 등 AI 서버 등도 부진. 부진한 흐름 속 애플(+1.00%)은 견조."
+    assert [m.group(1) for m in _MENTION_RE.finditer(text)] == ["델", "슈퍼 마이크로 컴퓨터", "부진한 흐름 속 애플"[-len("흐름 속 애플"):]]
+    mentions, unmapped = _extract_stocks(text, master)
+    assert unmapped == [] and {m.ticker: m.name for m in mentions} == {"DELL": "델", "SMCI": "슈퍼마이크로", "AAPL": "애플"}  # 표시 이름은 마스터 대표명
+
+
+def test_ms_alias_is_microsoft_and_morgan_stanley_by_name(master: StockMaster):
+    """채널 표기 'MS(+0.16%)' 는 마이크로소프트, '모건스탠리(+1.2%)' 는 모건스탠리(티커 MS). 별칭 정확 일치가 티커보다 우선한다."""
+    from morning_brief.summarize import _extract_stocks
+
+    assert master.resolve("MS").ticker == "MSFT" and master.resolve("모건스탠리").ticker == "MS" and master.resolve("BOA").ticker == "BAC"
+    mentions, unmapped = _extract_stocks("MS(+0.16%)와 모건스탠리(+1.20%), BOA(-0.50%), 코스트코(+0.30%), P&G(-0.10%) 등락.", master)
+    assert unmapped == [] and [m.ticker for m in mentions] == ["MSFT", "MS", "BAC", "COST", "PG"]
