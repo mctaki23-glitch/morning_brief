@@ -146,9 +146,9 @@ def _mast(brief: Optional[Brief], root: str, logo_svg: Optional[str], *, sub: st
     links = f'<a href="{root}archive/">지난 브리핑</a><a href="{root}">최신 브리핑</a>'
     return (
         '<header class="mast">'
-        f'<div class="brand"><div class="logo-slot">{logo}</div>'
-        f'<div class="title"><a href="{root}">{PRODUCT}</a></div><div class="sub">{_esc(sub) if brief is None else sub}</div></div>'
-        f'<div class="when"><div class="date">{date_label}</div><div class="links">{links}</div></div>'
+        f'<div class="brand"><div class="logo-slot">{logo}</div><div class="title"><a href="{root}">{PRODUCT}</a></div></div>'
+        f'<div class="when"><div class="date">{date_label}</div></div>'
+        f'<div class="mast-meta"><div class="sub">{_esc(sub) if brief is None else sub}</div><div class="links">{links}</div></div>'
         "</header>"
     )
 
@@ -172,11 +172,11 @@ def _quality_tags(brief: Brief) -> str:
 
 
 def _foot(brief: Optional[Brief]) -> str:
-    src = ""
-    if brief is not None:
-        src = (f'<p>출처: 텔레그램 <a href="{_esc(brief.message_url)}" target="_blank" rel="noopener">{CHANNEL_TITLE} (@{_esc(brief.source_channel)})</a> · '
-               f"원문 요약·재구성</p>{_quality_tags(brief)}")
-    return f'<footer class="foot">{src}<p>{DISCLAIMER}</p></footer>'
+    if brief is None:
+        return f'<footer class="foot"><p class="dis">{DISCLAIMER}</p></footer>'
+    src = (f'<p class="src">출처: 텔레그램 <a href="{_esc(brief.message_url)}" target="_blank" rel="noopener">{CHANNEL_TITLE} (@{_esc(brief.source_channel)})</a> · '
+           "원문 요약·재구성</p>")
+    return f'<footer class="foot"><div class="foot-row">{src}{_quality_tags(brief)}</div><p class="dis">{DISCLAIMER}</p></footer>'
 
 
 # ── 데일리 브리핑 페이지 ───────────────────────────────────────
@@ -202,34 +202,31 @@ def _indices(brief: Brief) -> str:
     return f'<div class="tiles">{"".join(tiles)}</div>'
 
 
-def _stock_table(brief: Brief, stocks: list[StockMention]) -> str:
+def _stock_cards(brief: Brief, stocks: list[StockMention]) -> str:
+    """종목 카드 목록 — 카드 어디를 눌러도 상세 시트가 열리고, 누르는 동안 하이라이트(.pressed / :active). PC 2열 · 모바일 1열."""
     if not stocks:
         return '<p class="empty">언급된 종목이 없습니다.</p>'
-    rows = []
+    cards = []
     for m in stocks:
         pct = m.price_change_pct()
         disp, cls = fmt_pct(pct)
         mini = _mini_link(f"#s-{m.slug}", m.name, chart.candlestick(m.prices.points, compact=True, width=MINI_W, height=MINI_H)
                           if m.prices and m.prices.points else "", m.prices.points if m.prices else None)
-        tk = f'<span class="tk">{_esc(m.ticker)}</span>' if m.ticker else ""
-        mk = f'<span class="mk">{"미국" if m.market == "US" else "한국"}</span>'
+        meta = " · ".join(b for b in ((f'<span class="tk">{_esc(m.ticker)}</span>' if m.ticker else ""), "미국" if m.market == "US" else "한국") if b)
         warn = "" if m.evidence_verified else '<span class="badge-warn">근거 미검증</span>'
-        rows.append(
-            f'<tr data-order="{m.order}" data-pct="{pct if pct is not None else ""}" data-market="{m.market}" '
+        cards.append(
+            f'<article class="card" data-order="{m.order}" data-pct="{pct if pct is not None else ""}" data-market="{m.market}" '
             f'data-sheet="s-{m.slug}" tabindex="0" aria-label="{_esc(m.name)} 상세 보기">'
-            f'<td class="nm-cell"><span class="nm">{_esc(m.name)}</span>{tk}{mk}</td>'
-            f'<td class="chg r {cls}">{disp}</td>'
-            f'<td class="mini">{mini}</td>'
-            f'<td class="why">{_esc(m.reason_summary) or "—"}{warn}</td></tr>'
+            f'<div class="c-head"><div class="nm-cell"><span class="nm">{_esc(m.name)}</span><span class="meta">{meta}</span></div>'
+            f'<div class="chg r {cls}">{disp}</div></div>'
+            f'<div class="c-body"><div class="mini">{mini}</div>'
+            f'<p class="why">{_esc(m.reason_summary) or "—"}{warn}</p></div></article>'
         )
-    return (
-        '<div class="tbl stocks"><table id="stocks"><thead><tr><th>종목</th><th class="r">등락</th><th>최근 20일</th>'
-        f'<th>등락 이유</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
-    )
+    return f'<div class="cards" id="stocks">{"".join(cards)}</div>'
 
 
 MINI_W, MINI_H = 320, 110          # 목록 미니 차트 원본 크기(비율 유지 스케일: PC 150px, 모바일 셀 폭)
-CHART_LG, CHART_SM = (680, 380), (360, 330)  # 시트 차트: PC · 모바일 — 세로를 넉넉히 잡아 등락 움직임이 보이게
+CHART_LG, CHART_SM = (640, 400), (360, 330)  # 시트 차트: PC(차트 | 등락 이유 2열의 차트 칸) · 모바일 — 세로를 넉넉히 잡아 등락 움직임이 보이게
 
 
 def _mini_link(href: str, name: str, svg: str, points=None) -> str:
@@ -263,9 +260,8 @@ def _series_is_stale(m: StockMention, brief_date: str) -> bool:
 def _sheet_body(brief: Brief, m: StockMention, *, share_href: str = "") -> str:
     pct = m.price_change_pct()
     disp, cls = fmt_pct(pct)
-    tk = f'<span class="tk">{_esc(m.ticker)}</span>' if m.ticker else ""
-    mk = f'<span class="mk">{"미국" if m.market == "US" else "한국"}</span>'
-    share = f'<a class="tk" href="{share_href}">공유 링크</a>' if share_href else ""
+    meta = " · ".join(b for b in ((f'<span class="tk">{_esc(m.ticker)}</span>' if m.ticker else ""), "미국" if m.market == "US" else "한국") if b)
+    share = f'<a class="share" href="{share_href}">공유 링크</a>' if share_href else ""
 
     if m.prices and m.prices.last_close is not None:
         cur = m.prices.currency
@@ -307,12 +303,11 @@ def _sheet_body(brief: Brief, m: StockMention, *, share_href: str = "") -> str:
     if m.prices and not m.prices.is_real:
         dis += " 표시된 시세는 합성(데모) 데이터로 실제 가격과 다릅니다."
     return (
-        f'<div class="s-head"><h2>{_esc(m.name)}</h2>{tk}{mk}{share}</div>'
-        f'<div class="price">{price}</div>'
-        '<div class="s-rule"></div><h3 class="s-h">캔들차트</h3>'
-        f'<div class="chart-card">{svg}</div>{note}{table}'
-        '<div class="s-rule"></div><h3 class="s-h">등락 이유</h3>'
-        f'<p class="reason">{_esc(m.reason_summary) or "등락 이유 정보가 없습니다."}</p>{quote}'
+        f'<div class="s-head"><h2>{_esc(m.name)}</h2><span class="s-meta">{meta}</span>{share}</div>'
+        f'<div class="price">{price}</div><div class="s-rule"></div>'
+        f'<div class="s-grid"><div class="s-main"><div class="chart-card">{svg}</div>{note}{table}</div>'
+        f'<aside class="s-side"><h3 class="s-h">등락 이유</h3>'
+        f'<p class="reason">{_esc(m.reason_summary) or "등락 이유 정보가 없습니다."}</p>{quote}</aside></div>'
         f'<p class="s-dis">{dis}</p>'
     )
 
@@ -364,11 +359,11 @@ _BRIEF_JS = """<script>
       return;
     }
     if(e.target.closest('a[href]')) return;  /* 행 안의 일반 링크는 그대로 */
-    var row=e.target.closest('tr[data-sheet]');  /* 종목 칸 어디를 눌러도 상세 시트 */
+    var row=e.target.closest('[data-sheet]');  /* 종목 카드·매크로 행 어디를 눌러도 상세 시트 */
     if(row&&isSheet(row.getAttribute('data-sheet'))){e.preventDefault(); show(row.getAttribute('data-sheet'),true);}
   });
   document.addEventListener('keydown',function(e){
-    if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('tr[data-sheet]')){
+    if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('[data-sheet]')){
       var id=e.target.getAttribute('data-sheet'); if(isSheet(id)){e.preventDefault(); show(id,true);}
     }
   });
@@ -377,8 +372,21 @@ _BRIEF_JS = """<script>
   var initial=location.hash.slice(1); if(isSheet(initial)) show(initial,false);
 })();
 (function(){
-  var table=document.getElementById('stocks'); if(!table) return;
-  var body=table.querySelector('tbody'); var rows=Array.prototype.slice.call(body.querySelectorAll('tr'));
+  /* 누르는 동안 하이라이트(터치·마우스 공통). 스크롤 시작과 구분하려고 70ms 뒤에 켜고, 짧은 탭도 보이도록 떼고 220ms 뒤에 끈다 */
+  var sel='.card[data-sheet],tr[data-sheet]';
+  document.addEventListener('pointerdown',function(e){
+    var c=e.target.closest&&e.target.closest(sel); if(!c) return;
+    var t=setTimeout(function(){c.classList.add('pressed');},70);
+    function clear(){window.removeEventListener('pointerup',up); window.removeEventListener('pointercancel',cancel);}
+    function up(){clear(); clearTimeout(t); c.classList.add('pressed'); setTimeout(function(){c.classList.remove('pressed');},220);}
+    function cancel(){clear(); clearTimeout(t); c.classList.remove('pressed');}
+    window.addEventListener('pointerup',up); window.addEventListener('pointercancel',cancel);
+  },{passive:true});
+  document.addEventListener('touchstart',function(){},{passive:true}); /* iOS Safari 가 :active 를 적용하게 */
+})();
+(function(){
+  var list=document.getElementById('stocks'); if(!list) return;
+  var rows=Array.prototype.slice.call(list.querySelectorAll('[data-order]'));
   var sort='order', market='all';
   function apply(){
     rows.sort(function(a,b){
@@ -387,7 +395,7 @@ _BRIEF_JS = """<script>
       return (+a.dataset.order)-(+b.dataset.order);
     });
     var shown=0;
-    rows.forEach(function(r){body.appendChild(r);var ok=(market==='all'||r.dataset.market===market);r.hidden=!ok;if(ok)shown++;});
+    rows.forEach(function(r){r.parentNode.appendChild(r);var ok=(market==='all'||r.dataset.market===market);r.hidden=!ok;if(ok)shown++;});
     var n=document.getElementById('stock-count'); if(n) n.textContent=shown;
   }
   function bind(attr,set){
@@ -437,9 +445,10 @@ def render_brief(brief: Brief, *, base_url: str = "", logo_svg: Optional[str] = 
     body = (
         f'<div class="page" id="top">{_mast(brief, root, logo_svg)}{newer}'
         f'<section class="sec" id="overview"><div class="rule"></div><h2>시황 요약</h2>{overview}</section>'
-        f'<section class="sec" id="indices"><div class="rule"></div><h2>주요 지수</h2>{_indices(brief)}</section>'
+        '<section class="sec" id="indices"><div class="rule"></div><div class="sec-head"><h2>주요 지수</h2>'
+        f'<p class="sec-meta">등락은 브리핑 본문 기준 · 최근 20일 추이</p></div>{_indices(brief)}</section>'
         f'<section class="sec" id="stocks-sec"><div class="rule"></div><div class="sec-head">'
-        f'<h2>오늘의 종목<span class="n" id="stock-count">{len(stocks)}</span></h2>{controls}</div>{_stock_table(brief, stocks)}</section>'
+        f'<h2>오늘의 종목<span class="n" id="stock-count">{len(stocks)}</span></h2>{controls}</div>{_stock_cards(brief, stocks)}</section>'
         f"{macro_section}{outlook}{_foot(brief)}</div>"
         + "".join(_sheet_overlay(brief, m) for m in stocks)
         + "".join(_sheet_overlay(brief, m) for m in brief.macros)
@@ -511,7 +520,7 @@ def _macro_section(brief: Brief) -> str:
         value = chart.fmt_unit(m.prices.last_close, m.unit) if (m.prices and m.prices.last_close is not None) else "—"
         rows.append(
             f'<tr data-sheet="x-{m.slug}" tabindex="0" aria-label="{_esc(m.name)} 상세 보기">'
-            f'<td class="nm-cell"><span class="nm">{_esc(m.name)}</span><span class="tk">{_esc(m.unit)}</span></td>'
+            f'<td class="nm-cell"><span class="nm">{_esc(m.name)}</span><span class="meta">{_esc(m.unit)}</span></td>'
             f'<td class="val r">{_esc(value)}</td><td class="chg r {cls}">{disp}</td>'
             f'<td class="mini">{_mini_link(f"#x-{m.slug}", m.name, _macro_mini(m), m.prices.points if m.prices else None)}</td>'
             f'<td class="why">{_esc(m.reason_summary) or "—"}</td></tr>'
@@ -519,7 +528,7 @@ def _macro_section(brief: Brief) -> str:
     return (
         '<section class="sec" id="macro"><div class="rule"></div><div class="sec-head">'
         f'<h2>금리 · 유가 · 금 · 환율<span class="n">{len(brief.macros)}</span></h2>'
-        '<span class="empty">브리핑에 언급된 매크로 자산 · 등락은 데이터 기준 전일 대비</span></div>'
+        '<p class="sec-meta">브리핑에 언급된 매크로 자산 · 등락은 데이터 기준 전일 대비</p></div>'
         '<div class="tbl stocks macro"><table><thead><tr><th>자산</th><th class="r">현재값</th><th class="r">전일 대비</th>'
         f'<th>최근 20일</th><th>브리핑 코멘트</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div></section>'
     )
@@ -546,12 +555,11 @@ def _macro_sheet_body(brief: Brief, m: StockMention) -> str:
         quote = (f'<blockquote class="quote">“{_esc(m.evidence)}”'
                  f'<a class="src" href="{_esc(brief.message_url)}" target="_blank" rel="noopener">원문 메시지 보기</a></blockquote>')
     return (
-        f'<div class="s-head"><h2>{_esc(m.name)}</h2><span class="tk">{_esc(m.unit)}</span><span class="mk">매크로</span></div>'
-        f'<div class="price">{price}</div>'
-        '<div class="s-rule"></div><h3 class="s-h">차트</h3>'
-        f'<div class="chart-card">{svg}</div>{note}{table}'
-        '<div class="s-rule"></div><h3 class="s-h">브리핑 코멘트</h3>'
-        f'<p class="reason">{_esc(m.reason_summary) or "코멘트가 없습니다."}</p>{quote}'
+        f'<div class="s-head"><h2>{_esc(m.name)}</h2><span class="s-meta">{_esc(m.unit)} · 매크로</span></div>'
+        f'<div class="price">{price}</div><div class="s-rule"></div>'
+        f'<div class="s-grid"><div class="s-main"><div class="chart-card">{svg}</div>{note}{table}</div>'
+        f'<aside class="s-side"><h3 class="s-h">브리핑 코멘트</h3>'
+        f'<p class="reason">{_esc(m.reason_summary) or "코멘트가 없습니다."}</p>{quote}</aside></div>'
         '<p class="s-dis">투자 참고용 자동 생성 자료이며 매매 권유가 아닙니다.</p>'
     )
 
@@ -620,7 +628,7 @@ def render_archive(entries: list[dict], *, logo_svg: Optional[str] = None, fonts
             )
         listing = "".join(parts)
     body = (
-        f'<div class="page" id="top">{_mast(None, root, logo_svg, sub=f"{CHANNEL_TITLE} 브리핑 아카이브", date_label="지난 브리핑")}'
+        f'<div class="page" id="top">{_mast(None, root, logo_svg, sub=f"{CHANNEL_TITLE} 브리핑 아카이브", date_label="")}'
         '<section class="sec"><div class="rule"></div><div class="sec-head"><h2>지난 브리핑'
         f'<span class="n">{len(entries)}</span></h2>'
         '<input class="search" id="q" type="search" placeholder="날짜 또는 종목명으로 검색" aria-label="아카이브 검색"></div>'

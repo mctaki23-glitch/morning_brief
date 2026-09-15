@@ -61,6 +61,13 @@ class StockMaster:
                 return entry
         return None
 
+    def resolve_exact(self, name_or_ticker: Optional[str]) -> Optional[StockEntry]:
+        """별칭 또는 티커 정확 일치만(부분 포함 없음). 'SK하이닉스 ADR' 처럼 원주와 다른 상장물을 찾을 때 쓴다."""
+        if not name_or_ticker:
+            return None
+        key = name_or_ticker.strip()
+        return self._alias_lower.get(key.lower()) or self._by_ticker.get(key)
+
     def scan(self, text: str) -> list[StockEntry]:
         """본문에서 언급된 종목 엔트리를 등장 순서대로 (중복 제거) 반환."""
         found: list[StockEntry] = []
