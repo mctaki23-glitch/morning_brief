@@ -132,6 +132,21 @@ for sym in ("OKLO", "MU", "HXSCL"):
     PROBES.append((f"nasdaq historical {sym} (last rows)", nasdaq(sym, "stocks"), NASDAQ_H, 20))
 
 
+# ── OTC 예탁증서(SK하이닉스 ADR = HXSCL) 시세 소스 후보 — Nasdaq·네이버 해외주식은 09-15 재처리에서 조용히 실패(rCode 400 / 409) ──
+PLAIN_UA = {"User-Agent": _p._UA, "Accept": "*/*"}
+PROBES.append(("nasdaq chart HXSCL 5d", f"https://api.nasdaq.com/api/quote/HXSCL/chart?assetclass=stocks&fromdate={END - timedelta(days=5):%Y-%m-%d}&todate={END:%Y-%m-%d}", NASDAQ_H, 20))
+for sym in ("HXSCL.PK", "HXSCL.K", "HXSCL.US"):
+    PROBES.append((f"naver world {sym}", f"https://api.stock.naver.com/stock/{urllib.parse.quote(sym)}/price?pageSize=3&page=1", NAVER_H, 20))
+PROBES.append(("naver m search HXSCL", "https://m.stock.naver.com/api/search/all?query=HXSCL", NAVER_H, 20))
+PROBES.append(("naver m search 하이닉스 ADR", "https://m.stock.naver.com/api/search/all?query=" + urllib.parse.quote("SK하이닉스 ADR"), NAVER_H, 20))
+PROBES.append(("stooq hxscl.us csv", "https://stooq.com/q/d/l/?s=hxscl.us&i=d", PLAIN_UA, 20))
+PROBES.append(("cnbc quote HXSCL", "https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols=HXSCL&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json&events=1", PLAIN_UA, 20))
+PROBES.append(("cnbc bars HXSCL 1M", "https://ts-api.cnbc.com/harmony/app/bars/1M/1D/adjusted/HXSCL.json", PLAIN_UA, 20))
+PROBES.append(("otcmarkets inside HXSCL", "https://backend.otcmarkets.com/otcapi/stock/trade/inside/HXSCL?symbol=HXSCL", {"User-Agent": _p._UA, "Accept": "application/json", "Referer": "https://www.otcmarkets.com/", "Origin": "https://www.otcmarkets.com"}, 20))
+PROBES.append(("marketwatch csv HXSCL", f"https://www.marketwatch.com/investing/stock/hxscl/downloaddatapartial?startdate={END - timedelta(days=40):%m/%d/%Y}%2000:00:00&enddate={END:%m/%d/%Y}%2000:00:00&daterange=d30&frequency=p1d&csvdownload=true&downloadpartial=false&newdates=false", PLAIN_UA, 20))
+PROBES.append(("google finance HXSCL", "https://www.google.com/finance/quote/HXSCL:OTCMKTS", PLAIN_UA, 20))
+
+
 for sym in ("OKLO", "MU"):
     PROBES.append((f"nasdaq chart {sym} 1d", f"https://api.nasdaq.com/api/quote/{sym}/chart?assetclass=stocks&fromdate={END - timedelta(days=1):%Y-%m-%d}&todate={END:%Y-%m-%d}", NASDAQ_H, 20))
     PROBES.append((f"nasdaq chart {sym} default", f"https://api.nasdaq.com/api/quote/{sym}/chart?assetclass=stocks", NASDAQ_H, 20))
