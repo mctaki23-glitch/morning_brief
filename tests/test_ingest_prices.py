@@ -315,3 +315,35 @@ def test_get_prices_freshens_stale_nasdaq_series_from_naver(monkeypatch):
     stale.points = pts(["2026-09-08", "2026-09-09"]); stale.source = "nasdaq"
     s2 = prices.get_prices("META", "US", days=45, allow_synthetic=False, freshen_through="2026-09-09")
     assert s2.source == "nasdaq" and calls["naver"] == 1
+
+
+def test_nasdaq_latest_bar_from_quote_endpoints(monkeypatch):
+    """마감 직후 historical 에 없는 그날 봉을 /info(Closed at 종가) + /summary(고저·거래량)로 구성한다."""
+    from morning_brief import prices
+    from morning_brief.models import PricePoint, PriceSeries
+
+    info = {"data": {"marketStatus": "After-Hours",
+                     "primaryData": {"lastSalePrice": "$36.1798", "netChange": "-0.0452", "lastTradeTimestamp": "Sep 14, 2026 7:56 PM ET"},
+                     "secondaryData": {"lastSalePrice": "$36.225", "netChange": "+0.005", "lastTradeTimestamp": "Closed at Sep 14, 2026 4:00 PM ET"}}}
+    summary = {"data": {"summaryData": {"TodayHighLow": {"value": "$37.10/$35.90"}, "ShareVolume": {"value": "11,644,711"},
+                                        "PreviousClose": {"value": "$36.22"}, "OpenPrice": {"value": "$36.40"}}}}
+    calls = []
+
+    def fake_json(url, headers):
+        calls.append(url)
+        return info if "/info" in url else summary
+    monkeypatch.setattr(prices, "_get_json", fake_json)
+    bar = prices.nasdaq_latest_bar("OKLO", "2026-09-14")
+    assert bar == PricePoint("2026-09-14", 36.4, 37.1, 35.9, 36.225, 11644711.0)
+    assert prices.nasdaq_latest_bar("OKLO", "2026-09-11") is None  # through 이후 날짜의 봉은 쓰지 않는다
+
+    # 고저가 N/A 이면 시가·종가로 채운 봉
+    summary["data"]["summaryData"]["TodayHighLow"]["value"] = "N/A"; del summary["data"]["summaryData"]["OpenPrice"]
+    bar2 = prices.nasdaq_latest_bar("OKLO", "2026-09-14")
+    assert (bar2.open, bar2.high, bar2.low, bar2.close) == (36.225, 36.225, 36.225, 36.225)
+
+    # freshen: 네이버가 없는 NYSE 종목은 Nasdaq 시세 요약으로 보충되고 source 태그가 붙는다
+    stale = PriceSeries("OKLO", [PricePoint("2026-09-10", 40, 41, 39, 39.88, 1e6), PricePoint("2026-09-11", 39, 40, 35, 36.22, 1e6)], "USD", "nasdaq", "2026-09-11")
+    monkeypatch.setattr(prices, "from_naver_world", lambda ticker, days, exchange=None: None)
+    out = prices.freshen(stale, "OKLO", 45, "NYSE", "2026-09-14")
+    assert out.points[-1].date == "2026-09-14" and out.points[-1].close == 36.225 and out.source == "nasdaq+nasdaq-quote" and out.as_of == "2026-09-14"

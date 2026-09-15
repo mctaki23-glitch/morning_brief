@@ -398,3 +398,23 @@ def test_ms_alias_is_microsoft_and_morgan_stanley_by_name(master: StockMaster):
     assert master.resolve("MS").ticker == "MSFT" and master.resolve("모건스탠리").ticker == "MS" and master.resolve("BOA").ticker == "BAC"
     mentions, unmapped = _extract_stocks("MS(+0.16%)와 모건스탠리(+1.20%), BOA(-0.50%), 코스트코(+0.30%), P&G(-0.10%) 등락.", master)
     assert unmapped == [] and [m.ticker for m in mentions] == ["MSFT", "MS", "BAC", "COST", "PG"]
+
+
+def test_stale_series_hides_data_delta_next_to_text_pct():
+    """2026-09-15 오클로: 본문 -0.03%(09-14) 옆에 09-11 봉 기준 변동폭(-3.66)이 붙어 어긋났다. 세션 봉이 없으면 변동폭 대신 기준일을 표시."""
+    from morning_brief import render
+    from morning_brief.models import Brief, PricePoint, PriceSeries, StockMention
+
+    assert render.expected_session("2026-09-15") == "2026-09-14" and render.expected_session("2026-09-12") == "2026-09-11"
+    assert render.expected_session("2026-09-14") == "2026-09-11"  # 월요일 브리핑 → 금요일 세션
+    pts = [PricePoint("2026-09-10", 40, 41, 39, 39.88, 1e6), PricePoint("2026-09-11", 39, 40, 35, 36.22, 1e6)]
+    stale = StockMention(name="오클로", ticker="OKLO", market="US", direction="DOWN", change_pct=-0.03, reason_summary="제한적인 등락.",
+                         evidence="오클로(-0.03%)", prices=PriceSeries("OKLO", pts, "USD", "nasdaq", "2026-09-11"))
+    brief = Brief(date="2026-09-15", market_overview="시황.", generated_at="2026-09-15T09:29:00+09:00", stocks=[stale])
+    html = render.render_brief(brief)
+    assert "(−3.66)" not in html and "시세 2026-09-11 종가까지" in html and "▼0.03%" in html
+    # 세션 봉이 있으면 변동폭 표시
+    fresh_pts = pts + [PricePoint("2026-09-14", 36.3, 36.9, 35.9, 36.21, 1e6)]
+    stale.prices = PriceSeries("OKLO", fresh_pts, "USD", "nasdaq+naver", "2026-09-14")
+    html2 = render.render_brief(brief)
+    assert "(−0.01)" in html2 and "종가까지" not in html2
