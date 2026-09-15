@@ -132,6 +132,37 @@ for sym in ("OKLO", "MU", "HXSCL"):
     PROBES.append((f"nasdaq historical {sym} (last rows)", nasdaq(sym, "stocks"), NASDAQ_H, 20))
 
 
+# ── OTC 예탁증서(SK하이닉스 ADR = HXSCL) 시세 소스 후보 — Nasdaq·네이버 해외주식은 09-15 재처리에서 조용히 실패(rCode 400 / 409) ──
+PLAIN_UA = {"User-Agent": _p._UA, "Accept": "*/*"}
+PROBES.append(("nasdaq chart HXSCL 5d", f"https://api.nasdaq.com/api/quote/HXSCL/chart?assetclass=stocks&fromdate={END - timedelta(days=5):%Y-%m-%d}&todate={END:%Y-%m-%d}", NASDAQ_H, 20))
+for sym in ("HXSCL.PK", "HXSCL.K", "HXSCL.US"):
+    PROBES.append((f"naver world {sym}", f"https://api.stock.naver.com/stock/{urllib.parse.quote(sym)}/price?pageSize=3&page=1", NAVER_H, 20))
+PROBES.append(("naver m search HXSCL", "https://m.stock.naver.com/api/search/all?query=HXSCL", NAVER_H, 20))
+PROBES.append(("naver m search 하이닉스 ADR", "https://m.stock.naver.com/api/search/all?query=" + urllib.parse.quote("SK하이닉스 ADR"), NAVER_H, 20))
+PROBES.append(("stooq hxscl.us csv", "https://stooq.com/q/d/l/?s=hxscl.us&i=d", PLAIN_UA, 20))
+PROBES.append(("cnbc quote HXSCL", "https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols=HXSCL&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json&events=1", PLAIN_UA, 20))
+PROBES.append(("cnbc bars HXSCL 1M", "https://ts-api.cnbc.com/harmony/app/bars/1M/1D/adjusted/HXSCL.json", PLAIN_UA, 20))
+PROBES.append(("otcmarkets inside HXSCL", "https://backend.otcmarkets.com/otcapi/stock/trade/inside/HXSCL?symbol=HXSCL", {"User-Agent": _p._UA, "Accept": "application/json", "Referer": "https://www.otcmarkets.com/", "Origin": "https://www.otcmarkets.com"}, 20))
+PROBES.append(("marketwatch csv HXSCL", f"https://www.marketwatch.com/investing/stock/hxscl/downloaddatapartial?startdate={END - timedelta(days=40):%m/%d/%Y}%2000:00:00&enddate={END:%m/%d/%Y}%2000:00:00&daterange=d30&frequency=p1d&csvdownload=true&downloadpartial=false&newdates=false", PLAIN_UA, 20))
+PROBES.append(("google finance HXSCL", "https://www.google.com/finance/quote/HXSCL:OTCMKTS", PLAIN_UA, 20))
+
+
+# ── HXSCL 2차 후보: CNBC 시세 JSON 전체 덤프 · CNBC 시계열 경로 변형 · 서버 렌더링 히스토리 페이지(FT · stockanalysis) · Yahoo 재시도 ──
+PROBES.append(("dump cnbc quote HXSCL", "https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols=HXSCL&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json&events=1", PLAIN_UA, 20))
+for path in ("bars/1D/1M/adjusted/HXSCL.json", "bars/1M/1D/adjusted/HXSCL-US.json", "bars/3M/1D/adjusted/HXSCL.json", "bars/1Y/1D/adjusted/HXSCL.json",
+             "charts/1M.json?symbol=HXSCL", "bars/1M/1D/adjusted/AAPL.json"):
+    PROBES.append((f"cnbc ts {path}", f"https://ts-api.cnbc.com/harmony/app/{path}", PLAIN_UA, 20))
+PROBES.append(("html ft tearsheet HXSCL:PKC", "https://markets.ft.com/data/equities/tearsheet/historical?s=HXSCL:PKC", PLAIN_UA, 25))
+PROBES.append(("html stockanalysis HXSCL history", "https://stockanalysis.com/quote/otc/HXSCL/history/", PLAIN_UA, 25))
+PROBES.append(("yahoo chart HXSCL", "https://query2.finance.yahoo.com/v8/finance/chart/HXSCL?range=3mo&interval=1d", PLAIN_UA, 20))
+PROBES.append(("yahoo spark HXSCL", "https://query1.finance.yahoo.com/v7/finance/spark?symbols=HXSCL&range=3mo&interval=1d", PLAIN_UA, 20))
+
+
+PROBES.append(("dump cnbc ts charts HXSCL", "https://ts-api.cnbc.com/harmony/app/charts/1M.json?symbol=HXSCL", PLAIN_UA, 20))
+PROBES.append(("dump cnbc ts charts AAPL", "https://ts-api.cnbc.com/harmony/app/charts/1M.json?symbol=AAPL", PLAIN_UA, 20))
+PROBES.append(("dump cnbc quote HXSCL.PK", "https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols=HXSCL.PK&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json", PLAIN_UA, 20))
+
+
 for sym in ("OKLO", "MU"):
     PROBES.append((f"nasdaq chart {sym} 1d", f"https://api.nasdaq.com/api/quote/{sym}/chart?assetclass=stocks&fromdate={END - timedelta(days=1):%Y-%m-%d}&todate={END:%Y-%m-%d}", NASDAQ_H, 20))
     PROBES.append((f"nasdaq chart {sym} default", f"https://api.nasdaq.com/api/quote/{sym}/chart?assetclass=stocks", NASDAQ_H, 20))
@@ -155,9 +186,34 @@ def live_topup_checks() -> None:
             print(f"### live nasdaq_latest_bar {sym}/{assetclass}\n    ERR {exc!r}", flush=True)
 
 
+def ft_probe() -> None:
+    """FT 마켓 데이터: 티어시트 HTML 에서 내부 xid 를 찾고 get-historical-prices 로 일별 시세 표(HTML 행)를 받아본다 — OTC ADR 커버리지 확인."""
+    import re as _re
+    for sym in ("HXSCL:PKC", "HXSCL:OTC", "OKLO:NYQ"):
+        status, body = fetch(f"https://markets.ft.com/data/equities/tearsheet/summary?s={urllib.parse.quote(sym)}", PLAIN_UA, 25)
+        xids = sorted(set(_re.findall(r'"xid"\s*:\s*"?(\d+)', body)))
+        price = _re.findall(r'mod-ui-data-list__value"[^>]*>([^<]{1,20})<', body)[:3]
+        asof = _re.findall(r'Data delayed[^<]{0,80}|as of [^<]{0,60}', body)[:2]
+        print(f"### ft summary {sym}\n    {status} len={len(body)} xids={xids[:5]} price={price} asof={asof}", flush=True)
+        for xid in xids[:2]:
+            url = (f"https://markets.ft.com/data/equities/ajax/get-historical-prices?startDate={END - timedelta(days=35):%Y/%m/%d}"
+                   f"&endDate={END:%Y/%m/%d}&symbol={xid}")
+            st2, b2 = fetch(url, {**PLAIN_UA, "X-Requested-With": "XMLHttpRequest", "Referer": f"https://markets.ft.com/data/equities/tearsheet/historical?s={sym}"}, 25)
+            rows = _re.findall(r"<tr>(.*?)</tr>", b2.replace("\\/", "/"), _re.S)
+            print(f"### ft historical xid={xid}\n    {url}\n    {st2} len={len(b2)} rows={len(rows)} first={rows[0][:400] if rows else b2[:300]!r}", flush=True)
+
+
 if __name__ == "__main__":
     for label, url, headers, timeout in PROBES:
         status, body = fetch(url, headers, timeout)
-        detail = naver_items(body) if label.startswith("naver list") and status == "200" else summarize(body)
+        if label.startswith("dump "):
+            detail = body[:2500].replace("\n", " ")
+        elif label.startswith("html "):
+            import re as _re
+            dates = _re.findall(r"(?:Sep|Aug) \d{1,2}, 2026|2026-0[89]-\d{2}", body)[:6]
+            detail = f"len={len(body)} table={'<table' in body} dates={dates} sample={body[:160]!r}"
+        else:
+            detail = naver_items(body) if label.startswith("naver list") and status == "200" else summarize(body)
         print(f"### {label}\n    {url}\n    {status} :: {detail}", flush=True)
     live_topup_checks()
+    ft_probe()
