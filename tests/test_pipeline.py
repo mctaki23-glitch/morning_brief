@@ -233,7 +233,7 @@ def test_rule_based_on_real_briefing_format(master: StockMaster):
     by = {m.ticker or m.name: m for m in r.stocks}
     assert by["INTC"].change_pct == 9.05 and by["INTC"].direction == "UP" and "PC CPU 가격" in by["INTC"].reason_summary
     assert by["MU"].change_pct == -1.61 and by["MU"].reason_summary.startswith("마이크론(-1.61%)은")  # 앞 문장에 붙지 않음
-    assert by["HXSCL"].change_pct == 4.83 and by["HXSCL"].market == "US" and by["HXSCL"].name == "SK하이닉스 ADR"  # SK하이닉스 ADR → 미국 예탁증서(원주 000660 아님)
+    assert by["SKHY"].change_pct == 4.83 and by["SKHY"].market == "US" and by["SKHY"].name == "SK하이닉스 ADR"  # SK하이닉스 ADR → 미국 예탁증서(원주 000660 아님)
     assert "000660" not in by
     assert by["NVS"].change_pct == -13.93 and by["GLW"].change_pct == 7.56
     assert "005930" not in by  # 삼성전자: 재고 뉴스 문맥의 언급(등락률 표기 없음)은 종목 서머리로 만들지 않는다
@@ -422,7 +422,7 @@ def test_stale_series_hides_data_delta_next_to_text_pct():
 
 
 def test_korean_adr_mentions_are_us_listings_not_the_kr_share(master: StockMaster):
-    """'SK하이닉스 ADR(-7.60%)' · 'SK하이닉스ADR(+0.94%)' 은 미국 예탁증서 — 원주 000660(한국)이 아니라 HXSCL(미국)로.
+    """'SK하이닉스 ADR(-7.60%)' · 'SK하이닉스ADR(+0.94%)' 은 미국 예탁증서 — 원주 000660(한국)이 아니라 SKHY(미국)로.
     마스터에 DR 이 없는 한국 종목의 DR 은 티커 없는 미국 종목으로 두고, 원주 언급('SK하이닉스(+1.10%)')은 그대로 한국 종목."""
     from morning_brief.summarize import _extract_stocks
     text = ("SK하이닉스 ADR(-7.60%), 샌디스크(-4.98%) 등 메모리 낙폭 축소. 삼성전자 GDR(+1.20%)도 강세. TSMC ADR(+0.50%)은 보합권.\n"
@@ -430,9 +430,9 @@ def test_korean_adr_mentions_are_us_listings_not_the_kr_share(master: StockMaste
     mentions, unmapped = _extract_stocks(text, master)
     by = {m.name: m for m in mentions}
     adr = by["SK하이닉스 ADR"]
-    assert (adr.ticker, adr.market, adr.change_pct) == ("HXSCL", "US", -7.6)
+    assert (adr.ticker, adr.market, adr.change_pct) == ("SKHY", "US", -7.6)
     assert by["삼성전자 GDR"].ticker is None and by["삼성전자 GDR"].market == "US" and "삼성전자 GDR" in unmapped
     assert by["TSMC"].ticker == "TSM"  # 미국 기업의 ADR 은 미국 상장 그 자체
     assert (by["SK하이닉스"].ticker, by["SK하이닉스"].market, by["SK하이닉스"].change_pct) == ("000660", "KR", 1.1)
     m2, _ = _extract_stocks("마이크론(-0.22%), SK하이닉스ADR(+0.94%), 샌디스크(-3.50%) 하락.", master)
-    assert [(m.name, m.ticker) for m in m2] == [("마이크론", "MU"), ("SK하이닉스 ADR", "HXSCL"), ("샌디스크", "SNDK")]
+    assert [(m.name, m.ticker) for m in m2] == [("마이크론", "MU"), ("SK하이닉스 ADR", "SKHY"), ("샌디스크", "SNDK")]

@@ -37,7 +37,7 @@
   {"ticker": "MARA", "market": "US", "names": ["마라홀딩스", "마라톤", "MARA"]},
   {"ticker": "005930", "market": "KR", "names": ["삼성전자", "삼전"], "exchange": "KOSPI"},
   {"ticker": "000660", "market": "KR", "names": ["SK하이닉스", "하이닉스"], "exchange": "KOSPI"},
-  {"ticker": "HXSCL", "market": "US", "names": ["SK하이닉스 ADR", "SK하이닉스ADR", "하이닉스 ADR", "SK hynix ADR", "HXSCL"], "exchange": "OTC"},
+  {"ticker": "SKHY", "market": "US", "names": ["SK하이닉스 ADR", "SK하이닉스ADR", "하이닉스 ADR", "SK hynix ADR", "SKHY"]},
   {"ticker": "373220", "market": "KR", "names": ["LG에너지솔루션", "엘지엔솔", "LG엔솔"], "exchange": "KOSPI"},
   {"ticker": "207940", "market": "KR", "names": ["삼성바이오로직스", "삼바"], "exchange": "KOSPI"},
   {"ticker": "005380", "market": "KR", "names": ["현대차", "현대자동차"], "exchange": "KOSPI"},
