@@ -188,8 +188,8 @@ if __name__ == "__main__":
             detail = body[:2500].replace("\n", " ")
         elif label.startswith("html "):
             import re as _re
-            detail = (f"len={len(body)} table={'<table' in body} dates={_re.findall(r'(?:Sep|Aug) \\d{1,2}, 2026|2026-0[89]-\\d{2}', body)[:6]} "
-                      f"sample={body[:160]!r}")
+            dates = _re.findall(r"(?:Sep|Aug) \d{1,2}, 2026|2026-0[89]-\d{2}", body)[:6]
+            detail = f"len={len(body)} table={'<table' in body} dates={dates} sample={body[:160]!r}"
         else:
             detail = naver_items(body) if label.startswith("naver list") and status == "200" else summarize(body)
         print(f"### {label}\n    {url}\n    {status} :: {detail}", flush=True)
