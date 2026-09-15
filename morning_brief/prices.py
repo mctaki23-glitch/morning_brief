@@ -405,10 +405,12 @@ def freshen(series: PriceSeries, ticker: str, days: int, exchange: Optional[str]
         print(f"[prices] {ticker}: 최신 봉 보충 실패 {exc!r}")
         return series
     if fresh is None:
+        print(f"[prices] {ticker}: 최신 봉 보충 실패 — 네이버 세계주식 응답 없음(심볼 후보 {naver_world_symbols(ticker, exchange)})")
         return series
     last = series.points[-1].date
     extra = [p for p in fresh.points if last < p.date <= through]
     if not extra:
+        print(f"[prices] {ticker}: 최신 봉 보충 실패 — 네이버 마지막 봉 {fresh.points[-1].date} (필요: {last} 이후 ~{through})")
         return series
     series.points = (series.points + extra)[-days:]
     series.as_of = series.points[-1].date
