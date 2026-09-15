@@ -158,6 +158,11 @@ PROBES.append(("yahoo chart HXSCL", "https://query2.finance.yahoo.com/v8/finance
 PROBES.append(("yahoo spark HXSCL", "https://query1.finance.yahoo.com/v7/finance/spark?symbols=HXSCL&range=3mo&interval=1d", PLAIN_UA, 20))
 
 
+PROBES.append(("dump cnbc ts charts HXSCL", "https://ts-api.cnbc.com/harmony/app/charts/1M.json?symbol=HXSCL", PLAIN_UA, 20))
+PROBES.append(("dump cnbc ts charts AAPL", "https://ts-api.cnbc.com/harmony/app/charts/1M.json?symbol=AAPL", PLAIN_UA, 20))
+PROBES.append(("dump cnbc quote HXSCL.PK", "https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols=HXSCL.PK&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json", PLAIN_UA, 20))
+
+
 for sym in ("OKLO", "MU"):
     PROBES.append((f"nasdaq chart {sym} 1d", f"https://api.nasdaq.com/api/quote/{sym}/chart?assetclass=stocks&fromdate={END - timedelta(days=1):%Y-%m-%d}&todate={END:%Y-%m-%d}", NASDAQ_H, 20))
     PROBES.append((f"nasdaq chart {sym} default", f"https://api.nasdaq.com/api/quote/{sym}/chart?assetclass=stocks", NASDAQ_H, 20))
@@ -181,6 +186,23 @@ def live_topup_checks() -> None:
             print(f"### live nasdaq_latest_bar {sym}/{assetclass}\n    ERR {exc!r}", flush=True)
 
 
+def ft_probe() -> None:
+    """FT 마켓 데이터: 티어시트 HTML 에서 내부 xid 를 찾고 get-historical-prices 로 일별 시세 표(HTML 행)를 받아본다 — OTC ADR 커버리지 확인."""
+    import re as _re
+    for sym in ("HXSCL:PKC", "HXSCL:OTC", "OKLO:NYQ"):
+        status, body = fetch(f"https://markets.ft.com/data/equities/tearsheet/summary?s={urllib.parse.quote(sym)}", PLAIN_UA, 25)
+        xids = sorted(set(_re.findall(r'"xid"\s*:\s*"?(\d+)', body)))
+        price = _re.findall(r'mod-ui-data-list__value"[^>]*>([^<]{1,20})<', body)[:3]
+        asof = _re.findall(r'Data delayed[^<]{0,80}|as of [^<]{0,60}', body)[:2]
+        print(f"### ft summary {sym}\n    {status} len={len(body)} xids={xids[:5]} price={price} asof={asof}", flush=True)
+        for xid in xids[:2]:
+            url = (f"https://markets.ft.com/data/equities/ajax/get-historical-prices?startDate={END - timedelta(days=35):%Y/%m/%d}"
+                   f"&endDate={END:%Y/%m/%d}&symbol={xid}")
+            st2, b2 = fetch(url, {**PLAIN_UA, "X-Requested-With": "XMLHttpRequest", "Referer": f"https://markets.ft.com/data/equities/tearsheet/historical?s={sym}"}, 25)
+            rows = _re.findall(r"<tr>(.*?)</tr>", b2.replace("\\/", "/"), _re.S)
+            print(f"### ft historical xid={xid}\n    {url}\n    {st2} len={len(b2)} rows={len(rows)} first={rows[0][:400] if rows else b2[:300]!r}", flush=True)
+
+
 if __name__ == "__main__":
     for label, url, headers, timeout in PROBES:
         status, body = fetch(url, headers, timeout)
@@ -194,3 +216,4 @@ if __name__ == "__main__":
             detail = naver_items(body) if label.startswith("naver list") and status == "200" else summarize(body)
         print(f"### {label}\n    {url}\n    {status} :: {detail}", flush=True)
     live_topup_checks()
+    ft_probe()
