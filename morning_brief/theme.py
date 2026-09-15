@@ -150,6 +150,7 @@ overflow:auto;overscroll-behavior:contain;background:var(--canvas);border:1px so
 .price{font-family:var(--en);font-size:24px;font-weight:700;color:var(--ink);margin:6px 0 14px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .price small{font-size:14px;font-weight:500;color:var(--muted)}
 .price .chg{font-weight:700}
+.price small.stale{color:var(--active);font-weight:600}
 .s-rule{height:1px;background:var(--orange);margin:14px 0 10px}
 .s-h{font-size:16px;font-weight:700;color:var(--ink);margin:0 0 8px}
 .chart-card{background:var(--s2);border:1px solid var(--hair2);padding:8px}

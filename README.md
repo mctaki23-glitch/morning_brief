@@ -21,6 +21,7 @@
         ② 구조화 ──────▶ Claude Opus 5 도구 호출(근거 발췌 검증) → 실패 시 규칙 기반
                         │
         ③ 시세 ────────▶ 미국 Nasdaq→네이버 해외주식→investing.com→Stooq→Yahoo · 한국 네이버→Yahoo · archive 캐시 폴백
+                        (새벽 실행에 Nasdaq 일봉이 전일 봉을 아직 안 주면 네이버 해외주식 → Nasdaq 시세 API /chart·/info 로 그 봉만 보충)
                         │
         ④ 아카이브 ────▶ archive/<date>/{raw.txt, meta.json, brief.json, prices/}  (리포지토리 커밋 = 소스 오브 트루스)
                         │

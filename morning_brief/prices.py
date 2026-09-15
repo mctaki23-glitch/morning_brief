@@ -15,6 +15,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import re
 import random
 import time
 import urllib.error
@@ -398,23 +399,156 @@ def get_prices(ticker: str, market: str = "US", days: int = 45, *, allow_synthet
 
 
 def freshen(series: PriceSeries, ticker: str, days: int, exchange: Optional[str], through: str) -> PriceSeries:
-    """네이버 세계주식 일봉에서 series 마지막 봉 이후 ~ through 까지의 봉을 가져와 덧붙인다(거래량은 없으면 0)."""
+    """series 마지막 봉 이후 ~ through 까지의 봉을 덧붙인다. 1차 네이버 세계주식 일봉(거래량 없음), 2차 Nasdaq 시세 API
+    (/chart 구간 일봉 → /info·/summary 마감 종가 봉) — 네이버에 없는 NYSE 종목(OKLO·ORCL·DELL·ABBV·COHR·IONQ·CRCL 등)용."""
+    last = series.points[-1].date
+    extra: list[PricePoint] = []
+    tag = ""
     try:
         fresh = from_naver_world(ticker, days, exchange)
     except _NET_ERRORS as exc:
-        print(f"[prices] {ticker}: 최신 봉 보충 실패 {exc!r}")
-        return series
-    if fresh is None:
-        return series
-    last = series.points[-1].date
-    extra = [p for p in fresh.points if last < p.date <= through]
+        print(f"[prices] {ticker}: 네이버 보충 실패 {exc!r}")
+        fresh = None
+    if fresh is not None:
+        extra = [p for p in fresh.points if last < p.date <= through]
+        tag = "naver"
+        if not extra:
+            print(f"[prices] {ticker}: 네이버 마지막 봉 {fresh.points[-1].date} — 필요한 {through} 봉 없음")
+    else:
+        print(f"[prices] {ticker}: 네이버 세계주식 응답 없음(심볼 후보 {naver_world_symbols(ticker, exchange)})")
     if not extra:
+        extra, tag = nasdaq_topup(ticker, last, through), "nasdaq-quote"
+    if not extra:
+        print(f"[prices] {ticker}: 최신 봉 보충 실패 — {last} 이후 ~{through} 봉을 어느 소스에서도 못 받음")
         return series
     series.points = (series.points + extra)[-days:]
     series.as_of = series.points[-1].date
-    series.source = f"{series.source}+naver"
-    print(f"[prices] {ticker}: {last} 이후 봉 {len(extra)}개를 네이버에서 보충 (~{series.as_of})")
+    series.source = f"{series.source}+{tag}"
+    print(f"[prices] {ticker}: {last} 이후 봉 {len(extra)}개를 {tag} 에서 보충 (~{series.as_of})")
     return series
+
+
+_NASDAQ_QUOTE_HEADERS = {"User-Agent": _UA, "Accept": "application/json, text/plain, */*", "Accept-Language": "en-US,en;q=0.9",
+                         "Origin": "https://www.nasdaq.com", "Referer": "https://www.nasdaq.com/"}
+_MONTHS = {m: i for i, m in enumerate(("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"), 1)}
+_NY = ZoneInfo("America/New_York")
+
+
+def _nasdaq_json(path: str) -> dict:
+    return _get_json(f"https://api.nasdaq.com/api/quote/{urllib.parse.quote(path, safe='/?=&')}", _NASDAQ_QUOTE_HEADERS)
+
+
+def _parse_closed_at(ts: str) -> Optional[str]:
+    """'Closed at Sep 14, 2026 4:00 PM ET' 또는 'Sep 14, 2026 7:56 PM ET' → '2026-09-14'."""
+    m = re.search(r"([A-Z][a-z]{2}) (\d{1,2}), (\d{4})", ts or "")
+    if not m or m.group(1) not in _MONTHS:
+        return None
+    return f"{int(m.group(3)):04d}-{_MONTHS[m.group(1)]:02d}-{int(m.group(2)):02d}"
+
+
+def _parse_mdy(s: str) -> Optional[str]:
+    """/chart 일봉의 dateTime '9/14/2026'(M/D/YYYY) → '2026-09-14'. 분 단위 시세의 '4:00 AM ET' 꼴은 None."""
+    m = re.fullmatch(r"\s*(\d{1,2})/(\d{1,2})/(\d{4})\s*", s or "")
+    if not m:
+        return None
+    return f"{int(m.group(3)):04d}-{int(m.group(1)):02d}-{int(m.group(2)):02d}"
+
+
+def _session_complete(bar_date: str, now: Optional[datetime] = None) -> bool:
+    """그 날짜의 미국 정규장이 끝났는가(뉴욕 16:05 이후). 장중에 호출되면 진행 중인 날의 봉은 받지 않는다."""
+    now = now or datetime.now(_NY)
+    today = now.date().isoformat()
+    return bar_date < today or (bar_date == today and (now.hour, now.minute) >= (16, 5))
+
+
+def nasdaq_chart_bars(ticker: str, from_date: str, to_date: str, assetclass: str = "stocks") -> list[PricePoint]:
+    """/chart?fromdate=&todate= 는 구간 일봉 배열을 준다(러너 실측 2026-09-15): z={open, high, low, close, volume, dateTime 'M/D/YYYY'}.
+    historical 보다 먼저(마감 직후) 갱신되고 종가가 공식 종가와 같다(OKLO 09-14: chart 36.21 ↔ 본문 -0.03%; /info 는 36.225).
+    기간 없이 부르면 분 단위 시세(dateTime '4:00 AM ET')라 그런 행은 건너뛴다."""
+    data = _nasdaq_json(f"{ticker}/chart?assetclass={assetclass}&fromdate={from_date}&todate={to_date}")
+    rows = ((data or {}).get("data") or {}).get("chart") or []
+    out: list[PricePoint] = []
+    for row in rows:
+        z = row.get("z") if isinstance(row, dict) else None
+        if not isinstance(z, dict):
+            continue
+        d = _parse_mdy(str(z.get("dateTime", "")))
+        close = _num(z.get("close")) if z.get("close") not in (None, "") else _num(z.get("value"))
+        if not d or close is None:
+            continue
+        open_, high, low = _num(z.get("open")), _num(z.get("high")), _num(z.get("low"))
+        if open_ is None:
+            open_ = close
+        if high is None or low is None:
+            high, low = max(open_, close), min(open_, close)
+        out.append(PricePoint(d, round(open_, 4), round(max(high, open_, close), 4), round(min(low, open_, close), 4), round(close, 4),
+                              _num(z.get("volume")) or 0.0))
+    out.sort(key=lambda p: p.date)
+    return out
+
+
+def nasdaq_topup(ticker: str, last: str, through: str, assetclass: str = "stocks") -> list[PricePoint]:
+    """last 이후 ~ through 까지의 봉을 Nasdaq 시세 API 에서 받는다. 1차 /chart 구간 일봉(정식 OHLCV), 2차 /info 'Closed at' 종가 +
+    /summary 고저·거래량으로 만든 봉. 네트워크·파싱 실패는 빈 목록(호출자가 다른 소스로 넘어감)."""
+    try:
+        start = (date.fromisoformat(through) - timedelta(days=10)).isoformat()
+    except ValueError:
+        return []
+    bars: list[PricePoint] = []
+    try:
+        bars = [p for p in nasdaq_chart_bars(ticker, start, through, assetclass) if last < p.date <= through and _session_complete(p.date)]
+    except _NET_ERRORS as exc:
+        print(f"[prices] {ticker}: Nasdaq /chart 보충 실패 {exc!r}")
+    if bars:
+        return bars
+    try:
+        bar = nasdaq_latest_bar(ticker, through, assetclass)
+    except _NET_ERRORS as exc:
+        print(f"[prices] {ticker}: Nasdaq 시세 요약 보충 실패 {exc!r}")
+        return []
+    if bar is None or not (last < bar.date <= through):
+        return []
+    print(f"[prices] {ticker}: /chart 에 {through} 일봉 없음 → /info·/summary 마감 종가로 봉 구성")
+    return [bar]
+
+
+def nasdaq_latest_bar(ticker: str, through: str, assetclass: str = "stocks") -> Optional[PricePoint]:
+    """Nasdaq /info 의 secondaryData('Closed at …', 정규장 종가)로 가장 최근 종가 봉을 만든다. 고가·저가·시가·거래량은
+    /summary(TodayHighLow · OpenPrice · ShareVolume)에서, 없으면 종가로 채운다. /chart 일봉이 없을 때의 2차 수단."""
+    info = _nasdaq_json(f"{ticker}/info?assetclass={assetclass}")
+    d = (info or {}).get("data") or {}
+    close_block = None
+    for block in (d.get("secondaryData"), d.get("primaryData")):
+        if isinstance(block, dict) and str(block.get("lastTradeTimestamp", "")).startswith("Closed at"):
+            close_block = block
+            break
+    if close_block is None and str(d.get("marketStatus", "")).lower() in ("closed", "market closed") and isinstance(d.get("primaryData"), dict):
+        close_block = d["primaryData"]  # 장 마감·애프터마켓 종료 후에는 primaryData 가 종가
+    if not isinstance(close_block, dict):
+        return None
+    date_ = _parse_closed_at(str(close_block.get("lastTradeTimestamp", "")))
+    close = _num(close_block.get("lastSalePrice"))
+    if not date_ or close is None or date_ > through:
+        return None
+    high = low = open_ = None
+    volume = 0.0
+    try:
+        summary = (_nasdaq_json(f"{ticker}/summary?assetclass={assetclass}") or {}).get("data") or {}
+        sd = summary.get("summaryData") or {}
+        val = lambda k: (sd.get(k) or {}).get("value") if isinstance(sd.get(k), dict) else None
+        hl = str(val("TodayHighLow") or "")
+        if "/" in hl:
+            high, low = _num(hl.split("/")[0]), _num(hl.split("/")[1])
+        open_ = _num(val("OpenPrice"))
+        volume = _num(val("ShareVolume")) or 0.0
+    except _NET_ERRORS as exc:
+        print(f"[prices] {ticker}: Nasdaq summary 없음 {exc!r} — 종가만으로 봉 구성")
+    if high is None or low is None:
+        high = max(close, open_ or close)
+        low = min(close, open_ or close)
+    if open_ is None:
+        open_ = close
+    return PricePoint(date_, round(open_, 4), round(max(high, open_, close), 4), round(min(low, open_, close), 4), round(close, 4), volume)
 
 
 def synthetic(ticker: str, market: str, days: int) -> PriceSeries:

@@ -25,6 +25,7 @@ from typing import Optional
 from . import chart, og
 from .models import Brief, StockMention
 from .theme import CSS, FONTS_HTML, font_face_css
+from datetime import date as _date, timedelta as _timedelta
 
 _WEEKDAYS = "월화수목금토일"
 PRODUCT = "Morning Brief"
@@ -35,7 +36,8 @@ DISCLAIMER = (
 )
 _SOURCE_LABEL = {
     "stooq": "Stooq 일봉", "yahoo": "Yahoo Finance 일봉", "naver": "네이버 금융 일봉", "nasdaq": "Nasdaq 일봉", "investing": "Investing.com 일봉",
-    "nasdaq+naver": "Nasdaq 일봉 + 네이버 최신 봉",
+    "nasdaq+naver": "Nasdaq 일봉 + 네이버 최신 봉", "nasdaq+nasdaq-quote": "Nasdaq 일봉 + 마감 직후 시세 API 최신 봉",
+    "naver+nasdaq-quote": "네이버 일봉 + Nasdaq 시세 API 최신 봉",
     "cache": "캐시(전일 기준)", "synthetic": "합성 데이터(데모)", "none": "시세 없음",
     "fred": "FRED(세인트루이스 연준)", "coingecko": "CoinGecko",
 }
@@ -238,6 +240,26 @@ def _mini_link(href: str, name: str, svg: str, points=None) -> str:
     return f'<a class="mini-link" href="{href}" aria-label="{_esc(name)} 차트 크게 보기">{svg}{caption}</a>'
 
 
+def expected_session(brief_date: str) -> str:
+    """브리핑이 다루는 마지막 거래 세션 일자(브리핑 일자 전날, 주말이면 그 앞 금요일). 휴장일은 고려하지 않는다."""
+    try:
+        d = _date.fromisoformat(brief_date) - _timedelta(days=1)
+    except ValueError:
+        return ""
+    while d.weekday() >= 5:
+        d -= _timedelta(days=1)
+    return d.isoformat()
+
+
+def _series_is_stale(m: StockMention, brief_date: str) -> bool:
+    """본문에 등락률이 있는데 시세 시계열이 그 세션 전에 끝났으면 True(마감 직후 소스 지연으로 마지막 봉이 빠진 경우)."""
+    if m.change_pct is None or not m.prices or not m.prices.points:
+        return False
+    last = m.prices.as_of or m.prices.points[-1].date
+    exp = expected_session(brief_date)
+    return bool(exp) and len(last) == 10 and last < exp
+
+
 def _sheet_body(brief: Brief, m: StockMention, *, share_href: str = "") -> str:
     pct = m.price_change_pct()
     disp, cls = fmt_pct(pct)
@@ -248,9 +270,13 @@ def _sheet_body(brief: Brief, m: StockMention, *, share_href: str = "") -> str:
     if m.prices and m.prices.last_close is not None:
         cur = m.prices.currency
         delta = ""
-        if m.prices.change is not None:
+        stale = _series_is_stale(m, brief.date)
+        if m.prices.change is not None and not stale:
             sign = "+" if m.prices.change >= 0 else "−"
             delta = f"<small>({sign}{chart.fmt_price(abs(m.prices.change), cur)})</small>"
+        if stale:
+            # 본문이 말하는 세션의 봉이 아직 없다: 텍스트 등락률 옆에 하루 전 데이터 변동폭을 붙이면 서로 어긋나므로 생략하고 기준일을 밝힌다
+            delta = f'<small class="stale">시세 {_esc(m.prices.as_of or m.prices.points[-1].date)} 종가까지</small>'
         price = (f'<span class="num">{chart.fmt_price(m.prices.last_close, cur)} <small>{_esc(cur)}</small></span>'
                  f'<span class="chg {cls}">{disp}</span>{delta}')
     else:

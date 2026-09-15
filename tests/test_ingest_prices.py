@@ -315,3 +315,117 @@ def test_get_prices_freshens_stale_nasdaq_series_from_naver(monkeypatch):
     stale.points = pts(["2026-09-08", "2026-09-09"]); stale.source = "nasdaq"
     s2 = prices.get_prices("META", "US", days=45, allow_synthetic=False, freshen_through="2026-09-09")
     assert s2.source == "nasdaq" and calls["naver"] == 1
+
+
+def test_nasdaq_latest_bar_from_quote_endpoints(monkeypatch):
+    """마감 직후 historical 에 없는 그날 봉을 /info(Closed at 종가) + /summary(고저·거래량)로 구성한다."""
+    from morning_brief import prices
+    from morning_brief.models import PricePoint
+
+    info = {"data": {"marketStatus": "After-Hours",
+                     "primaryData": {"lastSalePrice": "$36.1798", "netChange": "-0.0452", "lastTradeTimestamp": "Sep 14, 2026 7:56 PM ET"},
+                     "secondaryData": {"lastSalePrice": "$36.225", "netChange": "+0.005", "lastTradeTimestamp": "Closed at Sep 14, 2026 4:00 PM ET"}}}
+    summary = {"data": {"summaryData": {"TodayHighLow": {"value": "$37.10/$35.90"}, "ShareVolume": {"value": "11,644,711"},
+                                        "PreviousClose": {"value": "$36.22"}, "OpenPrice": {"value": "$36.40"}}}}
+    calls = []
+
+    def fake_json(url, headers):
+        calls.append(url)
+        return info if "/info" in url else summary
+    monkeypatch.setattr(prices, "_get_json", fake_json)
+    bar = prices.nasdaq_latest_bar("OKLO", "2026-09-14")
+    assert bar == PricePoint("2026-09-14", 36.4, 37.1, 35.9, 36.225, 11644711.0)
+    assert "assetclass=stocks" in calls[0]
+    assert prices.nasdaq_latest_bar("OKLO", "2026-09-11") is None  # through 이후 날짜의 봉은 쓰지 않는다
+
+    # 고저가 N/A 이면 시가·종가로 채운 봉
+    summary["data"]["summaryData"]["TodayHighLow"]["value"] = "N/A"; del summary["data"]["summaryData"]["OpenPrice"]
+    bar2 = prices.nasdaq_latest_bar("OKLO", "2026-09-14")
+    assert (bar2.open, bar2.high, bar2.low, bar2.close) == (36.225, 36.225, 36.225, 36.225)
+
+
+# 러너 실측(2026-09-15 00:49Z) /chart?fromdate=2026-09-14&todate=2026-09-15 응답의 일봉 행
+_CHART_09_14 = {"z": {"high": "36.99", "low": "34.38", "open": "34.95", "close": "36.21", "volume": "11,644,710", "dateTime": "9/14/2026", "value": "36.21"},
+                "x": 1789344000000, "y": 36.21}
+_CHART_09_11 = {"z": {"high": "39.20", "low": "36.20", "open": "38.79", "close": "36.22", "volume": "22,594,900", "dateTime": "9/11/2026", "value": "36.22"},
+                "x": 1789084800000, "y": 36.22}
+
+
+def test_nasdaq_chart_bars_parse_daily_rows(monkeypatch):
+    """/chart 구간 요청은 정식 OHLCV 일봉(dateTime M/D/YYYY)을 준다. 분 단위 행('4:00 AM ET')은 건너뛰고 날짜순으로 돌려준다."""
+    from morning_brief import prices
+    from morning_brief.models import PricePoint
+
+    payload = {"data": {"chart": [_CHART_09_14, {"z": {"dateTime": "4:00 AM ET", "value": "35.36"}, "x": 1, "y": 35.36}, _CHART_09_11]}}
+    seen = []
+    monkeypatch.setattr(prices, "_get_json", lambda url, headers: seen.append(url) or payload)
+    bars = prices.nasdaq_chart_bars("OKLO", "2026-09-04", "2026-09-14")
+    assert bars == [PricePoint("2026-09-11", 38.79, 39.2, 36.2, 36.22, 22594900.0), PricePoint("2026-09-14", 34.95, 36.99, 34.38, 36.21, 11644710.0)]
+    assert seen[0].endswith("/OKLO/chart?assetclass=stocks&fromdate=2026-09-04&todate=2026-09-14")
+    assert prices._parse_mdy("9/14/2026") == "2026-09-14" and prices._parse_mdy("4:00 AM ET") is None
+
+
+def test_session_complete_guard():
+    """장중에 부르면 진행 중인 날의 봉은 완결로 보지 않는다(뉴욕 16:05 이후부터)."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    from morning_brief import prices
+    ny = ZoneInfo("America/New_York")
+    assert prices._session_complete("2026-09-14", datetime(2026, 9, 14, 15, 52, tzinfo=ny)) is False
+    assert prices._session_complete("2026-09-14", datetime(2026, 9, 14, 16, 5, tzinfo=ny)) is True
+    assert prices._session_complete("2026-09-11", datetime(2026, 9, 14, 9, 0, tzinfo=ny)) is True
+
+
+def test_freshen_prefers_chart_bar_then_quote_bar(monkeypatch):
+    """네이버에 없는 NYSE 종목: /chart 일봉으로 보충(종가 36.21 = 본문 -0.03%), /chart 가 비면 /info 종가 봉으로. 태그 nasdaq-quote."""
+    from morning_brief import prices
+    from morning_brief.models import PricePoint, PriceSeries
+
+    def stale():
+        return PriceSeries("OKLO", [PricePoint("2026-09-10", 40, 41, 39, 39.88, 1e6), PricePoint("2026-09-11", 38.79, 39.2, 36.2, 36.22, 1e6)], "USD", "nasdaq", "2026-09-11")
+    monkeypatch.setattr(prices, "from_naver_world", lambda ticker, days, exchange=None: None)
+    monkeypatch.setattr(prices, "_session_complete", lambda d, now=None: True)
+    info = {"data": {"secondaryData": {"lastSalePrice": "$36.225", "lastTradeTimestamp": "Closed at Sep 14, 2026 4:00 PM ET"}}}
+    chart = {"data": {"chart": [_CHART_09_11, _CHART_09_14]}}
+
+    def fake_json(url, headers):
+        if "/chart" in url:
+            return chart
+        if "/info" in url:
+            return info
+        return {"data": {"summaryData": {}}}
+    monkeypatch.setattr(prices, "_get_json", fake_json)
+    out = prices.freshen(stale(), "OKLO", 45, "NYSE", "2026-09-14")
+    assert [p.date for p in out.points] == ["2026-09-10", "2026-09-11", "2026-09-14"]  # 09-11 은 이미 있으므로 중복 추가 없음
+    assert out.points[-1] == PricePoint("2026-09-14", 34.95, 36.99, 34.38, 36.21, 11644710.0)
+    assert out.source == "nasdaq+nasdaq-quote" and out.as_of == "2026-09-14"
+    assert round(out.change_pct, 2) == -0.03
+
+    chart["data"]["chart"] = []  # /chart 가 아직 비었으면 /info 마감 종가 봉
+    out2 = prices.freshen(stale(), "OKLO", 45, "NYSE", "2026-09-14")
+    assert out2.points[-1].date == "2026-09-14" and out2.points[-1].close == 36.225 and out2.source == "nasdaq+nasdaq-quote"
+
+    del info["data"]["secondaryData"]  # 둘 다 없으면 시계열 그대로
+    out3 = prices.freshen(stale(), "OKLO", 45, "NYSE", "2026-09-14")
+    assert out3.points[-1].date == "2026-09-11" and out3.source == "nasdaq"
+
+
+def test_index_proxy_tops_up_from_nasdaq_quote(monkeypatch):
+    """러셀2000 프록시(IWM)도 새벽엔 historical 이 전일 봉을 안 준다 — 같은 /chart 보충을 거치고 소스 태그는 'proxy:IWM' 그대로."""
+    from morning_brief import macro_prices, prices
+    from morning_brief.models import PricePoint, PriceSeries
+
+    hist = PriceSeries("IWM", [PricePoint("2026-09-10", 290, 291, 289, 290.5, 1e6), PricePoint("2026-09-11", 290, 291, 288, 288.89, 1e6)], "USD", "nasdaq", "2026-09-11")
+    monkeypatch.setattr(macro_prices, "from_nasdaq_asset", lambda symbol, key, days, assetclass, today=None: hist if assetclass == "etf" else None)
+    asked = []
+
+    def fake_topup(symbol, last, through, assetclass="stocks"):
+        asked.append((symbol, last, through, assetclass))
+        return [PricePoint("2026-09-14", 289.5, 292.0, 289.0, 291.3, 2e7)]
+    monkeypatch.setattr(prices, "nasdaq_topup", fake_topup)
+    out = macro_prices.from_nasdaq_proxy("IWM", "INDEX_RUT", 45, "2026-09-14")
+    assert asked == [("IWM", "2026-09-11", "2026-09-14", "etf")]
+    assert out.source == "proxy:IWM" and out.ticker == "INDEX_RUT" and out.as_of == "2026-09-14" and out.points[-1].close == 291.3
+    # through 가 없거나(과거 재생성) 이미 그 날 봉이 있으면 호출하지 않는다
+    asked.clear()
+    assert macro_prices.from_nasdaq_proxy("IWM", "INDEX_RUT", 45, None).as_of == "2026-09-14" and asked == []

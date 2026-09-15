@@ -55,6 +55,13 @@ def summarize(body: str) -> str:
                 out += f" rows={len(rows)} first={json.dumps(rows[0], ensure_ascii=False)[:200] if rows else None}"
         elif isinstance(d, list):
             out += f" data=list[{len(d)}] first={json.dumps(d[0], ensure_ascii=False)[:220] if d else None}"
+        if isinstance(d, dict) and ("primaryData" in d or "summaryData" in d):
+            out += " " + json.dumps({k: d[k] for k in d if k in ("primaryData", "secondaryData", "marketStatus", "lastTradeTimestamp")}, ensure_ascii=False)[:500]
+            if isinstance(d.get("summaryData"), dict):
+                out += " summary=" + json.dumps({k: v.get("value") if isinstance(v, dict) else v for k, v in d["summaryData"].items()}, ensure_ascii=False)[:700]
+        if isinstance(d, dict) and "chart" in d:
+            ch = d.get("chart") or []
+            out += f" chart_points={len(ch)} first={json.dumps(ch[0], ensure_ascii=False)[:200] if ch else None} last={json.dumps(ch[-1], ensure_ascii=False)[:200] if ch else None} other_keys={sorted(k for k in d if k != 'chart')}"
         if "status" in data:
             out += f" status={json.dumps(data['status'], ensure_ascii=False)[:160]}"
         if "quotes" in data:
@@ -114,6 +121,20 @@ for sym in ("KOSPI", "KOSDAQ"):
                    {"User-Agent": _p._UA, "Accept": "*/*", "Referer": "https://finance.naver.com/"}, 20))
 for path in ("worldstock/index/.DJI/price", "index/.DJI/prices"):
     PROBES.append((f"naver alt {path}", f"https://api.stock.naver.com/{path}?page=1&pageSize=3", NAVER_H, 20))
+
+
+# ── 마감 직후 최신 봉 보충 후보 (Nasdaq historical 은 종가를 수 시간 뒤에 반영) ──
+for sym in ("OKLO.N", "OKLO", "OKLO.O", "ORCL.N", "DELL.N", "ABBV.N", "MU.O"):
+    PROBES.append((f"naver world {sym}", f"https://api.stock.naver.com/stock/{urllib.parse.quote(sym)}/price?pageSize=3&page=1", NAVER_H, 20))
+for sym in ("OKLO", "MU"):
+    PROBES.append((f"nasdaq info {sym}", f"https://api.nasdaq.com/api/quote/{sym}/info?assetclass=stocks", NASDAQ_H, 20))
+    PROBES.append((f"nasdaq summary {sym}", f"https://api.nasdaq.com/api/quote/{sym}/summary?assetclass=stocks", NASDAQ_H, 20))
+    PROBES.append((f"nasdaq historical {sym} (last rows)", nasdaq(sym, "stocks"), NASDAQ_H, 20))
+
+
+for sym in ("OKLO", "MU"):
+    PROBES.append((f"nasdaq chart {sym} 1d", f"https://api.nasdaq.com/api/quote/{sym}/chart?assetclass=stocks&fromdate={END - timedelta(days=1):%Y-%m-%d}&todate={END:%Y-%m-%d}", NASDAQ_H, 20))
+    PROBES.append((f"nasdaq chart {sym} default", f"https://api.nasdaq.com/api/quote/{sym}/chart?assetclass=stocks", NASDAQ_H, 20))
 
 
 if __name__ == "__main__":

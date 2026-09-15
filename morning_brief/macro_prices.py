@@ -213,12 +213,14 @@ def from_naver_sise(code: str, key: str, days: int) -> Optional[PriceSeries]:
     return series
 
 
-def from_nasdaq_proxy(symbol: str, key: str, days: int) -> Optional[PriceSeries]:
-    """대표 ETF(IWM 등) 일봉. Nasdaq API 는 ETF 를 assetclass=etf 로 구분하므로 etf → stocks 순으로 시도."""
+def from_nasdaq_proxy(symbol: str, key: str, days: int, through: Optional[str] = None) -> Optional[PriceSeries]:
+    """대표 ETF(IWM 등) 일봉. Nasdaq API 는 ETF 를 assetclass=etf 로 구분하므로 etf → stocks 순으로 시도.
+    through 가 있으면 historical 이 아직 안 준 최신 봉을 /chart·/info 시세로 보충한다(종목 시세와 같은 경로)."""
     series = None
     for assetclass in ("etf", "stocks"):
         series = from_nasdaq_asset(symbol, key, days, assetclass)
         if series is not None:
+            series = topup_nasdaq(series, symbol, assetclass, days, through)
             break
     if series is not None:
         series.ticker = key
@@ -226,9 +228,27 @@ def from_nasdaq_proxy(symbol: str, key: str, days: int) -> Optional[PriceSeries]
     return series
 
 
+def topup_nasdaq(series: Optional[PriceSeries], symbol: str, assetclass: str, days: int, through: Optional[str]) -> Optional[PriceSeries]:
+    """새벽 실행에서 Nasdaq historical 은 전일(through) 봉을 아직 포함하지 않는다 — 시세 API(/chart 일봉 → /info 종가)로 덧붙인다.
+    소스 태그는 바꾸지 않는다(렌더러가 'proxy:IWM' 을 그대로 읽는다)."""
+    if series is None or not through or not series.points or series.points[-1].date >= through:
+        return series
+    last = series.points[-1].date
+    extra = _p.nasdaq_topup(symbol, last, through, assetclass)
+    if not extra:
+        print(f"[macro] {series.ticker}: {symbol} {last} 이후 ~{through} 봉 보충 실패 — 시계열이 하루 늦게 끝남")
+        return series
+    series.points = (series.points + extra)[-days:]
+    series.as_of = series.points[-1].date
+    print(f"[macro] {series.ticker}: {symbol} 최신 봉 {len(extra)}개 보충 (~{series.as_of})")
+    return series
+
+
 # ── 진입점 ───────────────────────────────────────────────────
 def get_series(inst: MacroInstrument, days: int = 45, *, cache_dir: Optional[Path] = None, allow_synthetic: bool = True,
-               key: Optional[str] = None) -> Optional[PriceSeries]:
+               key: Optional[str] = None, freshen_through: Optional[str] = None) -> Optional[PriceSeries]:
+    """freshen_through: 이 날짜(미국 세션 일자)까지의 봉이 있어야 한다 — Nasdaq historical 기반 소스(지수·ETF 프록시)는
+    새벽에 그 봉이 없으면 Nasdaq 시세 API 로 보충한다."""
     key = key or f"MACRO_{inst.id}"
     for kind, symbol in inst.sources:
         try:
@@ -251,11 +271,11 @@ def get_series(inst: MacroInstrument, days: int = 45, *, cache_dir: Optional[Pat
             elif kind == "naver_world_index":
                 series = from_naver_world_index(symbol, key, days)
             elif kind == "nasdaq_index":
-                series = from_nasdaq_asset(symbol, key, days, "index")
+                series = topup_nasdaq(from_nasdaq_asset(symbol, key, days, "index"), symbol, "index", days, freshen_through)
             elif kind == "naver_sise":
                 series = from_naver_sise(symbol, key, days)
             elif kind == "nasdaq_proxy":
-                series = from_nasdaq_proxy(symbol, key, days)
+                series = from_nasdaq_proxy(symbol, key, days, freshen_through)
             else:
                 continue
         except _p._NET_ERRORS as exc:
