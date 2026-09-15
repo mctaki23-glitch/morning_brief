@@ -3,7 +3,7 @@
   "source_channel": "ehdwl",
   "status": "published",
   "posted_at": "2026-09-15T05:24:28+09:00",
-  "generated_at": "2026-09-15T09:29:09+09:00",
+  "generated_at": "2026-09-15T10:01:17+09:00",
   "market_overview": "09/14 미 증시, AI 개발 속도 조절 우려와 국채 금리 영향에 하락 후 낙폭 일부 축소\n\n미 증시는 중동 불안으로 국제유가가 급등하고 미 10년물 국채금리가 2023년 10월 이후 처음으로 5.0%를 상회하자 하락 출발. 특히 앤트로픽 CEO의 AI 개발속도 조절 필요성을 제기하자 AI 반도체가 하락을 주도. 그러나 트럼프 대통령이 미국도 대화에 열려 있다고 언급하자 국제유가가 장중 상승폭을 크게 축소했고, 10년물 금리도 하락 전환하면서 지수도 낙폭이 축소. 장 마감 앞두고 여전히 높은 유가에 재차 매물 출회되는 등 유가와 금리 영향이 지수 방향성을 결정(다우 -0.29%, 나스닥 -0.56%, S&P500 -0.48%, 러셀2000 -0.40%, 필라델피아 반도체 지수 -5.86%)",
   "kr_outlook": "국제유가 안정에 대한 기대\n\nMSCI 한국 증시 ETF는 6.62% 하락한 가운데 MSCI 신흥지수 ETF도 2.73% 하락. 필라델피아 반도체 지수는 5.86% 하락. 러셀2000지수는 0.40% 하락. 다우 운송지수는 0.49% 상승. KOSPI 야간 선물은 2.20% 하락. 전일 서울 환시에서 달러/원 환율은 1,347.3원을 기록. NDF 달러/원 환율 1개월물은 1,347.90원을 기록.",
   "indices": [
@@ -1138,14 +1138,6 @@
         "ticker": "INDEX_RUT",
         "points": [
           {
-            "date": "2026-07-10",
-            "open": 297.69,
-            "high": 298.21,
-            "low": 293.62,
-            "close": 295.99,
-            "volume": 15888500.0
-          },
-          {
             "date": "2026-07-13",
             "open": 295.06,
             "high": 295.78,
@@ -1496,11 +1488,19 @@
             "low": 288.77,
             "close": 288.89,
             "volume": 26358500.0
+          },
+          {
+            "date": "2026-09-14",
+            "open": 287.49,
+            "high": 289.84,
+            "low": 287.055,
+            "close": 287.91,
+            "volume": 26060880.0
           }
         ],
         "currency": "USD",
         "source": "proxy:IWM",
-        "as_of": "2026-09-11"
+        "as_of": "2026-09-14"
       }
     },
     {
@@ -2253,11 +2253,11 @@
             "high": 932.21,
             "low": 902.6,
             "close": 924.03,
-            "volume": 0.0
+            "volume": 27141900.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -3007,15 +3007,15 @@
           },
           {
             "date": "2026-09-14",
-            "open": 1521.53,
-            "high": 1581.84,
+            "open": 1521.525,
+            "high": 1581.8399,
             "low": 1505.0,
             "close": 1551.99,
-            "volume": 0.0
+            "volume": 9586706.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -3390,15 +3390,15 @@
           },
           {
             "date": "2026-09-14",
-            "open": 417.32,
+            "open": 417.315,
             "high": 436.28,
             "low": 416.0,
             "close": 426.94,
-            "volume": 0.0
+            "volume": 7302523.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -3777,11 +3777,11 @@
             "high": 821.86,
             "low": 769.0,
             "close": 805.55,
-            "volume": 0.0
+            "volume": 4150751.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -4160,11 +4160,11 @@
             "high": 212.77,
             "low": 208.93,
             "close": 210.96,
-            "volume": 0.0
+            "volume": 132267200.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -4543,11 +4543,11 @@
             "high": 498.39,
             "low": 480.33,
             "close": 493.41,
-            "volume": 0.0
+            "volume": 24810140.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -4924,13 +4924,13 @@
             "date": "2026-09-14",
             "open": 95.82,
             "high": 98.86,
-            "low": 94.52,
+            "low": 94.5233,
             "close": 97.19,
-            "volume": 0.0
+            "volume": 96459680.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -5307,13 +5307,13 @@
             "date": "2026-09-14",
             "open": 215.81,
             "high": 224.1,
-            "low": 213.63,
+            "low": 213.6264,
             "close": 218.82,
-            "volume": 0.0
+            "volume": 22196830.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -5692,11 +5692,11 @@
             "high": 424.45,
             "low": 416.01,
             "close": 418.01,
-            "volume": 0.0
+            "volume": 14305940.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -6075,11 +6075,11 @@
             "high": 350.25,
             "low": 343.91,
             "close": 344.72,
-            "volume": 0.0
+            "volume": 32662850.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -6458,11 +6458,11 @@
             "high": 1610.41,
             "low": 1572.84,
             "close": 1575.15,
-            "volume": 0.0
+            "volume": 1974471.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -6837,15 +6837,15 @@
           },
           {
             "date": "2026-09-14",
-            "open": 275.0,
+            "open": 274.995,
             "high": 280.2,
             "low": 273.24,
             "close": 273.49,
-            "volume": 0.0
+            "volume": 13682890.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -7224,11 +7224,11 @@
             "high": 432.51,
             "low": 419.6,
             "close": 424.21,
-            "volume": 0.0
+            "volume": 8064762.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -7605,13 +7605,13 @@
             "date": "2026-09-14",
             "open": 242.38,
             "high": 249.25,
-            "low": 238.03,
+            "low": 238.0323,
             "close": 239.01,
-            "volume": 0.0
+            "volume": 6490510.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -7986,15 +7986,15 @@
           },
           {
             "date": "2026-09-14",
-            "open": 150.65,
+            "open": 150.645,
             "high": 154.25,
             "low": 142.77,
             "close": 143.6,
-            "volume": 0.0
+            "volume": 17757380.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -8015,14 +8015,6 @@
       "prices": {
         "ticker": "COHR",
         "points": [
-          {
-            "date": "2026-07-10",
-            "open": 321.4,
-            "high": 330.15,
-            "low": 315.19,
-            "close": 324.5,
-            "volume": 4030230.0
-          },
           {
             "date": "2026-07-13",
             "open": 314.0,
@@ -8374,11 +8366,19 @@
             "low": 292.51,
             "close": 305.37,
             "volume": 7308598.0
+          },
+          {
+            "date": "2026-09-14",
+            "open": 283.75,
+            "high": 284.97,
+            "low": 265.49,
+            "close": 266.5,
+            "volume": 9939628.0
           }
         ],
         "currency": "USD",
         "source": "nasdaq",
-        "as_of": "2026-09-11"
+        "as_of": "2026-09-14"
       },
       "slug": ""
     },
@@ -8752,15 +8752,15 @@
           },
           {
             "date": "2026-09-14",
-            "open": 860.88,
+            "open": 860.875,
             "high": 878.99,
             "low": 833.7,
             "close": 835.03,
-            "volume": 0.0
+            "volume": 4919181.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -9135,15 +9135,15 @@
           },
           {
             "date": "2026-09-14",
-            "open": 55.61,
+            "open": 55.605,
             "high": 57.2,
             "low": 55.16,
             "close": 55.41,
-            "volume": 0.0
+            "volume": 31211280.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -9164,14 +9164,6 @@
       "prices": {
         "ticker": "DELL",
         "points": [
-          {
-            "date": "2026-07-10",
-            "open": 449.11,
-            "high": 452.8,
-            "low": 433.24,
-            "close": 434.97,
-            "volume": 5146813.0
-          },
           {
             "date": "2026-07-13",
             "open": 432.445,
@@ -9523,11 +9515,19 @@
             "low": 517.515,
             "close": 567.29,
             "volume": 14473460.0
+          },
+          {
+            "date": "2026-09-14",
+            "open": 538.57,
+            "high": 546.29,
+            "low": 525.85,
+            "close": 534.28,
+            "volume": 9173770.0
           }
         ],
         "currency": "USD",
         "source": "nasdaq",
-        "as_of": "2026-09-11"
+        "as_of": "2026-09-14"
       },
       "slug": ""
     },
@@ -9902,14 +9902,14 @@
           {
             "date": "2026-09-14",
             "open": 37.43,
-            "high": 38.1,
+            "high": 38.095,
             "low": 36.38,
             "close": 36.74,
-            "volume": 0.0
+            "volume": 39892520.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -10286,13 +10286,13 @@
             "date": "2026-09-14",
             "open": 249.41,
             "high": 251.37,
-            "low": 244.12,
+            "low": 244.1201,
             "close": 249.09,
-            "volume": 0.0
+            "volume": 6817275.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -10671,11 +10671,11 @@
             "high": 367.73,
             "low": 357.04,
             "close": 358.97,
-            "volume": 0.0
+            "volume": 32477180.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -11054,11 +11054,11 @@
             "high": 87.39,
             "low": 85.48,
             "close": 87.16,
-            "volume": 0.0
+            "volume": 5558164.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -11437,11 +11437,11 @@
             "high": 13.95,
             "low": 13.74,
             "close": 13.86,
-            "volume": 0.0
+            "volume": 31579550.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -11820,11 +11820,11 @@
             "high": 5.25,
             "low": 5.12,
             "close": 5.2,
-            "volume": 0.0
+            "volume": 10496460.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -12203,11 +12203,11 @@
             "high": 117.0,
             "low": 114.27,
             "close": 115.03,
-            "volume": 0.0
+            "volume": 2101107.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -12584,13 +12584,13 @@
             "date": "2026-09-14",
             "open": 497.06,
             "high": 509.95,
-            "low": 495.34,
+            "low": 495.3416,
             "close": 505.41,
-            "volume": 0.0
+            "volume": 23091890.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -12967,13 +12967,13 @@
             "date": "2026-09-14",
             "open": 343.12,
             "high": 349.91,
-            "low": 342.14,
+            "low": 342.1361,
             "close": 349.39,
-            "volume": 0.0
+            "volume": 35905450.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -13352,11 +13352,11 @@
             "high": 668.6,
             "low": 649.22,
             "close": 665.6,
-            "volume": 0.0
+            "volume": 19332320.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -13735,11 +13735,11 @@
             "high": 255.95,
             "low": 250.74,
             "close": 253.54,
-            "volume": 0.0
+            "volume": 34352770.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -14118,11 +14118,11 @@
             "high": 335.5,
             "low": 331.34,
             "close": 333.08,
-            "volume": 0.0
+            "volume": 39269150.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -14143,14 +14143,6 @@
       "prices": {
         "ticker": "ORCL",
         "points": [
-          {
-            "date": "2026-07-10",
-            "open": 145.65,
-            "high": 145.68,
-            "low": 139.26,
-            "close": 140.64,
-            "volume": 29843310.0
-          },
           {
             "date": "2026-07-13",
             "open": 139.03,
@@ -14502,11 +14494,19 @@
             "low": 149.84,
             "close": 150.28,
             "volume": 80438560.0
+          },
+          {
+            "date": "2026-09-14",
+            "open": 141.42,
+            "high": 145.33,
+            "low": 141.01,
+            "close": 144.79,
+            "volume": 42159750.0
           }
         ],
         "currency": "USD",
         "source": "nasdaq",
-        "as_of": "2026-09-11"
+        "as_of": "2026-09-14"
       },
       "slug": ""
     },
@@ -14880,15 +14880,15 @@
           },
           {
             "date": "2026-09-14",
-            "open": 169.7,
-            "high": 174.36,
+            "open": 169.695,
+            "high": 174.3599,
             "low": 166.42,
             "close": 173.31,
-            "volume": 0.0
+            "volume": 29149530.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -15267,11 +15267,11 @@
             "high": 239.37,
             "low": 216.05,
             "close": 235.38,
-            "volume": 0.0
+            "volume": 25381460.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -15646,15 +15646,15 @@
           },
           {
             "date": "2026-09-14",
-            "open": 346.49,
+            "open": 346.485,
             "high": 378.6,
-            "low": 340.25,
+            "low": 340.2501,
             "close": 373.94,
-            "volume": 0.0
+            "volume": 12027310.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -16030,14 +16030,14 @@
           {
             "date": "2026-09-14",
             "open": 140.0,
-            "high": 143.19,
+            "high": 143.1899,
             "low": 137.24,
             "close": 142.35,
-            "volume": 0.0
+            "volume": 17501780.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -16416,11 +16416,11 @@
             "high": 260.18,
             "low": 251.5,
             "close": 259.43,
-            "volume": 0.0
+            "volume": 12966100.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -16799,11 +16799,11 @@
             "high": 266.1,
             "low": 256.66,
             "close": 265.6,
-            "volume": 0.0
+            "volume": 5723344.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -16824,14 +16824,6 @@
       "prices": {
         "ticker": "IONQ",
         "points": [
-          {
-            "date": "2026-07-10",
-            "open": 45.32,
-            "high": 45.45,
-            "low": 42.4,
-            "close": 42.86,
-            "volume": 14548430.0
-          },
           {
             "date": "2026-07-13",
             "open": 42.07,
@@ -17183,11 +17175,19 @@
             "low": 36.3321,
             "close": 36.75,
             "volume": 15395470.0
+          },
+          {
+            "date": "2026-09-14",
+            "open": 35.16,
+            "high": 38.56,
+            "low": 35.0,
+            "close": 37.5,
+            "volume": 18228810.0
           }
         ],
         "currency": "USD",
         "source": "nasdaq",
-        "as_of": "2026-09-11"
+        "as_of": "2026-09-14"
       },
       "slug": ""
     },
@@ -17561,15 +17561,15 @@
           },
           {
             "date": "2026-09-14",
-            "open": 16.1,
+            "open": 16.095,
             "high": 17.3,
             "low": 16.08,
             "close": 16.83,
-            "volume": 0.0
+            "volume": 11594700.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -17944,15 +17944,15 @@
           },
           {
             "date": "2026-09-14",
-            "open": 147.33,
+            "open": 147.325,
             "high": 152.56,
             "low": 146.0,
             "close": 148.15,
-            "volume": 0.0
+            "volume": 67861000.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -18328,14 +18328,14 @@
           {
             "date": "2026-09-14",
             "open": 60.55,
-            "high": 63.38,
+            "high": 63.375,
             "low": 60.51,
             "close": 62.55,
-            "volume": 0.0
+            "volume": 14449290.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -18714,11 +18714,11 @@
             "high": 42.2,
             "low": 40.3,
             "close": 41.6,
-            "volume": 0.0
+            "volume": 1318343.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -19094,14 +19094,14 @@
           {
             "date": "2026-09-14",
             "open": 4.4,
-            "high": 4.49,
+            "high": 4.485,
             "low": 4.34,
             "close": 4.43,
-            "volume": 0.0
+            "volume": 2456546.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -19480,11 +19480,11 @@
             "high": 892.81,
             "low": 868.25,
             "close": 874.76,
-            "volume": 0.0
+            "volume": 3308811.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -19859,15 +19859,15 @@
           },
           {
             "date": "2026-09-14",
-            "open": 276.52,
-            "high": 276.52,
+            "open": 276.515,
+            "high": 276.515,
             "low": 264.32,
             "close": 264.57,
-            "volume": 0.0
+            "volume": 3712319.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -20242,15 +20242,15 @@
           },
           {
             "date": "2026-09-14",
-            "open": 256.4,
+            "open": 256.395,
             "high": 261.7,
             "low": 249.05,
             "close": 257.05,
-            "volume": 0.0
+            "volume": 14842370.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -20271,14 +20271,6 @@
       "prices": {
         "ticker": "OKLO",
         "points": [
-          {
-            "date": "2026-07-10",
-            "open": 49.435,
-            "high": 50.65,
-            "low": 47.63,
-            "close": 48.85,
-            "volume": 6619400.0
-          },
           {
             "date": "2026-07-13",
             "open": 47.72,
@@ -20630,11 +20622,19 @@
             "low": 36.2,
             "close": 36.22,
             "volume": 22594900.0
+          },
+          {
+            "date": "2026-09-14",
+            "open": 34.95,
+            "high": 36.99,
+            "low": 34.38,
+            "close": 36.21,
+            "volume": 11644710.0
           }
         ],
         "currency": "USD",
         "source": "nasdaq",
-        "as_of": "2026-09-11"
+        "as_of": "2026-09-14"
       },
       "slug": ""
     },
@@ -21010,13 +21010,13 @@
             "date": "2026-09-14",
             "open": 8.31,
             "high": 8.8,
-            "low": 8.24,
+            "low": 8.235,
             "close": 8.51,
-            "volume": 0.0
+            "volume": 37099560.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -21391,15 +21391,15 @@
           },
           {
             "date": "2026-09-14",
-            "open": 62.34,
-            "high": 62.44,
+            "open": 62.335,
+            "high": 62.435,
             "low": 58.92,
             "close": 59.47,
-            "volume": 0.0
+            "volume": 64773950.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -21774,15 +21774,15 @@
           },
           {
             "date": "2026-09-14",
-            "open": 137.36,
+            "open": 137.355,
             "high": 137.93,
-            "low": 132.66,
+            "low": 132.655,
             "close": 136.18,
-            "volume": 0.0
+            "volume": 15656280.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -22159,13 +22159,13 @@
             "date": "2026-09-14",
             "open": 354.23,
             "high": 355.28,
-            "low": 347.55,
+            "low": 347.545,
             "close": 350.13,
-            "volume": 0.0
+            "volume": 9612162.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -22540,15 +22540,15 @@
           },
           {
             "date": "2026-09-14",
-            "open": 90.17,
+            "open": 90.165,
             "high": 90.48,
-            "low": 87.38,
+            "low": 87.3831,
             "close": 88.71,
-            "volume": 0.0
+            "volume": 15726300.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -22924,14 +22924,14 @@
           {
             "date": "2026-09-14",
             "open": 211.66,
-            "high": 212.97,
+            "high": 212.9699,
             "low": 204.82,
             "close": 206.58,
-            "volume": 0.0
+            "volume": 7502308.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -23310,11 +23310,11 @@
             "high": 1013.69,
             "low": 978.93,
             "close": 988.45,
-            "volume": 0.0
+            "volume": 2209520.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -23691,13 +23691,13 @@
             "date": "2026-09-14",
             "open": 1142.2,
             "high": 1153.95,
-            "low": 1130.5,
+            "low": 1130.5001,
             "close": 1138.28,
-            "volume": 0.0
+            "volume": 2131112.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -23718,14 +23718,6 @@
       "prices": {
         "ticker": "ABBV",
         "points": [
-          {
-            "date": "2026-07-10",
-            "open": 251.005,
-            "high": 251.6645,
-            "low": 245.05,
-            "close": 248.08,
-            "volume": 5780990.0
-          },
           {
             "date": "2026-07-13",
             "open": 248.37,
@@ -24077,11 +24069,19 @@
             "low": 253.92,
             "close": 257.12,
             "volume": 4308856.0
+          },
+          {
+            "date": "2026-09-14",
+            "open": 261.67,
+            "high": 264.6499,
+            "low": 260.1001,
+            "close": 261.77,
+            "volume": 4512420.0
           }
         ],
         "currency": "USD",
         "source": "nasdaq",
-        "as_of": "2026-09-11"
+        "as_of": "2026-09-14"
       },
       "slug": ""
     },
@@ -24457,13 +24457,13 @@
             "date": "2026-09-14",
             "open": 381.44,
             "high": 386.46,
-            "low": 379.28,
+            "low": 379.2814,
             "close": 383.55,
-            "volume": 0.0
+            "volume": 4475735.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -24842,11 +24842,11 @@
             "high": 96.01,
             "low": 95.28,
             "close": 95.55,
-            "volume": 0.0
+            "volume": 4453640.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -25222,14 +25222,14 @@
           {
             "date": "2026-09-14",
             "open": 108.08,
-            "high": 109.74,
+            "high": 109.735,
             "low": 108.0,
             "close": 109.08,
-            "volume": 0.0
+            "volume": 23884510.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -25604,15 +25604,15 @@
           },
           {
             "date": "2026-09-14",
-            "open": 913.65,
+            "open": 913.645,
             "high": 921.99,
             "low": 910.79,
             "close": 918.91,
-            "volume": 0.0
+            "volume": 2014224.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -25989,13 +25989,13 @@
             "date": "2026-09-14",
             "open": 90.0,
             "high": 90.36,
-            "low": 88.87,
+            "low": 88.865,
             "close": 89.35,
-            "volume": 0.0
+            "volume": 14071440.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -26374,11 +26374,11 @@
             "high": 147.72,
             "low": 145.75,
             "close": 146.13,
-            "volume": 0.0
+            "volume": 8704946.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -26755,13 +26755,13 @@
             "date": "2026-09-14",
             "open": 50.94,
             "high": 51.49,
-            "low": 50.92,
+            "low": 50.915,
             "close": 51.29,
-            "volume": 0.0
+            "volume": 18124860.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -27138,13 +27138,13 @@
             "date": "2026-09-14",
             "open": 26.38,
             "high": 26.62,
-            "low": 26.16,
+            "low": 26.155,
             "close": 26.51,
-            "volume": 0.0
+            "volume": 38502110.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -27523,11 +27523,11 @@
             "high": 137.51,
             "low": 130.73,
             "close": 136.94,
-            "volume": 0.0
+            "volume": 18712940.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -27903,14 +27903,14 @@
           {
             "date": "2026-09-14",
             "open": 112.26,
-            "high": 116.35,
+            "high": 116.345,
             "low": 111.96,
             "close": 114.33,
-            "volume": 0.0
+            "volume": 17093010.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -28286,14 +28286,14 @@
           {
             "date": "2026-09-14",
             "open": 180.81,
-            "high": 193.22,
+            "high": 193.2168,
             "low": 180.29,
             "close": 191.45,
-            "volume": 0.0
+            "volume": 13252010.0
           }
         ],
         "currency": "USD",
-        "source": "nasdaq+naver",
+        "source": "nasdaq",
         "as_of": "2026-09-14"
       },
       "slug": ""
@@ -28314,14 +28314,6 @@
       "prices": {
         "ticker": "CRCL",
         "points": [
-          {
-            "date": "2026-07-10",
-            "open": 70.66,
-            "high": 72.855,
-            "low": 65.07,
-            "close": 66.14,
-            "volume": 36802130.0
-          },
           {
             "date": "2026-07-13",
             "open": 64.42,
@@ -28673,11 +28665,19 @@
             "low": 90.1401,
             "close": 90.6,
             "volume": 10404720.0
+          },
+          {
+            "date": "2026-09-14",
+            "open": 92.105,
+            "high": 97.75,
+            "low": 92.0,
+            "close": 97.42,
+            "volume": 16955550.0
           }
         ],
         "currency": "USD",
         "source": "nasdaq",
-        "as_of": "2026-09-11"
+        "as_of": "2026-09-14"
       },
       "slug": ""
     }
@@ -33674,7 +33674,7 @@
   "summarizer": "rule-based",
   "model": "",
   "prompt_version": "2026-09-09.1",
-  "price_source": "nasdaq+naver",
+  "price_source": "nasdaq",
   "unmapped": [],
   "evidence_failures": []
 }
