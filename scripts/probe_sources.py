@@ -147,6 +147,17 @@ PROBES.append(("marketwatch csv HXSCL", f"https://www.marketwatch.com/investing/
 PROBES.append(("google finance HXSCL", "https://www.google.com/finance/quote/HXSCL:OTCMKTS", PLAIN_UA, 20))
 
 
+# ── HXSCL 2차 후보: CNBC 시세 JSON 전체 덤프 · CNBC 시계열 경로 변형 · 서버 렌더링 히스토리 페이지(FT · stockanalysis) · Yahoo 재시도 ──
+PROBES.append(("dump cnbc quote HXSCL", "https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols=HXSCL&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json&events=1", PLAIN_UA, 20))
+for path in ("bars/1D/1M/adjusted/HXSCL.json", "bars/1M/1D/adjusted/HXSCL-US.json", "bars/3M/1D/adjusted/HXSCL.json", "bars/1Y/1D/adjusted/HXSCL.json",
+             "charts/1M.json?symbol=HXSCL", "bars/1M/1D/adjusted/AAPL.json"):
+    PROBES.append((f"cnbc ts {path}", f"https://ts-api.cnbc.com/harmony/app/{path}", PLAIN_UA, 20))
+PROBES.append(("html ft tearsheet HXSCL:PKC", "https://markets.ft.com/data/equities/tearsheet/historical?s=HXSCL:PKC", PLAIN_UA, 25))
+PROBES.append(("html stockanalysis HXSCL history", "https://stockanalysis.com/quote/otc/HXSCL/history/", PLAIN_UA, 25))
+PROBES.append(("yahoo chart HXSCL", "https://query2.finance.yahoo.com/v8/finance/chart/HXSCL?range=3mo&interval=1d", PLAIN_UA, 20))
+PROBES.append(("yahoo spark HXSCL", "https://query1.finance.yahoo.com/v7/finance/spark?symbols=HXSCL&range=3mo&interval=1d", PLAIN_UA, 20))
+
+
 for sym in ("OKLO", "MU"):
     PROBES.append((f"nasdaq chart {sym} 1d", f"https://api.nasdaq.com/api/quote/{sym}/chart?assetclass=stocks&fromdate={END - timedelta(days=1):%Y-%m-%d}&todate={END:%Y-%m-%d}", NASDAQ_H, 20))
     PROBES.append((f"nasdaq chart {sym} default", f"https://api.nasdaq.com/api/quote/{sym}/chart?assetclass=stocks", NASDAQ_H, 20))
@@ -173,6 +184,13 @@ def live_topup_checks() -> None:
 if __name__ == "__main__":
     for label, url, headers, timeout in PROBES:
         status, body = fetch(url, headers, timeout)
-        detail = naver_items(body) if label.startswith("naver list") and status == "200" else summarize(body)
+        if label.startswith("dump "):
+            detail = body[:2500].replace("\n", " ")
+        elif label.startswith("html "):
+            import re as _re
+            detail = (f"len={len(body)} table={'<table' in body} dates={_re.findall(r'(?:Sep|Aug) \\d{1,2}, 2026|2026-0[89]-\\d{2}', body)[:6]} "
+                      f"sample={body[:160]!r}")
+        else:
+            detail = naver_items(body) if label.startswith("naver list") and status == "200" else summarize(body)
         print(f"### {label}\n    {url}\n    {status} :: {detail}", flush=True)
     live_topup_checks()
