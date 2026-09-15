@@ -137,8 +137,27 @@ for sym in ("OKLO", "MU"):
     PROBES.append((f"nasdaq chart {sym} default", f"https://api.nasdaq.com/api/quote/{sym}/chart?assetclass=stocks", NASDAQ_H, 20))
 
 
+def live_topup_checks() -> None:
+    """실제 보충 함수를 러너에서 실행해 코드 경로를 검증한다. historical 마지막 봉이 through-5일이라고 가정하고 그 이후 봉을 받아본다
+    (OKLO·ORCL: 네이버에 없는 NYSE 종목, IWM: 러셀2000 프록시 ETF)."""
+    through = (END - timedelta(days=1)).isoformat()
+    last = (END - timedelta(days=5)).isoformat()
+    for sym, assetclass in (("OKLO", "stocks"), ("ORCL", "stocks"), ("IWM", "etf")):
+        try:
+            bars = _p.nasdaq_topup(sym, last, through, assetclass)
+            print(f"### live nasdaq_topup {sym}/{assetclass} last={last} through={through}\n    "
+                  f"{[(b.date, b.open, b.high, b.low, b.close, b.volume) for b in bars]}", flush=True)
+        except Exception as exc:  # noqa: BLE001
+            print(f"### live nasdaq_topup {sym}/{assetclass}\n    ERR {exc!r}", flush=True)
+        try:
+            print(f"### live nasdaq_latest_bar {sym}/{assetclass}\n    {_p.nasdaq_latest_bar(sym, through, assetclass)}", flush=True)
+        except Exception as exc:  # noqa: BLE001
+            print(f"### live nasdaq_latest_bar {sym}/{assetclass}\n    ERR {exc!r}", flush=True)
+
+
 if __name__ == "__main__":
     for label, url, headers, timeout in PROBES:
         status, body = fetch(url, headers, timeout)
         detail = naver_items(body) if label.startswith("naver list") and status == "200" else summarize(body)
         print(f"### {label}\n    {url}\n    {status} :: {detail}", flush=True)
+    live_topup_checks()
