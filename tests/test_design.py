@@ -31,10 +31,10 @@ def test_css_has_signature_tokens_and_no_forbidden_effects():
     assert "#F58220" in CSS and "#FAB072" in CSS and "#043B72" in CSS  # 오렌지 룰 · 테이블 헤더 · 블루
     for forbidden in ("gradient(", "box-shadow", "prefers-color-scheme", "font-style:italic", "Pretendard", "Roboto"):
         assert forbidden not in CSS, forbidden
-    # 라운드는 4px 이하 (버튼 2px, 카드 4px, 테이블 0)
+    # 라운드는 6px 이하 (버튼 2px, 카드·시트 6px = 디자인 시스템 r-md, 테이블 0). 12px 이상은 미래에셋이 아니다
     for value in re.findall(r"border-radius:\s*([^;}]+)", CSS):
         for num in re.findall(r"(\d+(?:\.\d+)?)px", value):
-            assert float(num) <= 4, value
+            assert float(num) <= 6, value
     # 승인 폰트만: KoPub돋움(자체 호스팅) → Noto Sans KR 폴백, 영문 Inter
     assert CSS.index("KoPub Dotum") < CSS.index("Noto Sans KR") and "Inter" in CSS
 

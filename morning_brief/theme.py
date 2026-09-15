@@ -60,24 +60,13 @@ a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{o
 .mast .links a:first-child{border-left:0;padding-left:0}
 .mast .links a:last-child{padding-right:0}
 
-/* 섹션 내비 — 스크롤에 고정, 현재 섹션은 2px 오렌지 밑줄 */
-.toc{position:sticky;top:0;z-index:5;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;background:var(--canvas);
-border-bottom:1px solid var(--hair2);margin:0 calc(-1 * var(--gutter));padding:0 var(--gutter)}
-.toc::-webkit-scrollbar{display:none}
-.toc a{flex:none;display:inline-flex;align-items:baseline;gap:6px;padding:11px 14px 9px;font-size:14px;font-weight:500;color:var(--muted);
-border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;line-height:1.3}
-.toc a:first-child{padding-left:0}
-.toc a:hover{color:var(--ink)}
-.toc a[aria-current="true"]{color:var(--ink);font-weight:700;border-bottom-color:var(--orange)}
-.toc .n{font-family:var(--en);font-size:12px;font-weight:600;color:var(--muted2)}
-
 /* 과거 브리핑 페이지 상단 안내(최신 브리핑 링크) */
 .newer{display:block;margin-top:16px;padding:10px 14px;border:1px solid var(--orange);border-radius:2px;background:var(--s2);color:var(--body);font-size:14.5px;line-height:1.5}
 .newer strong{color:var(--navy);font-weight:700}
 .newer:hover{background:var(--s1)}
 
 /* 섹션 */
-.sec{margin-top:56px;scroll-margin-top:60px}
+.sec{margin-top:56px}
 .rule{height:1px;background:var(--orange);margin-bottom:14px}
 .sec h2{font-size:22px;line-height:1.3;font-weight:700;color:var(--ink);margin:0 0 16px;letter-spacing:-.3px}
 .sec h2 .n{font-family:var(--en);font-weight:600;color:var(--muted);font-size:14px;margin-left:8px;letter-spacing:0}
@@ -91,7 +80,7 @@ border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;line-h
 
 /* 지수 보드 */
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(176px,1fr));gap:12px}
-.tile{border:1px solid var(--hair);border-radius:4px;padding:14px 16px 12px;background:var(--canvas);min-width:0;display:flex;flex-direction:column}
+.tile{border:1px solid var(--hair);border-radius:6px;padding:14px 16px 12px;background:var(--canvas);min-width:0;display:flex;flex-direction:column}
 .tile .t-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .tile .l{font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tile .v{font-family:var(--en);font-size:26px;font-weight:700;color:var(--ink);line-height:1.1;margin:8px 0 0;letter-spacing:-.3px}
@@ -109,7 +98,30 @@ border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;line-h
 .seg button:hover{background:var(--s2);color:var(--ink)}
 .seg button[aria-pressed="true"]{background:var(--orange);color:#FFFFFF;font-weight:600}
 
-/* 종목 테이블 — 헤어라인 행, 종목명 2줄(이름 / 티커 · 시장) */
+/* 종목 카드 — 카드 어디를 눌러도 상세, 누르는 동안 하이라이트(.pressed / :active). PC 2열 · 960px 이하 1열 */
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.card{border:1px solid var(--hair);border-radius:6px;background:var(--canvas);padding:14px 16px;min-width:0;cursor:pointer;
+-webkit-tap-highlight-color:transparent;transition:background-color .15s,border-color .15s}
+.card[hidden]{display:none}
+.card:hover{background:var(--s2)}
+.card.pressed,.card:active{background:var(--s1);border-color:var(--orange)}
+.card:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+.c-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.card .nm{display:block;font-weight:700;color:var(--ink);font-size:16px;line-height:1.3}
+.card .meta{display:block;font-size:12.5px;color:var(--muted);margin-top:2px;letter-spacing:.1px;line-height:1.3}
+.card .meta .tk{font-family:var(--en);font-weight:500}
+.card .chg{font-family:var(--en);font-weight:700;white-space:nowrap;font-size:17px;line-height:1.3}
+.c-body{display:grid;grid-template-columns:200px minmax(0,1fr);grid-template-areas:"mini why";gap:6px 18px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--hair2)}
+.card .mini{grid-area:mini;min-width:0}
+.card .mini:empty{display:none}
+.card .mini:empty+.why{grid-column:1/-1}
+.card .mini-link{display:block}
+.card .mini svg{display:block;width:100%;height:auto}
+.card .why{grid-area:why;margin:0;color:var(--body);font-size:14.5px;line-height:1.6}
+tr[data-sheet]{-webkit-tap-highlight-color:transparent}
+tr[data-sheet].pressed td{background:var(--s1)}
+
+/* 매크로 테이블 — 헤어라인 행, 이름 / 단위 2줄 */
 .tbl{border:1px solid var(--hair);overflow-x:auto;background:var(--canvas)}
 table{border-collapse:collapse;width:100%;font-size:15px;line-height:1.5}
 thead th{background:var(--soft);color:var(--ink);font-weight:700;text-align:left;padding:9px 14px;border-bottom:1px solid var(--hair);white-space:nowrap;font-size:13px;letter-spacing:.2px}
@@ -156,7 +168,7 @@ html.js .detail:target:not(.open){display:none}
 html.js .detail.open{display:block}
 .detail .scrim{position:absolute;inset:0;background:rgba(26,26,26,.55)}
 .sheet{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(960px,calc(100vw - 32px));max-height:calc(100vh - 48px);
-overflow:auto;overscroll-behavior:contain;background:var(--canvas);border:1px solid var(--hair);border-radius:4px;padding:22px 28px 24px}
+overflow:auto;overscroll-behavior:contain;background:var(--canvas);border:1px solid var(--hair);border-radius:6px;padding:22px 28px 24px}
 .sheet .close{position:absolute;top:10px;right:10px;width:40px;height:40px;display:grid;place-items:center;color:var(--muted);font-size:22px;line-height:1;border:1px solid transparent;border-radius:2px}
 .sheet .close:hover{color:var(--ink);border-color:var(--hair)}
 .s-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding-right:48px}
@@ -170,7 +182,7 @@ overflow:auto;overscroll-behavior:contain;background:var(--canvas);border:1px so
 .price small.stale{color:var(--active);font-weight:600}
 .s-rule{height:1px;background:var(--orange);margin:0 0 18px}
 .s-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start}
-.s-side{background:var(--s2);border:1px solid var(--hair2);border-radius:4px;padding:16px 18px 18px;min-width:0}
+.s-side{background:var(--s2);border:1px solid var(--hair2);border-radius:6px;padding:16px 18px 18px;min-width:0}
 .s-h{font-size:13px;font-weight:700;color:var(--muted);margin:0 0 10px;letter-spacing:.3px}
 .chart-card{background:var(--canvas);border:1px solid var(--hair2);padding:8px}
 .chart-card svg{display:block;width:100%;height:auto}
@@ -205,6 +217,9 @@ table.ohlcv th:first-child,table.ohlcv td:first-child{text-align:left}
 .status p{margin:0 0 10px;font-size:16px}
 
 /* 반응형 */
+@media(max-width:960px){
+ .cards{grid-template-columns:minmax(0,1fr)}
+}
 @media(max-width:768px){
  :root{--gutter:20px}
  .page{padding:16px var(--gutter) 56px}
@@ -212,8 +227,7 @@ table.ohlcv th:first-child,table.ohlcv td:first-child{text-align:left}
  .brand .title{font-size:21px;letter-spacing:-.4px}
  .when .date{font-size:17px} .when .date .wd{font-size:13px;margin-left:4px}
  .mast-meta{flex-direction:column;align-items:flex-start;gap:6px}
- .toc a{padding:10px 12px 8px;font-size:13.5px}
- .sec{margin-top:40px;scroll-margin-top:52px} .sec h2{font-size:20px} .lead{font-size:17px;line-height:1.7} .lead.headline{font-size:21px}
+ .sec{margin-top:40px} .sec h2{font-size:20px} .lead{font-size:17px;line-height:1.7} .lead.headline{font-size:21px}
  .tile .v{font-size:22px}
  .s-grid{grid-template-columns:minmax(0,1fr);gap:18px}
  .s-head h2{font-size:21px} .price{font-size:24px} .price .chg{font-size:19px}
@@ -228,6 +242,9 @@ table.ohlcv th:first-child,table.ohlcv td:first-child{text-align:left}
  .stocks tbody tr[hidden]{display:none}
  .stocks tbody td{display:block;padding:0;border:0}
  .stocks tbody tr:hover td{background:transparent}
+ .cards{gap:10px}
+ .card{padding:14px 14px 12px}
+ .c-body{grid-template-columns:minmax(0,1fr);grid-template-areas:"why" "mini";gap:10px;align-items:start}
  .tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
  .tile:nth-child(odd):last-child{grid-column:1/-1}
  .tile{padding:12px 12px 10px} .tile .v{font-size:22px}
@@ -237,7 +254,7 @@ table.ohlcv th:first-child,table.ohlcv td:first-child{text-align:left}
  .stocks .mini svg{width:100%;height:auto}
  .c-dates{font-size:11.5px;margin-top:6px}
  .chart-lg{display:none} .chart-sm{display:block}
- .sheet{left:0;right:0;top:auto;bottom:0;transform:none;width:100%;max-height:92vh;border-radius:4px 4px 0 0;padding:14px 16px calc(20px + env(safe-area-inset-bottom))}
+ .sheet{left:0;right:0;top:auto;bottom:0;transform:none;width:100%;max-height:92vh;border-radius:6px 6px 0 0;padding:14px 16px calc(20px + env(safe-area-inset-bottom))}
  .sheet::before{content:"";display:block;width:40px;height:3px;background:var(--hair);margin:0 auto 12px}
  .s-side{padding:14px 14px 16px}
  .arc{grid-template-columns:1fr;gap:4px}
@@ -245,8 +262,8 @@ table.ohlcv th:first-child,table.ohlcv td:first-child{text-align:left}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 @media print{
  body{font-size:13pt;line-height:1.45} .page{max-width:100%;padding:0}
- .controls,.mast .links,.toc,.detail,.foot .tags{display:none}
- .tbl,.tile,.chart-card{page-break-inside:avoid} .sec h2{page-break-after:avoid}
+ .controls,.mast .links,.detail,.foot .tags{display:none}
+ .tbl,.tile,.card,.chart-card{page-break-inside:avoid} .sec h2{page-break-after:avoid}
 }
 """
 
