@@ -124,9 +124,9 @@ for path in ("worldstock/index/.DJI/price", "index/.DJI/prices"):
 
 
 # ── 마감 직후 최신 봉 보충 후보 (Nasdaq historical 은 종가를 수 시간 뒤에 반영) ──
-for sym in ("OKLO.N", "OKLO", "OKLO.O", "ORCL.N", "DELL.N", "ABBV.N", "MU.O"):
+for sym in ("OKLO.N", "OKLO", "OKLO.O", "ORCL.N", "DELL.N", "ABBV.N", "MU.O", "HXSCL", "HXSCL.O", "HXSCL.N"):
     PROBES.append((f"naver world {sym}", f"https://api.stock.naver.com/stock/{urllib.parse.quote(sym)}/price?pageSize=3&page=1", NAVER_H, 20))
-for sym in ("OKLO", "MU"):
+for sym in ("OKLO", "MU", "HXSCL"):
     PROBES.append((f"nasdaq info {sym}", f"https://api.nasdaq.com/api/quote/{sym}/info?assetclass=stocks", NASDAQ_H, 20))
     PROBES.append((f"nasdaq summary {sym}", f"https://api.nasdaq.com/api/quote/{sym}/summary?assetclass=stocks", NASDAQ_H, 20))
     PROBES.append((f"nasdaq historical {sym} (last rows)", nasdaq(sym, "stocks"), NASDAQ_H, 20))

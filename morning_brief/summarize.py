@@ -368,9 +368,28 @@ def _is_connective(token: str) -> bool:
 _PARTICLES = {"와", "과", "및", "이", "가", "은", "는", "도", "등", "에", "로", "을", "를", "의"}
 
 
+_DR_RE = re.compile(r"^(.*?[가-힣A-Za-z0-9&])\s*(ADR|GDR|ADS)$", re.I)  # 예탁증서 접미(붙여 쓴 'SK하이닉스ADR' 포함)
+
+
 def _resolve_name(raw: str, master: StockMaster):
     """캡처된 이름(1~3 단어)을 마스터에 매핑. 전체 → 뒤쪽 단어들 순으로 시도한다. (표시 이름, 엔트리|None) — 이름이 비면 ('', None)."""
     tokens = raw.split()
+    # 예탁증서: 'SK하이닉스 ADR' 'SK하이닉스ADR' 은 미국(해외) 상장물이라 원주 000660 이 아니다. 마스터에 DR 엔트리(HXSCL 등)가
+    # 있으면 그것으로, 없으면 티커 없는 미국 종목으로 둔다. 미국 기업 'TSMC ADR' 은 미국 상장 그 자체이므로 그대로 맵핑.
+    dr = _DR_RE.match(raw)
+    if dr:
+        suffix = dr.group(2).upper()
+        exact = master.resolve_exact(raw)
+        if exact:
+            return exact.display_name, exact
+        base_name, base_entry = _resolve_name(dr.group(1), master)
+        if base_entry is not None:
+            if base_entry.market != "KR":
+                return base_name, base_entry
+            dr_entry = master.resolve_exact(f"{base_entry.display_name} {suffix}") or master.resolve_exact(f"{base_entry.ticker} {suffix}")
+            if dr_entry:
+                return dr_entry.display_name, dr_entry
+            return f"{base_entry.display_name} {suffix}", None
     for i in range(len(tokens)):
         cand = " ".join(tokens[i:])
         entry = master.resolve(cand)
