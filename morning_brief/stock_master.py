@@ -48,11 +48,12 @@ class StockMaster:
         if not name_or_ticker:
             return None
         key = name_or_ticker.strip()
-        if key in self._by_ticker:
-            return self._by_ticker[key]
+        # 별칭 정확 일치를 티커보다 먼저 본다 — 채널에서 'MS' 는 마이크로소프트(별칭)이고 모건스탠리의 티커도 MS 이기 때문
         entry = self._alias_lower.get(key.lower())
         if entry:
             return entry
+        if key in self._by_ticker:
+            return self._by_ticker[key]
         # 부분 포함 (예: "삼성전자우" → 삼성전자, "SK하이닉스 ADR" → SK하이닉스). 짧은 별칭(2자 이하)은 오탐이 커서 정확 일치만 허용.
         low = key.lower()
         for alias, entry in self._alias_pairs:

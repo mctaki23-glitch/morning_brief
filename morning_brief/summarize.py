@@ -214,9 +214,9 @@ _CONNECTORS = {"여기에", "반면", "특히", "그리고", "이에", "이런",
 
 _PCT_RE = re.compile(r"([+\-−]?\d+(?:\.\d+)?)\s*%")
 _SIGNED_PCT_RE = re.compile(r"([+\-−]\d+(?:\.\d+)?)\s*%")
-# "종목명(+5.90%)" — 이름은 1~2 단어(줄바꿈 불가), 괄호 안은 부호 있는 등락률만
+# "종목명(+5.90%)" — 이름은 1~3 단어(줄바꿈 불가), 괄호 안은 부호 있는 등락률만
 _MENTION_RE = re.compile(
-    r"([A-Za-z가-힣0-9&][A-Za-z가-힣0-9&\-]*(?:[ \t]+[A-Za-z가-힣0-9&][A-Za-z가-힣0-9&\-]*)?)[ \t]*\(\s*([+\-−]\d+(?:\.\d+)?)\s*%\s*\)"
+    r"([A-Za-z가-힣0-9&][A-Za-z가-힣0-9&\-]*(?:[ \t]+[A-Za-z가-힣0-9&][A-Za-z가-힣0-9&\-]*){0,2})[ \t]*\(\s*([+\-−]\d+(?:\.\d+)?)\s*%\s*\)"
 )
 _SENT_SPLIT = re.compile(r"(?<=[.。!?])\s+|\n+")
 _MOVE_RE = re.compile(r"상승|하락|급등|급락|강세|약세|부진|반등|보합|올랐|올라|내렸|내려|견조|밀렸|출발")
@@ -353,40 +353,33 @@ def _extract_stocks(text: str, master: StockMaster) -> tuple[list[StockMention],
     return ordered, unmapped
 
 
-_CONNECTIVE_TAILS = ("하며", "며", "하고", "고", "에", "과", "와", "은", "는", "도", "등", "서", "로", "을", "를")
+_CONNECTIVE_TAILS = ("하며", "하고", "되며", "되고", "이며", "으며", "면서", "에서", "에는", "에도", "들과", "들은", "들이", "들도", "됐고", "했고", "했던", "하던", "인데")
 
 
 def _is_connective(token: str) -> bool:
-    """'급락하며' '기업들과' '부담에' '보이며' 처럼 조사·연결어미로 끝나는 한국어 단어인지(종목명 앞에 붙어 잡힌 서술어)."""
+    """'급락하며' '기업들과' '보이며' '둔화됐고' 처럼 연결어미·복수조사로 끝나는 서술어인지. 종목명 앞에 붙어 함께 잡힌 말을 떼기 위한 판별.
+    '마이크로' '테슬라' 같은 이름을 다치지 않도록 한 글자 조사(로·에·과 …)로 끝난다는 것만으로는 서술어로 보지 않는다."""
     t = token.rstrip(",")
-    if t in _PARTICLES:
-        return True  # '와 임대료', '이 쿼보' 처럼 조사만 따로 잡힌 경우
-    return bool(re.fullmatch(r"[가-힣]{2,}", t)) and t.endswith(_CONNECTIVE_TAILS)
+    if t in _PARTICLES or t in _CONNECTORS:
+        return True  # '와 임대료', '이 쿼보', '반면 XX' 처럼 조사·접속어가 따로 잡힌 경우
+    return bool(re.fullmatch(r"[가-힣]{3,}", t)) and t.endswith(_CONNECTIVE_TAILS)
 
 
 _PARTICLES = {"와", "과", "및", "이", "가", "은", "는", "도", "등", "에", "로", "을", "를", "의"}
 
 
 def _resolve_name(raw: str, master: StockMaster):
-    """캡처된 이름(1~2 단어)에서 접속어를 떼고 마스터에 매핑. (표시 이름, 엔트리|None) — 이름이 비면 ('', None)."""
+    """캡처된 이름(1~3 단어)을 마스터에 매핑. 전체 → 뒤쪽 단어들 순으로 시도한다. (표시 이름, 엔트리|None) — 이름이 비면 ('', None)."""
     tokens = raw.split()
-    candidates = []
-    if len(tokens) == 2:
-        first = tokens[0].rstrip(",")
-        if first not in _CONNECTORS and not first.endswith(","):
-            candidates.append(" ".join(tokens))
-        candidates.append(tokens[1])
-    else:
-        candidates.append(raw)
-    for cand in candidates:
+    for i in range(len(tokens)):
+        cand = " ".join(tokens[i:])
         entry = master.resolve(cand)
         if entry:
             return cand, entry
-    if len(tokens) == 2 and (tokens[0].rstrip(",") in _CONNECTORS or _is_connective(tokens[0])):
-        name = candidates[-1]  # '급락하며 프리포트맥모란', '기업들과 램리서치' → 앞 단어는 서술어·조사
-    else:
-        name = candidates[0]
-    name = name.strip(",.")
+    # 마스터에 없음: 앞에 붙은 서술어·조사·접속어만 떼고 나머지는 그대로 이름으로 쓴다
+    while len(tokens) > 1 and _is_connective(tokens[0]):
+        tokens = tokens[1:]
+    name = " ".join(tokens).strip(",.")
     if len(name) < 2 or name.isdigit() or name in _NOT_STOCK_WORDS:
         return "", None
     return name, None
