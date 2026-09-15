@@ -75,7 +75,7 @@ def build_brief(cfg: Config, raw: str, date_str: str, *, msg_count: int = 1, fet
             continue
         snap.ticker = inst.id
         snap.prices = prices.clip_before(macro_prices.get_series(inst, days=cfg.price_days, cache_dir=cache_dir, allow_synthetic=not cfg.production,
-                                                                 key=f"INDEX_{inst.id}"), date_str)
+                                                                 key=f"INDEX_{inst.id}", freshen_through=us_session), date_str)
         if snap.prices is not None and snap.value is None and not snap.prices.source.startswith("proxy:"):
             snap.value = snap.prices.last_close
 

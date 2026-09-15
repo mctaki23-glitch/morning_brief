@@ -36,7 +36,8 @@ DISCLAIMER = (
 )
 _SOURCE_LABEL = {
     "stooq": "Stooq 일봉", "yahoo": "Yahoo Finance 일봉", "naver": "네이버 금융 일봉", "nasdaq": "Nasdaq 일봉", "investing": "Investing.com 일봉",
-    "nasdaq+naver": "Nasdaq 일봉 + 네이버 최신 봉", "nasdaq+nasdaq-quote": "Nasdaq 일봉 + 마감 시세 요약", "naver+nasdaq-quote": "네이버 일봉 + Nasdaq 마감 시세 요약",
+    "nasdaq+naver": "Nasdaq 일봉 + 네이버 최신 봉", "nasdaq+nasdaq-quote": "Nasdaq 일봉 + 마감 직후 시세 API 최신 봉",
+    "naver+nasdaq-quote": "네이버 일봉 + Nasdaq 시세 API 최신 봉",
     "cache": "캐시(전일 기준)", "synthetic": "합성 데이터(데모)", "none": "시세 없음",
     "fred": "FRED(세인트루이스 연준)", "coingecko": "CoinGecko",
 }
