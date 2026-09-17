@@ -422,17 +422,19 @@ def test_stale_series_hides_data_delta_next_to_text_pct():
 
 
 def test_korean_adr_mentions_are_us_listings_not_the_kr_share(master: StockMaster):
-    """'SK하이닉스 ADR(-7.60%)' · 'SK하이닉스ADR(+0.94%)' 은 미국 예탁증서 — 원주 000660(한국)이 아니라 SKHY(미국)로.
-    마스터에 DR 이 없는 한국 종목의 DR 은 티커 없는 미국 종목으로 두고, 원주 언급('SK하이닉스(+1.10%)')은 그대로 한국 종목."""
+    """SK하이닉스는 채널에서 모두 미국 ADR(SKHY)이다 — 'SK하이닉스 ADR' · 'SK하이닉스ADR' · 'SK 하이닉스 ADR' · 표기 없는 'SK하이닉스' 모두
+    SKHY(미국)로 맵핑되고 하나의 종목으로 합쳐진다(사용자 지시 2026-09-17). 마스터에 DR 이 없는 한국 종목의 DR 은 티커 없는 미국 종목으로."""
     from morning_brief.summarize import _extract_stocks
     text = ("SK하이닉스 ADR(-7.60%), 샌디스크(-4.98%) 등 메모리 낙폭 축소. 삼성전자 GDR(+1.20%)도 강세. TSMC ADR(+0.50%)은 보합권.\n"
             "한국 증시에서는 SK하이닉스(+1.10%)가 상승.")
     mentions, unmapped = _extract_stocks(text, master)
     by = {m.name: m for m in mentions}
     adr = by["SK하이닉스 ADR"]
-    assert (adr.ticker, adr.market, adr.change_pct) == ("SKHY", "US", -7.6)
+    assert (adr.ticker, adr.market, adr.change_pct) == ("SKHY", "US", -7.6)  # 뒤의 표기 없는 언급은 같은 종목으로 합쳐짐
+    assert "SK하이닉스" not in by and "000660" not in {m.ticker for m in mentions}
     assert by["삼성전자 GDR"].ticker is None and by["삼성전자 GDR"].market == "US" and "삼성전자 GDR" in unmapped
     assert by["TSMC"].ticker == "TSM"  # 미국 기업의 ADR 은 미국 상장 그 자체
-    assert (by["SK하이닉스"].ticker, by["SK하이닉스"].market, by["SK하이닉스"].change_pct) == ("000660", "KR", 1.1)
     m2, _ = _extract_stocks("마이크론(-0.22%), SK하이닉스ADR(+0.94%), 샌디스크(-3.50%) 하락.", master)
     assert [(m.name, m.ticker) for m in m2] == [("마이크론", "MU"), ("SK하이닉스 ADR", "SKHY"), ("샌디스크", "SNDK")]
+    m3, _ = _extract_stocks("SK하이닉스(-5.20%), 마이크론(-4.90%) 하락. SK 하이닉스 ADR(-0.46%)도 약세.", master)
+    assert [(m.name, m.ticker, m.market, m.change_pct) for m in m3] == [("SK하이닉스 ADR", "SKHY", "US", -5.2), ("마이크론", "MU", "US", -4.9)]
