@@ -257,6 +257,18 @@ def _series_is_stale(m: StockMention, brief_date: str) -> bool:
     return bool(exp) and len(last) == 10 and last < exp
 
 
+def _stats_strip(points, currency: str, *, volume: bool = True, unit: Optional[str] = None) -> str:
+    """마지막 봉의 시가·고가·저가(·거래량) 4칸 — 차트를 읽기 전에 그날 범위를 한눈에."""
+    if not points:
+        return ""
+    last = points[-1]
+    fmt = (lambda v: chart.fmt_unit(v, unit)) if unit else (lambda v: chart.fmt_price(v, currency))
+    cells = [("시가", fmt(last.open)), ("고가", fmt(last.high)), ("저가", fmt(last.low))]
+    if volume:
+        cells.append(("거래량", chart.fmt_volume(last.volume) if last.volume else "—"))
+    return '<dl class="s-stats">' + "".join(f'<div><dt>{k}</dt><dd class="num">{_esc(v)}</dd></div>' for k, v in cells) + "</dl>"
+
+
 def _sheet_body(brief: Brief, m: StockMention, *, share_href: str = "") -> str:
     pct = m.price_change_pct()
     disp, cls = fmt_pct(pct)
@@ -302,9 +314,10 @@ def _sheet_body(brief: Brief, m: StockMention, *, share_href: str = "") -> str:
     dis = "투자 참고용 자동 생성 자료이며 매매 권유가 아닙니다."
     if m.prices and not m.prices.is_real:
         dis += " 표시된 시세는 합성(데모) 데이터로 실제 가격과 다릅니다."
+    stats = _stats_strip(m.prices.points, m.prices.currency) if (m.prices and m.prices.points) else ""
     return (
         f'<div class="s-head"><h2>{_esc(m.name)}</h2><span class="s-meta">{meta}</span>{share}</div>'
-        f'<div class="price">{price}</div><div class="s-rule"></div>'
+        f'<div class="price">{price}</div>{stats}<div class="s-rule"></div>'
         f'<div class="s-grid"><div class="s-main"><div class="chart-card">{svg}</div>{note}{table}</div>'
         f'<aside class="s-side"><h3 class="s-h">등락 이유</h3>'
         f'<p class="reason">{_esc(m.reason_summary) or "등락 이유 정보가 없습니다."}</p>{quote}</aside></div>'
@@ -511,26 +524,28 @@ def _macro_mini(m: StockMention) -> str:
 
 
 def _macro_section(brief: Brief) -> str:
-    """금리 · 유가 · 금 · 환율 등 매크로 자산 — 브리핑 코멘트 + 차트(종목 서머리와 같은 시트)."""
+    """금리 · 유가 · 금 · 환율 등 매크로 자산 — 지수 타일과 같은 문법의 카드(값 · 등락 · 추이 · 코멘트). 누르면 상세 시트."""
     if not brief.macros:
         return ""
-    rows = []
+    tiles = []
     for m in brief.macros:
         disp, cls, sub = _macro_change(m)
         value = chart.fmt_unit(m.prices.last_close, m.unit) if (m.prices and m.prices.last_close is not None) else "—"
-        rows.append(
-            f'<tr data-sheet="x-{m.slug}" tabindex="0" aria-label="{_esc(m.name)} 상세 보기">'
-            f'<td class="nm-cell"><span class="nm">{_esc(m.name)}</span><span class="meta">{_esc(m.unit)}</span></td>'
-            f'<td class="val r">{_esc(value)}</td><td class="chg r {cls}">{disp}</td>'
-            f'<td class="mini">{_mini_link(f"#x-{m.slug}", m.name, _macro_mini(m), m.prices.points if m.prices else None)}</td>'
-            f'<td class="why">{_esc(m.reason_summary) or "—"}</td></tr>'
+        mini = _mini_link(f"#x-{m.slug}", m.name, _macro_mini(m), m.prices.points if m.prices else None)
+        small = f"<small>{_esc(sub)}</small>" if sub else ""
+        tiles.append(
+            f'<article class="card mtile" data-sheet="x-{m.slug}" tabindex="0" aria-label="{_esc(m.name)} 상세 보기">'
+            f'<div class="c-head"><div class="nm-cell"><span class="nm">{_esc(m.name)}</span><span class="meta">{_esc(m.unit)}</span></div>'
+            f'<div class="chg r {cls}">{disp}</div></div>'
+            f'<div class="m-val num">{_esc(value)}{small}</div>'
+            f'<div class="mini">{mini}</div>'
+            f'<p class="why">{_esc(m.reason_summary) or "—"}</p></article>'
         )
     return (
         '<section class="sec" id="macro"><div class="rule"></div><div class="sec-head">'
         f'<h2>금리 · 유가 · 금 · 환율<span class="n">{len(brief.macros)}</span></h2>'
         '<p class="sec-meta">브리핑에 언급된 매크로 자산 · 등락은 데이터 기준 전일 대비</p></div>'
-        '<div class="tbl stocks macro"><table><thead><tr><th>자산</th><th class="r">현재값</th><th class="r">전일 대비</th>'
-        f'<th>최근 20일</th><th>브리핑 코멘트</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div></section>'
+        f'<div class="cards mtiles">{"".join(tiles)}</div></section>'
     )
 
 
@@ -550,13 +565,15 @@ def _macro_sheet_body(brief: Brief, m: StockMention) -> str:
         table = ""
     svg = (f'<div class="chart-lg">{_macro_chart(m, width=CHART_LG[0], height=CHART_LG[1])}</div>'
            f'<div class="chart-sm">{_macro_chart(m, width=CHART_SM[0], height=CHART_SM[1])}</div>')
+    from .macro_prices import is_close_only
+    stats = _stats_strip(m.prices.points, m.prices.currency, volume=False, unit=m.unit) if (m.prices and m.prices.points and not is_close_only(m.prices)) else ""
     quote = ""
     if m.evidence:
         quote = (f'<blockquote class="quote">“{_esc(m.evidence)}”'
                  f'<a class="src" href="{_esc(brief.message_url)}" target="_blank" rel="noopener">원문 메시지 보기</a></blockquote>')
     return (
         f'<div class="s-head"><h2>{_esc(m.name)}</h2><span class="s-meta">{_esc(m.unit)} · 매크로</span></div>'
-        f'<div class="price">{price}</div><div class="s-rule"></div>'
+        f'<div class="price">{price}</div>{stats}<div class="s-rule"></div>'
         f'<div class="s-grid"><div class="s-main"><div class="chart-card">{svg}</div>{note}{table}</div>'
         f'<aside class="s-side"><h3 class="s-h">브리핑 코멘트</h3>'
         f'<p class="reason">{_esc(m.reason_summary) or "코멘트가 없습니다."}</p>{quote}</aside></div>'
