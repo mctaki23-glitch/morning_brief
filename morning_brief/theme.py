@@ -48,10 +48,10 @@ a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{o
 .logo-slot{height:26px;display:flex;align-items:center}
 .logo-slot:empty{display:none}
 .logo-slot svg,.logo-slot img{height:26px;width:auto;display:block}
-.brand .title{font-size:26px;font-weight:700;color:var(--ink);line-height:1.15;letter-spacing:-.5px}
+.brand .title{font-size:28px;font-weight:700;color:var(--ink);line-height:1.15;letter-spacing:-.6px}
 .brand .title a{color:inherit}
 .when{text-align:right;line-height:1.15}
-.when .date{font-family:var(--en);font-size:24px;font-weight:700;color:var(--ink);letter-spacing:-.3px}
+.when .date{font-family:var(--en);font-size:26px;font-weight:700;color:var(--ink);letter-spacing:-.4px}
 .when .date .wd{font-family:var(--kr);font-size:15px;font-weight:500;color:var(--muted);margin-left:6px;letter-spacing:0}
 .mast-meta{grid-column:1/-1;display:flex;justify-content:space-between;align-items:baseline;gap:8px 24px;flex-wrap:wrap;margin-top:4px}
 .mast .sub{font-size:13.5px;color:var(--muted);letter-spacing:.1px}
@@ -66,27 +66,27 @@ a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{o
 .newer:hover{background:var(--s1)}
 
 /* 섹션 */
-.sec{margin-top:56px}
-.rule{height:1px;background:var(--orange);margin-bottom:14px}
+.sec{margin-top:64px}
+.rule{height:1px;background:var(--orange);margin-bottom:16px}
 .sec h2{font-size:22px;line-height:1.3;font-weight:700;color:var(--ink);margin:0 0 16px;letter-spacing:-.3px}
 .sec h2 .n{font-family:var(--en);font-weight:600;color:var(--muted);font-size:14px;margin-left:8px;letter-spacing:0}
 .sec-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px 20px;flex-wrap:wrap;margin-bottom:14px}
 .sec-head h2{margin:0}
 .sec-meta{font-size:13.5px;color:var(--muted);margin:0}
-.lead{font-size:19px;line-height:1.75;margin:0;max-width:66ch;color:var(--body)}
+.lead{font-size:18.5px;line-height:1.8;margin:0;max-width:66ch;color:var(--body);text-wrap:pretty}
 .lead+.lead{margin-top:14px}
-.lead.headline{font-size:24px;font-weight:700;color:var(--ink);line-height:1.4;letter-spacing:-.4px;max-width:56ch;text-wrap:balance}
+.lead.headline{font-size:26px;font-weight:700;color:var(--ink);line-height:1.35;letter-spacing:-.5px;max-width:52ch;text-wrap:balance}
 .empty{color:var(--muted);font-size:15px;margin:0}
 
 /* 지수 보드 */
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(176px,1fr));gap:12px}
-.tile{border:1px solid var(--hair);border-radius:6px;padding:14px 16px 12px;background:var(--canvas);min-width:0;display:flex;flex-direction:column}
+.tile{border:0;border-radius:6px;padding:16px 18px 14px;background:var(--s2);min-width:0;display:flex;flex-direction:column}
 .tile .t-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .tile .l{font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tile .v{font-family:var(--en);font-size:26px;font-weight:700;color:var(--ink);line-height:1.1;margin:8px 0 0;letter-spacing:-.3px}
+.tile .v{font-family:var(--en);font-size:28px;font-weight:700;color:var(--ink);line-height:1.1;margin:8px 0 0;letter-spacing:-.4px}
 .tile .v:empty{display:none}
 .tile .c{font-family:var(--en);font-size:14px;font-weight:700;white-space:nowrap}
-.tile .spark{margin-top:12px;padding-top:10px;border-top:1px solid var(--hair2)}
+.tile .spark{margin-top:12px;padding-top:10px;border-top:1px solid var(--hair)}
 .tile .spark svg{display:block;width:100%;height:auto}
 .tile .note{font-size:11.5px;color:var(--muted2);margin-top:6px;font-family:var(--en)}
 
@@ -100,49 +100,43 @@ a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{o
 
 /* 종목 카드 — 카드 어디를 눌러도 상세, 누르는 동안 하이라이트(.pressed / :active). PC 2열 · 960px 이하 1열 */
 .cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.card{border:1px solid var(--hair);border-radius:6px;background:var(--canvas);padding:14px 16px;min-width:0;cursor:pointer;
+.card{border:1px solid var(--hair);border-radius:6px;background:var(--canvas);padding:16px 18px;min-width:0;cursor:pointer;
 -webkit-tap-highlight-color:transparent;transition:background-color .15s,border-color .15s}
 .card[hidden]{display:none}
 .card:hover{background:var(--s2)}
 .card.pressed,.card:active{background:var(--s1);border-color:var(--orange)}
 .card:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
 .c-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-.card .nm{display:block;font-weight:700;color:var(--ink);font-size:16px;line-height:1.3}
+.card .nm{display:block;font-weight:700;color:var(--ink);font-size:16.5px;line-height:1.3;letter-spacing:-.2px}
 .card .meta{display:block;font-size:12.5px;color:var(--muted);margin-top:2px;letter-spacing:.1px;line-height:1.3}
 .card .meta .tk{font-family:var(--en);font-weight:500}
-.card .chg{font-family:var(--en);font-weight:700;white-space:nowrap;font-size:17px;line-height:1.3}
-.c-body{display:grid;grid-template-columns:200px minmax(0,1fr);grid-template-areas:"mini why";gap:6px 18px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--hair2)}
+.card .chg{font-family:var(--en);font-weight:700;white-space:nowrap;font-size:18px;line-height:1.3}
+.c-body{display:grid;grid-template-columns:220px minmax(0,1fr);grid-template-areas:"mini why";gap:8px 20px;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--hair2)}
 .card .mini{grid-area:mini;min-width:0}
 .card .mini:empty{display:none}
 .card .mini:empty+.why{grid-column:1/-1}
 .card .mini-link{display:block}
 .card .mini svg{display:block;width:100%;height:auto}
 .card .why{grid-area:why;margin:0;color:var(--body);font-size:14.5px;line-height:1.6}
-tr[data-sheet]{-webkit-tap-highlight-color:transparent}
-tr[data-sheet].pressed td{background:var(--s1)}
+.c-dates{font-family:var(--en);font-size:10.5px;line-height:1.2;color:var(--muted2);margin-top:4px;white-space:nowrap;letter-spacing:.1px}
 
-/* 매크로 테이블 — 헤어라인 행, 이름 / 단위 2줄 */
+/* 매크로 타일 — 종목 카드와 같은 문법(값 · 등락 · 추이 · 코멘트 3줄), PC 3열 · 960px 이하 2열 · 640px 이하 1열 */
+.mtiles{grid-template-columns:repeat(3,minmax(0,1fr))}
+.mtile .m-val{font-family:var(--en);font-size:22px;font-weight:700;color:var(--ink);margin-top:6px;line-height:1.15;letter-spacing:-.3px}
+.mtile .m-val small{font-family:var(--en);font-size:13px;font-weight:500;color:var(--muted);margin-left:6px;letter-spacing:0}
+.mtile .mini{margin-top:12px;padding-top:12px;border-top:1px solid var(--hair2)}
+.mtile .mini:empty{display:none}
+.mtile .mini-link{display:block}
+.mtile .mini svg{display:block;width:100%;height:auto}
+.mtile .why{margin:10px 0 0;color:var(--body);font-size:14px;line-height:1.55;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+
+/* 표(시트 안 OHLCV 데이터 표) */
 .tbl{border:1px solid var(--hair);overflow-x:auto;background:var(--canvas)}
 table{border-collapse:collapse;width:100%;font-size:15px;line-height:1.5}
 thead th{background:var(--soft);color:var(--ink);font-weight:700;text-align:left;padding:9px 14px;border-bottom:1px solid var(--hair);white-space:nowrap;font-size:13px;letter-spacing:.2px}
 tbody td{padding:12px 14px;border-bottom:1px solid var(--hair2);vertical-align:middle}
 tbody tr:last-child td{border-bottom:0}
-tbody tr:hover td{background:var(--s2)}
 th.r,td.r{text-align:right}
-.stocks tr[hidden]{display:none}
-.stocks .nm{display:block;font-weight:700;color:var(--ink);font-size:15.5px;line-height:1.3}
-.stocks .meta{display:block;font-size:12.5px;color:var(--muted);margin-top:3px;letter-spacing:.1px;line-height:1.3}
-.stocks .meta .tk{font-family:var(--en);font-weight:500}
-.stocks td.nm-cell{white-space:nowrap;min-width:150px}
-.stocks .chg{font-family:var(--en);font-weight:700;white-space:nowrap;font-size:15.5px}
-.macro td.val{font-family:var(--en);font-weight:600;color:var(--ink);white-space:nowrap}
-.stocks .why{color:var(--body);font-size:14.5px;line-height:1.6}
-.stocks td.mini{width:176px}
-.stocks .mini-link{display:block;width:160px}
-.stocks .mini svg{display:block;width:100%;height:auto}
-.c-dates{font-family:var(--en);font-size:10.5px;line-height:1.2;color:var(--muted2);margin-top:4px;white-space:nowrap;letter-spacing:.1px}
-.stocks tbody tr[data-sheet]{cursor:pointer}
-.stocks tbody tr[data-sheet]:focus-visible{outline:2px solid var(--orange);outline-offset:-2px}
 .badge-warn{display:inline-block;font-size:11px;color:var(--muted);border:1px solid var(--hair);padding:0 5px;margin-left:6px;vertical-align:1px}
 
 /* 관전 포인트 · 원문 */
@@ -176,10 +170,15 @@ overflow:auto;overscroll-behavior:contain;background:var(--canvas);border:1px so
 .s-head .s-meta{font-size:13.5px;color:var(--muted);font-weight:500}
 .s-head .s-meta .tk{font-family:var(--en)}
 .s-head .share{font-size:13px;color:var(--navy);font-weight:500;border-bottom:1px solid var(--hair)}
-.price{font-family:var(--en);font-size:28px;font-weight:700;color:var(--ink);margin:8px 0 16px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;letter-spacing:-.3px;line-height:1.15}
+.price{font-family:var(--en);font-size:28px;font-weight:700;color:var(--ink);margin:8px 0 14px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;letter-spacing:-.3px;line-height:1.15}
 .price small{font-size:14px;font-weight:500;color:var(--muted);letter-spacing:0}
 .price .chg{font-weight:700;font-size:22px}
 .price small.stale{color:var(--active);font-weight:600}
+.s-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:0 0 16px;border:1px solid var(--hair2);border-radius:6px;overflow:hidden;background:var(--s2)}
+.s-stats>div{padding:8px 14px;border-left:1px solid var(--hair2);min-width:0}
+.s-stats>div:first-child{border-left:0}
+.s-stats dt{font-size:11.5px;color:var(--muted);margin:0;letter-spacing:.2px}
+.s-stats dd{margin:2px 0 0;font-size:15px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .s-rule{height:1px;background:var(--orange);margin:0 0 18px}
 .s-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start}
 .s-side{background:var(--s2);border:1px solid var(--hair2);border-radius:6px;padding:16px 18px 18px;min-width:0}
@@ -219,6 +218,7 @@ table.ohlcv th:first-child,table.ohlcv td:first-child{text-align:left}
 /* 반응형 */
 @media(max-width:960px){
  .cards{grid-template-columns:minmax(0,1fr)}
+ .mtiles{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(max-width:768px){
  :root{--gutter:20px}
@@ -227,31 +227,23 @@ table.ohlcv th:first-child,table.ohlcv td:first-child{text-align:left}
  .brand .title{font-size:21px;letter-spacing:-.4px}
  .when .date{font-size:17px} .when .date .wd{font-size:13px;margin-left:4px}
  .mast-meta{flex-direction:column;align-items:flex-start;gap:6px}
- .sec{margin-top:40px} .sec h2{font-size:20px} .lead{font-size:17px;line-height:1.7} .lead.headline{font-size:21px}
- .tile .v{font-size:22px}
+ .sec{margin-top:44px} .sec h2{font-size:20px} .lead{font-size:17px;line-height:1.75} .lead.headline{font-size:22px}
+ .tile .v{font-size:24px}
  .s-grid{grid-template-columns:minmax(0,1fr);gap:18px}
  .s-head h2{font-size:21px} .price{font-size:24px} .price .chg{font-size:19px}
 }
 @media(max-width:640px){
- .stocks thead{display:none}
- .tbl.stocks{border-width:1px 0}
- .stocks tbody tr{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"nm chg" "why why" "mini mini";gap:4px 12px;padding:14px 0;border-bottom:1px solid var(--hair2)}
- .stocks tbody tr:last-child{border-bottom:0}
- .macro tbody tr{grid-template-areas:"nm chg" "val val" "why why" "mini mini"}
- .macro td.val{grid-area:val;text-align:left;font-size:18px}
- .stocks tbody tr[hidden]{display:none}
- .stocks tbody td{display:block;padding:0;border:0}
- .stocks tbody tr:hover td{background:transparent}
  .cards{gap:10px}
  .card{padding:14px 14px 12px}
  .c-body{grid-template-columns:minmax(0,1fr);grid-template-areas:"why" "mini";gap:10px;align-items:start}
+ .mtiles{grid-template-columns:minmax(0,1fr)}
+ .s-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .s-stats>div:nth-child(3){border-left:0}
+ .s-stats>div:nth-child(n+3){border-top:1px solid var(--hair2)}
  .tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
  .tile:nth-child(odd):last-child{grid-column:1/-1}
- .tile{padding:12px 12px 10px} .tile .v{font-size:22px}
+ .tile{padding:14px 14px 12px} .tile .v{font-size:22px}
  .tile .t-head{align-items:flex-start} .tile .l{white-space:normal;line-height:1.3}
- .stocks td.nm-cell{grid-area:nm;white-space:normal;min-width:0} .stocks td.chg{grid-area:chg;text-align:right} .stocks td.why{grid-area:why;margin-top:2px} .stocks td.mini{grid-area:mini;margin-top:8px}
- .stocks td.mini{width:auto} .stocks .mini-link{width:100%}
- .stocks .mini svg{width:100%;height:auto}
  .c-dates{font-size:11.5px;margin-top:6px}
  .chart-lg{display:none} .chart-sm{display:block}
  .sheet{left:0;right:0;top:auto;bottom:0;transform:none;width:100%;max-height:92vh;border-radius:6px 6px 0 0;padding:14px 16px calc(20px + env(safe-area-inset-bottom))}

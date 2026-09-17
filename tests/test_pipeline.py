@@ -287,7 +287,7 @@ def test_macro_section_renders_with_line_and_candle_charts(tmp_path: Path, monke
     ])
     html = render.render_brief(brief)
     assert "금리 · 유가 · 금 · 환율" in html and 'id="x-us10y"' in html and 'id="x-gold"' in html
-    assert '<td class="val r">' in html and 'data-sheet="x-gold"' in html
+    assert 'class="card mtile"' in html and 'class="m-val num"' in html and 'data-sheet="x-gold"' in html  # 매크로 타일(카드)
     assert "bp" in html  # 금리는 bp 표기
     assert macro_prices.is_close_only(yields) and not macro_prices.is_close_only(gold)
     assert 'stroke="#043B72" stroke-width="2"' in html  # 라인 차트(종가만 있는 시계열)
