@@ -205,7 +205,7 @@ def _json_from_text(text: str) -> Optional[dict]:
 #   → "*한국 증시 관련 수치: …" → "*FICC: …"
 _INDEX_PATTERNS = [
     ("다우", r"다우(?!\s*운송)"), ("나스닥", r"나스닥"), ("S&P500", r"S&P\s*500"), ("러셀2000", r"러셀(?:\s*2000)?"),
-    ("필라델피아 반도체", r"필라델피아\s*반도체"), ("코스피", r"코스피|KOSPI(?!\s*야간)"), ("코스닥", r"코스닥|KOSDAQ"),
+    ("필라델피아 반도체", r"필라델피아\s*반도체"), ("코스피", r"(?:코스피|KOSPI)(?!\s*야간)"), ("코스닥", r"(?:코스닥|KOSDAQ)"),
 ]
 _UP_WORDS = ["상승", "급등", "강세", "올랐", "올라", "반등", "상승 출발", "우호"]
 _DOWN_WORDS = ["하락", "급락", "약세", "내렸", "내려", "밀렸", "부진"]
@@ -287,8 +287,8 @@ def _extract_kr_outlook(text: str) -> str:
 def _extract_indices(text: str) -> list[IndexSnapshot]:
     result: list[IndexSnapshot] = []
     for name, pat in _INDEX_PATTERNS:
-        m = re.search(pat + r"[^\n%]{0,14}?" + _SIGNED_PCT_RE.pattern, text)
-        if not m:
+        m = re.search(rf"(?:{pat})[^\n%]{{0,14}}?" + _SIGNED_PCT_RE.pattern, text)
+        if not m or m.lastindex is None:
             continue
         pct = _to_float(m.group(m.lastindex))
         if pct is not None:

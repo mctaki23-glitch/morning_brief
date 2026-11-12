@@ -78,6 +78,20 @@ def test_indices_dedup(master: StockMaster):
     assert "필라델피아 반도체" in names
 
 
+def test_indices_extraction_with_kr_market_text(master: StockMaster):
+    text = (
+        "시황 요약 (다우 -1.18%, 나스닥 -0.32%, S&P500 -0.58%, 러셀2000 -0.52%, "
+        "필라델피아 반도체 지수 +1.30%, 코스피 +0.88%, 코스닥 -0.15%)\n"
+        "*한국 증시 전망: 코스피는 전일 상승에 따른 숨고르기 장세가 예상됩니다."
+    )
+    result = summarize(text, Config(), master)
+    indices = {i.name: i.change_pct for i in result.indices}
+    assert indices["코스피"] == 0.88
+    assert indices["코스닥"] == -0.15
+    assert indices["다우"] == -1.18
+
+
+
 def test_verify_evidence_tolerates_formatting_but_rejects_fabrication():
     raw = "엔비디아(NVDA)는 차세대 GPU에 대한 대형 클라우드 업체들의 신규 수주 기대가 부각되며\n  +5.2% 급등했습니다."
     assert verify_evidence("엔비디아(NVDA)는 차세대 GPU에 대한 대형 클라우드 업체들의 신규 수주 기대가 부각되며 +5.2% 급등했습니다.", raw)
